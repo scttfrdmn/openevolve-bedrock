@@ -24,7 +24,8 @@ Two transports, chosen by ``api_base``:
   reasoning effort.
 * ``https://...``               -> OpenAI-compatible Chat Completions
   (``bedrock-mantle.<region>.api.aws/v1`` or
-  ``bedrock-runtime.<region>.amazonaws.com/openai/v1``) with a Bedrock API key.
+  ``bedrock-runtime.<region>.amazonaws.com/openai/v1``) with a Bedrock API key,
+  or with short-term keys minted from your AWS credentials if none is set.
   Parameters Bedrock rejects (``seed``, ``top_p: null``) are never sent.
 
 Models differ in what they accept: many reject the cache point, current ones
@@ -55,6 +56,7 @@ import hashlib
 import logging
 import os
 import random
+import re
 import threading
 import time
 from typing import Any, Dict, List, Optional, Tuple
@@ -144,6 +146,7 @@ THINKING_ADAPTIVE = "thinking_adaptive"  # budget_tokens rejected -> adaptive
 NO_THINKING = "no_thinking"              # neither accepted
 REASONING_NESTED = "reasoning_nested"    # reasoning_effort rejected -> reasoning.effort
 NO_REASONING = "no_reasoning"            # neither accepted
+MAX_COMPLETION_TOKENS = "max_completion_tokens"  # Chat Completions max_tokens rejected
 _quirks: Dict[str, set] = {}
 _quirks_lock = threading.Lock()
 
@@ -179,6 +182,8 @@ def _classify_rejection(message: str, features: set) -> Optional[str]:
         return REASONING_NESTED
     if "reasoning_nested" in features and "reasoning" in m:
         return NO_REASONING
+    if "max_tokens" in features and "'max_tokens'" in m:
+        return MAX_COMPLETION_TOKENS
     return None
 
 
@@ -376,6 +381,53 @@ class ConverseTransport(_Transport):
         return text, usage
 
 
+_MINT_REFRESH_S = 15 * 60
+# Wrong endpoint for the model rather than a bad field: Mantle serves some models
+# under /openai/v1 instead of /v1 ("isn't supported on this route"), and some
+# (Claude) not on Chat Completions at all.
+_ROUTE_UNSUPPORTED = re.compile(r"(?:not|n't) supported on this route|does not support the '[^']*' API", re.I)
+
+
+def _region_from_url(url: str) -> Optional[str]:
+    """'us-east-1' from https://bedrock-mantle.us-east-1.api.aws/v1 (or bedrock-runtime...)."""
+    m = re.search(r"//bedrock-[a-z]+\.([a-z]{2}(?:-[a-z]+)+-\d+)\.", url or "")
+    return m.group(1) if m else None
+
+
+def _aws_credentials(profile: Optional[str]):
+    try:
+        import boto3
+
+        return boto3.Session(profile_name=profile).get_credentials()
+    except Exception:  # missing profile etc.: behave as "no credentials"
+        return None
+
+
+def _mint_bedrock_api_key(region: str, profile: Optional[str]) -> str:
+    """A short-term Bedrock API key: a SigV4-presigned CallWithBearerToken URL, as
+    aws-bedrock-token-generator makes. Valid up to 12 h, or until the credentials expire."""
+    import base64
+
+    from botocore.auth import SigV4QueryAuth
+    from botocore.awsrequest import AWSRequest
+
+    creds = _aws_credentials(profile)
+    if creds is None:
+        raise ValueError("openevolve-bedrock: no AWS credentials to sign a Bedrock API key")
+    req = AWSRequest(
+        method="POST",
+        url="https://bedrock.amazonaws.com/",
+        headers={"host": "bedrock.amazonaws.com"},
+        params={"Action": "CallWithBearerToken"},
+    )
+    SigV4QueryAuth(creds.get_frozen_credentials(), "bedrock", region, expires=43200).add_auth(req)
+    token = req.url.replace("https://", "", 1) + "&Version=1"
+    return "bedrock-api-key-" + base64.b64encode(token.encode()).decode()
+
+
+_LEADING_REASONING = re.compile(r"\A\s*<reasoning>.*?</reasoning>\s*", re.S)
+
+
 class OpenAICompatTransport(_Transport):
     """Bedrock's OpenAI-compatible Chat Completions (Mantle or runtime /openai/v1)."""
 
@@ -387,26 +439,39 @@ class OpenAICompatTransport(_Transport):
         self.base_url = base_url
         self.settings = settings
         self.timeout = timeout
-        self.api_key = (
-            api_key
-            or os.environ.get("AWS_BEARER_TOKEN_BEDROCK")
-            or os.environ.get("OPENAI_API_KEY")
-        )
-        if not self.api_key:
+        self.region = _region_from_url(base_url) or settings.region
+        self.api_key = api_key or os.environ.get("AWS_BEARER_TOKEN_BEDROCK")
+        # No key: mint short-term ones from AWS credentials (re-minted as they age).
+        self._mint = not self.api_key and _aws_credentials(settings.profile) is not None
+        if not self.api_key and not self._mint:
+            self.api_key = os.environ.get("OPENAI_API_KEY")
+        if not self.api_key and not self._mint:
             raise ValueError(
-                "openevolve-bedrock: OpenAI-compatible transport needs a Bedrock API key. "
-                "Set llm.api_key in config (e.g. \"${AWS_BEARER_TOKEN_BEDROCK}\") or export "
-                "AWS_BEARER_TOKEN_BEDROCK."
+                "openevolve-bedrock: OpenAI-compatible transport needs a Bedrock API key or "
+                "AWS credentials. Set llm.api_key in config (e.g. \"${AWS_BEARER_TOKEN_BEDROCK}\"), "
+                "export AWS_BEARER_TOKEN_BEDROCK, or configure AWS credentials (AWS_PROFILE etc.)."
+            )
+        if self._mint and not self.region:
+            raise ValueError(
+                "openevolve-bedrock: can't tell the region from api_base %r to sign a Bedrock "
+                "API key. Export OE_BEDROCK_REGION / AWS_REGION." % base_url
             )
         self._client = None
+        self._minted_at = 0.0
 
     @property
     def client(self):
+        if self._mint and time.monotonic() - self._minted_at > _MINT_REFRESH_S:
+            self._client = None
         if self._client is None:
             import openai
 
+            key = self.api_key
+            if self._mint:
+                key = _mint_bedrock_api_key(self.region, self.settings.profile)
+                self._minted_at = time.monotonic()
             self._client = openai.OpenAI(
-                api_key=self.api_key, base_url=self.base_url, timeout=self.timeout, max_retries=0
+                api_key=key, base_url=self.base_url, timeout=self.timeout, max_retries=0
             )
         return self._client
 
@@ -419,7 +484,11 @@ class OpenAICompatTransport(_Transport):
         msgs.extend({"role": m["role"], "content": m["content"]} for m in messages)
         req: Dict[str, Any] = {"model": self.model, "messages": msgs, "stream": False}
         if params.get("max_tokens") is not None:
-            req["max_tokens"] = int(params["max_tokens"])
+            if _has_quirk(self.model, MAX_COMPLETION_TOKENS):
+                req["max_completion_tokens"] = int(params["max_tokens"])
+            else:
+                req["max_tokens"] = int(params["max_tokens"])
+                features.add("max_tokens")
         if not _has_quirk(self.model, NO_SAMPLING):
             if params.get("temperature") is not None:
                 req["temperature"] = float(params["temperature"])
@@ -447,6 +516,14 @@ class OpenAICompatTransport(_Transport):
                 resp = self.client.chat.completions.create(**req)
                 break
             except openai.BadRequestError as e:
+                if _ROUTE_UNSUPPORTED.search(str(e)):
+                    # Not a field problem; don't learn quirks from it.
+                    raise ValueError(
+                        "openevolve-bedrock: %s isn't served by Chat Completions at %s. The "
+                        "model card's Programmatic Access table gives its base URL (on Mantle, "
+                        "/v1 or /openai/v1); or use Converse (api_base: aws://<region>). (%s)"
+                        % (self.model, self.base_url, e)
+                    ) from e
                 if _learn_from_rejection(self.model, str(e), features):
                     attempt -= 1  # does not count against the budget
                     continue
@@ -472,20 +549,25 @@ class OpenAICompatTransport(_Transport):
             raise ValueError("endpoint returned a raw string instead of a chat completion")
         choice = resp.choices[0]
         text = choice.message.content or ""
+        if _base_model_id(self.model).startswith("openai.gpt-oss"):
+            # bedrock-runtime's /openai/v1 puts gpt-oss reasoning inline, before the answer.
+            text = _LEADING_REASONING.sub("", text, count=1)
         u = getattr(resp, "usage", None)
         prompt_tokens = int(getattr(u, "prompt_tokens", 0) or 0) if u else 0
         completion_tokens = int(getattr(u, "completion_tokens", 0) or 0) if u else 0
-        cached = 0
+        cached = written = 0
         details = getattr(u, "prompt_tokens_details", None) if u else None
         if details is not None:
             cached = int(getattr(details, "cached_tokens", 0) or 0)
+            written = int(getattr(details, "cache_write_tokens", 0) or 0)
         usage = Usage(
             model=self.model,
             transport=self.name,
-            # prompt_tokens includes cached tokens; the ledger prices them separately
-            input_tokens=max(0, prompt_tokens - cached),
+            # prompt_tokens includes cache reads and writes; the ledger prices them separately
+            input_tokens=max(0, prompt_tokens - cached - written),
             output_tokens=completion_tokens,
             cache_read_tokens=cached,
+            cache_write_tokens=written,
             latency_ms=latency_ms,
             attempts=attempt,
             throttled=throttled,

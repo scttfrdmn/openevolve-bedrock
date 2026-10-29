@@ -24,6 +24,15 @@ All notable changes to this project are documented here. The format follows
   `reasoning_effort`, `reasoning.effort` and none.
 - OpenAI-compatible transport: `input_tokens` no longer includes cached tokens,
   which the ledger prices separately (cache reads were billed twice).
+- OpenAI-compatible transport no longer needs `AWS_BEARER_TOKEN_BEDROCK`:
+  without a key it mints short-term Bedrock API keys from the AWS credentials
+  (re-signed every 15 minutes).
+- OpenAI-compatible transport records `cache_write_tokens` (GPT-5.6 and later)
+  and no longer bills them as plain input; switches to `max_completion_tokens`
+  for models that reject `max_tokens`; strips gpt-oss's inline leading
+  `<reasoning>` span on `bedrock-runtime`; and reports a wrong base path
+  ("isn't supported on this route") as such instead of learning a reasoning
+  quirk from it.
 - `check --cache-probe` sends a ~5K-token system prompt twice, above every
   model's cache minimum (Haiku 4.5: 4096), so the second call shows a read.
 

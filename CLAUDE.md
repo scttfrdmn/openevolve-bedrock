@@ -55,9 +55,12 @@ oe-bedrock cost examples/circle_packing/openevolve_output/ --pricing pricing.yam
 
 ## Where the real-AWS unknowns are
 
-- The OpenAI-compatible (Mantle) transport has not run live: whether it
-  reports `prompt_tokens_details.cached_tokens`, and its rejection wording for
-  the per-model adaptations.
+- The OpenAI-compatible transport ran live (2026-10-28, minted keys) on Mantle
+  and `bedrock-runtime` `/openai/v1`: gpt-oss, Qwen, GLM, Devstral, GPT-6.1 Sol.
+  Rejection wordings seen so far are quoted in tests; "isn't supported on this
+  route" means the wrong base path for that model, not a bad field
+  (`_ROUTE_UNSUPPORTED`). Check AWS docs (model cards, endpoints page) before
+  assuming endpoint behaviour.
 - Converse was exercised on 25 models from 13 vendors in us-west-2
   (2026-10-28); new models can reject fields in new words. When one does, add
   the wording to `_classify_rejection` with a test quoting it verbatim.
