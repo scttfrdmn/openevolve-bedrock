@@ -119,12 +119,127 @@ def test_non_retryable_error_raises_immediately(fake_converse):
     assert len(client.calls) == 1
 
 
-def test_anthropic_reasoning_effort_maps_to_thinking(fake_converse):
+def test_anthropic_reasoning_effort_maps_to_adaptive_thinking(fake_converse):
     client = fake_converse([converse_ok()])
     run(BedrockLLM(model_cfg(reasoning_effort="high", max_tokens=2000)).generate("x"))
     req = client.calls[0]
-    assert req["additionalModelRequestFields"] == {"thinking": {"type": "enabled", "budget_tokens": 16384}}
-    assert req["inferenceConfig"] == {"maxTokens": 16384 + 1024}   # > budget, no temperature/topP
+    assert req["additionalModelRequestFields"] == {
+        "thinking": {"type": "adaptive"}, "output_config": {"effort": "high"}}
+    assert req["inferenceConfig"] == {"maxTokens": 2000}   # no temperature/topP with thinking
+
+
+def test_adaptive_rejected_falls_back_to_budget(fake_converse):
+    # Claude Haiku 4.5's rejection, verbatim from Bedrock (2026-10-28)
+    client = fake_converse([
+        client_error("ValidationException", "The model returned the following errors: "
+                     "adaptive thinking is not supported on this model"),
+        converse_ok(), converse_ok(),
+    ])
+    llm = BedrockLLM(model_cfg(reasoning_effort="high", max_tokens=2000))
+    run(llm.generate("x"))
+    assert client.calls[1]["additionalModelRequestFields"] == {
+        "thinking": {"type": "enabled", "budget_tokens": 16384}}
+    assert client.calls[1]["inferenceConfig"] == {"maxTokens": 16384 + 1024}  # > budget
+    assert read_ledger()[0]["attempts"] == 1
+    run(llm.generate("y"))                     # remembered: budget up front
+    assert len(client.calls) == 3
+    assert client.calls[2]["additionalModelRequestFields"]["thinking"]["type"] == "enabled"
+
+
+def test_budget_rejected_falls_back_to_adaptive(fake_converse, monkeypatch):
+    # Claude 5.5's rejection of budget_tokens, verbatim from Bedrock
+    monkeypatch.setenv("OE_BEDROCK_THINKING_BUDGET", "2048")
+    client = fake_converse([
+        client_error("ValidationException", 'The model returned the following errors: '
+                     '"thinking.type.enabled" is not supported for this model. '
+                     'Use "thinking.type.adaptive" and "output_config.effort" instead.'),
+        converse_ok(),
+    ])
+    run(BedrockLLM(model_cfg(name="us.anthropic.claude-sonnet-5-5")).generate("x"))
+    assert client.calls[0]["additionalModelRequestFields"]["thinking"]["budget_tokens"] == 2048
+    assert client.calls[1]["additionalModelRequestFields"] == {"thinking": {"type": "adaptive"}}
+
+
+def test_thinking_dropped_when_neither_shape_accepted(fake_converse):
+    client = fake_converse([
+        client_error("ValidationException", "adaptive thinking is not supported on this model"),
+        client_error("ValidationException", "budget_tokens: thinking is not supported"),
+        converse_ok(),
+    ])
+    run(BedrockLLM(model_cfg(reasoning_effort="low")).generate("x"))
+    assert len(client.calls) == 3
+    assert "additionalModelRequestFields" not in client.calls[2]
+    assert client.calls[2]["inferenceConfig"]["temperature"] == 0.7  # sampling back without thinking
+
+
+def test_cache_point_access_denied_is_learned(fake_converse):
+    # How Bedrock rejects cachePoint on most non-Claude/Nova models (2026-10-28)
+    client = fake_converse([
+        client_error("AccessDeniedException", "You invoked an unsupported model or your request "
+                     "did not allow prompt caching. See the documentation for more information."),
+        converse_ok(),
+    ])
+    run(BedrockLLM(model_cfg(name="deepseek.v3.2")).generate("x"))
+    assert "cachePoint" in json.dumps(client.calls[0])
+    assert "cachePoint" not in json.dumps(client.calls[1])
+
+
+def test_temperature_rejected_then_dropped(fake_converse):
+    client = fake_converse([
+        client_error("ValidationException",
+                     "The model returned the following errors: `temperature` is deprecated for this model."),
+        converse_ok(), converse_ok(),
+    ])
+    llm = BedrockLLM(model_cfg(name="us.anthropic.claude-opus-5-5", top_p=0.9))
+    run(llm.generate("x"))
+    assert client.calls[0]["inferenceConfig"]["temperature"] == 0.7
+    assert client.calls[1]["inferenceConfig"] == {"maxTokens": 512}
+    run(llm.generate("y"))
+    assert client.calls[2]["inferenceConfig"] == {"maxTokens": 512}
+
+
+def test_reasoning_effort_field_fallbacks(fake_converse):
+    # GPT-6.1 rejects reasoning_effort and takes reasoning.effort
+    client = fake_converse([
+        client_error("ValidationException", "The model returned the following errors: "
+                     "Unknown parameter: 'reasoning_effort'."),
+        converse_ok(),
+    ])
+    run(BedrockLLM(model_cfg(name="us.openai.gpt-6.1-sol", reasoning_effort="low")).generate("x"))
+    assert client.calls[0]["additionalModelRequestFields"] == {"reasoning_effort": "low"}
+    assert client.calls[1]["additionalModelRequestFields"] == {"reasoning": {"effort": "low"}}
+
+
+def test_unexplained_rejection_drops_reasoning(fake_converse):
+    # DeepSeek R1 rejects reasoning_effort with a bare "Validation Error"
+    client = fake_converse([
+        client_error("ValidationException", "The model returned the following errors: Validation Error"),
+        converse_ok(),
+    ])
+    run(BedrockLLM(model_cfg(name="us.deepseek.r1-v1:0", reasoning_effort="low")).generate("x"))
+    assert "additionalModelRequestFields" not in client.calls[1]
+
+
+def test_reasoning_effort_sent_to_any_vendor(fake_converse):
+    client = fake_converse([converse_ok()])
+    run(BedrockLLM(model_cfg(name="deepseek.v3.2", reasoning_effort="medium")).generate("x"))
+    assert client.calls[0]["additionalModelRequestFields"] == {"reasoning_effort": "medium"}
+
+
+def test_unrecognised_or_repeated_rejection_raises(fake_converse):
+    from botocore.exceptions import ClientError
+
+    client = fake_converse([client_error("ValidationException", "Malformed input request"), converse_ok()])
+    with pytest.raises(ClientError):
+        run(BedrockLLM(model_cfg()).generate("x"))
+    assert len(client.calls) == 1
+
+    temp = "`temperature` is deprecated for this model."
+    client = fake_converse([client_error("ValidationException", temp),
+                            client_error("ValidationException", temp), converse_ok()])
+    with pytest.raises(ClientError):                 # learned once; no second adaptation, no loop
+        run(BedrockLLM(model_cfg(name="m.x")).generate("x"))
+    assert len(client.calls) == 2
 
 
 def test_thinking_budget_env(fake_converse, monkeypatch):
@@ -213,7 +328,7 @@ def test_openai_transport_request(fake_openai, monkeypatch):
     assert req["temperature"] == 0.7 and req["max_tokens"] == 512 and req["stream"] is False
     rec = read_ledger()[0]
     assert rec["transport"] == "openai" and rec["cache_read_tokens"] == 30
-    assert rec["input_tokens"] == 70 and rec["output_tokens"] == 7
+    assert rec["input_tokens"] == 40 and rec["output_tokens"] == 7  # 70 prompt - 30 cached
 
 
 def test_openai_transport_429_retry(fake_openai, monkeypatch):
@@ -231,6 +346,24 @@ def test_openai_transport_429_retry(fake_openai, monkeypatch):
     run(BedrockLLM(model_cfg(api_base="https://bedrock-mantle.us-east-1.api.aws/v1")).generate("x"))
     assert len(fake.calls) == 2
     assert read_ledger()[0]["throttled"] == 1
+
+
+def test_openai_transport_drops_rejected_temperature(fake_openai, monkeypatch):
+    import openai as _openai
+
+    try:
+        import httpx
+    except ModuleNotFoundError:
+        import httpx2 as httpx
+
+    monkeypatch.setenv("AWS_BEARER_TOKEN_BEDROCK", "k")
+    resp = httpx.Response(400, request=httpx.Request("POST", "https://x"))
+    err = _openai.BadRequestError("This model doesn't support the temperature field.", response=resp, body=None)
+    fake = fake_openai([err, _chat_ok()])
+    run(BedrockLLM(model_cfg(name="openai.gpt-6.1-sol",
+                             api_base="https://bedrock-mantle.us-east-1.api.aws/v1")).generate("x"))
+    assert fake.calls[0]["temperature"] == 0.7
+    assert "temperature" not in fake.calls[1]
 
 
 def test_openai_transport_requires_key(monkeypatch):

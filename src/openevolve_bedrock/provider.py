@@ -18,13 +18,21 @@
 Two transports, chosen by ``api_base``:
 
 * ``aws://<region>`` or unset  -> Converse API via boto3 (SigV4 credentials,
-  IAM roles, or a Bedrock API key in ``AWS_BEARER_TOKEN_BEDROCK``). Supports
-  prompt caching of the system message, cross-region inference profiles, and
-  Claude extended thinking.
+  IAM roles, or a Bedrock API key in ``AWS_BEARER_TOKEN_BEDROCK``). Works with
+  any Bedrock text model from any vendor; supports prompt caching of the system
+  message, cross-region inference profiles, Claude thinking and other vendors'
+  reasoning effort.
 * ``https://...``               -> OpenAI-compatible Chat Completions
   (``bedrock-mantle.<region>.api.aws/v1`` or
   ``bedrock-runtime.<region>.amazonaws.com/openai/v1``) with a Bedrock API key.
   Parameters Bedrock rejects (``seed``, ``top_p: null``) are never sent.
+
+Models differ in what they accept: many reject the cache point, current ones
+reject non-default ``temperature``, Claude thinking is ``adaptive`` on newer
+models and ``budget_tokens`` on older ones, and vendors name reasoning effort
+differently. Instead of a model table that goes stale, each transport sends the
+current-generation shape and, when Bedrock rejects a field, drops or swaps it
+for that model, retries, and remembers for the rest of the process (``_quirks``).
 
 Every call appends one line to the usage ledger (see ``ledger.py``).
 
@@ -35,8 +43,9 @@ Environment knobs (all optional):
     OE_BEDROCK_CACHE           auto (default) | off   system-message cache point
     OE_BEDROCK_LEDGER          ledger path; "off" disables
     OE_BEDROCK_MAX_ATTEMPTS    throttle/transient retry budget (default 8)
-    OE_BEDROCK_THINKING_BUDGET Claude extended-thinking budget tokens; if set,
-                               enables thinking regardless of reasoning_effort
+    OE_BEDROCK_THINKING_BUDGET Claude thinking budget tokens; if set, enables
+                               thinking regardless of reasoning_effort (models
+                               that only take adaptive thinking get that)
 """
 
 from __future__ import annotations
@@ -68,8 +77,11 @@ _THROTTLE_CODES = {
     "ServiceQuotaExceededException",
 }
 
-# reasoning_effort -> Claude thinking budget (tokens)
-_THINKING_BUDGETS = {"low": 1024, "medium": 4096, "high": 16384}
+# reasoning_effort -> Claude thinking budget (tokens), for models without adaptive thinking
+_THINKING_BUDGETS = {"minimal": 1024, "low": 1024, "medium": 4096, "high": 16384,
+                     "xhigh": 32768, "max": 32768}
+# reasoning_effort -> Claude output_config.effort, for adaptive thinking
+_EFFORTS = {"minimal": "low"}
 
 # Cross-region inference profile prefixes
 _PROFILE_PREFIXES = ("us.", "eu.", "apac.", "global.", "jp.", "au.", "ca.")
@@ -123,8 +135,91 @@ class _Transport:
 
 _client_cache: Dict[Tuple[str, Optional[str], int], Any] = {}
 _client_lock = threading.Lock()
-_no_cache_models: set = set()  # models that rejected cachePoint
-_no_cache_lock = threading.Lock()
+
+# Request features a model rejected, learned from Bedrock's errors (per process).
+NO_CACHE = "no_cache"                    # cachePoint
+NO_SAMPLING = "no_sampling"              # temperature / topP
+THINKING_BUDGET = "thinking_budget"      # adaptive rejected -> budget_tokens
+THINKING_ADAPTIVE = "thinking_adaptive"  # budget_tokens rejected -> adaptive
+NO_THINKING = "no_thinking"              # neither accepted
+REASONING_NESTED = "reasoning_nested"    # reasoning_effort rejected -> reasoning.effort
+NO_REASONING = "no_reasoning"            # neither accepted
+_quirks: Dict[str, set] = {}
+_quirks_lock = threading.Lock()
+
+
+def _has_quirk(model: str, quirk: str) -> bool:
+    with _quirks_lock:
+        return quirk in _quirks.get(model, ())
+
+
+def _learn_quirk(model: str, quirk: str, message: str) -> bool:
+    """Record a quirk; False if already known (the caller should then give up)."""
+    with _quirks_lock:
+        known = _quirks.setdefault(model, set())
+        if quirk in known:
+            return False
+        known.add(quirk)
+    logger.warning("%s: %s; adapting requests to this model (%s)", model, quirk, message[:200])
+    return True
+
+
+def _classify_rejection(message: str, features: set) -> Optional[str]:
+    """Map a Bedrock rejection to the quirk that avoids it, given the features sent."""
+    m = message.lower()
+    if "cache" in features and "cach" in m:
+        return NO_CACHE
+    if "sampling" in features and ("temperature" in m or "top_p" in m or "topp" in m):
+        return NO_SAMPLING
+    if "thinking_adaptive" in features and "adaptive" in m:
+        return THINKING_BUDGET
+    if "thinking_budget" in features and ("thinking.type.enabled" in m or "budget_tokens" in m):
+        return THINKING_ADAPTIVE
+    if "reasoning_effort" in features and "reasoning_effort" in m:
+        return REASONING_NESTED
+    if "reasoning_nested" in features and "reasoning" in m:
+        return NO_REASONING
+    return None
+
+
+def _learn_from_rejection(model: str, message: str, features: set) -> bool:
+    quirk = _classify_rejection(message, features)
+    if quirk is None and features & {"reasoning_effort", "reasoning_nested"}:
+        # Some models reject reasoning fields without naming them (DeepSeek R1:
+        # "Validation Error"). Reasoning effort is optional, so it goes first.
+        quirk = NO_REASONING
+    if quirk is None:
+        return False
+    # Thinking and reasoning fall back one shape, then off.
+    if quirk == THINKING_BUDGET and _has_quirk(model, THINKING_ADAPTIVE):
+        quirk = NO_THINKING
+    elif quirk == THINKING_ADAPTIVE and _has_quirk(model, THINKING_BUDGET):
+        quirk = NO_THINKING
+    return _learn_quirk(model, quirk, message)
+
+
+def _thinking_fields(model: str, params: Dict[str, Any]) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    """Claude thinking request fields for this model, and which shape was chosen."""
+    effort, budget = params.get("effort"), params.get("thinking_budget")
+    if not (effort or budget) or _has_quirk(model, NO_THINKING):
+        return None, None
+    use_budget = (budget and not _has_quirk(model, THINKING_ADAPTIVE)) or _has_quirk(model, THINKING_BUDGET)
+    if use_budget:
+        budget = int(budget or _THINKING_BUDGETS.get(str(effort).lower(), 4096))
+        return {"thinking": {"type": "enabled", "budget_tokens": budget}}, "thinking_budget"
+    fields: Dict[str, Any] = {"thinking": {"type": "adaptive"}}
+    if effort:
+        fields["output_config"] = {"effort": _EFFORTS.get(str(effort).lower(), str(effort).lower())}
+    return fields, "thinking_adaptive"
+
+
+def _reasoning_fields(model: str, effort: Optional[str]) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    """Non-Anthropic reasoning effort: ``reasoning_effort``, else ``reasoning.effort``."""
+    if not effort or _has_quirk(model, NO_REASONING):
+        return None, None
+    if _has_quirk(model, REASONING_NESTED):
+        return {"reasoning": {"effort": str(effort)}}, "reasoning_nested"
+    return {"reasoning_effort": str(effort)}, "reasoning_effort"
 
 
 def _bedrock_runtime_client(region: str, profile: Optional[str], timeout: int):
@@ -166,10 +261,7 @@ class ConverseTransport(_Transport):
         return self._client
 
     def _cache_enabled(self) -> bool:
-        if self.settings.cache == "off":
-            return False
-        with _no_cache_lock:
-            return self.model not in _no_cache_models
+        return self.settings.cache != "off" and not _has_quirk(self.model, NO_CACHE)
 
     def build_request(
         self,
@@ -177,7 +269,9 @@ class ConverseTransport(_Transport):
         messages: List[Dict[str, str]],
         params: Dict[str, Any],
         use_cache: bool,
-    ) -> Dict[str, Any]:
+    ) -> Tuple[Dict[str, Any], set]:
+        """The Converse request, and the optional features it uses (for rejection handling)."""
+        features: set = set()
         req: Dict[str, Any] = {
             "modelId": self.model,
             "messages": [
@@ -190,42 +284,49 @@ class ConverseTransport(_Transport):
             sys_blocks: List[Dict[str, Any]] = [{"text": system}]
             if use_cache:
                 sys_blocks.append({"cachePoint": {"type": "default"}})
+                features.add("cache")
             req["system"] = sys_blocks
 
-        thinking_budget = params.get("thinking_budget")
+        extra: Dict[str, Any] = {}
+        if params.get("vendor") == "anthropic":
+            fields, shape = _thinking_fields(self.model, params)
+        else:
+            fields, shape = _reasoning_fields(self.model, params.get("effort"))
+        if fields:
+            extra.update(fields)
+            features.add(shape)
+
         inference: Dict[str, Any] = {}
         max_tokens = params.get("max_tokens")
-        if thinking_budget:
-            # Thinking requires maxTokens > budget and forbids temperature/topP.
-            inference["maxTokens"] = max(int(max_tokens or 0), int(thinking_budget) + 1024)
-        else:
-            if max_tokens is not None:
-                inference["maxTokens"] = int(max_tokens)
+        if max_tokens is not None:
+            inference["maxTokens"] = int(max_tokens)
+        if shape == "thinking_budget":
+            # maxTokens must exceed the budget
+            budget = extra["thinking"]["budget_tokens"]
+            inference["maxTokens"] = max(int(max_tokens or 0), budget + 1024)
+        # Claude thinking forbids sampling params; some models reject them outright.
+        if not (shape or "").startswith("thinking") and not _has_quirk(self.model, NO_SAMPLING):
             if params.get("temperature") is not None:
                 inference["temperature"] = float(params["temperature"])
             if params.get("top_p") is not None:
                 inference["topP"] = float(params["top_p"])
+            if "temperature" in inference or "topP" in inference:
+                features.add("sampling")
         if inference:
             req["inferenceConfig"] = inference
-
-        extra: Dict[str, Any] = {}
-        if thinking_budget:
-            extra["thinking"] = {"type": "enabled", "budget_tokens": int(thinking_budget)}
-        if params.get("openai_reasoning_effort"):
-            extra["reasoning_effort"] = params["openai_reasoning_effort"]
         if extra:
             req["additionalModelRequestFields"] = extra
-        return req
+        return req, features
 
     def complete(self, system, messages, params):
         from botocore.exceptions import ClientError, EndpointConnectionError, ReadTimeoutError
 
-        use_cache = bool(system) and self._cache_enabled()
         attempt = 0
         throttled = 0
         while True:
             attempt += 1
-            req = self.build_request(system, messages, params, use_cache)
+            use_cache = bool(system) and self._cache_enabled()
+            req, features = self.build_request(system, messages, params, use_cache)
             t0 = time.monotonic()
             try:
                 resp = self.client.converse(**req)
@@ -233,14 +334,10 @@ class ConverseTransport(_Transport):
             except ClientError as e:
                 code = e.response.get("Error", {}).get("Code", "")
                 msg = str(e.response.get("Error", {}).get("Message", e))
-                if code == "ValidationException" and use_cache and "cache" in msg.lower():
-                    logger.warning(
-                        "%s rejected cachePoint (%s); disabling prompt cache for this model",
-                        self.model, msg,
-                    )
-                    with _no_cache_lock:
-                        _no_cache_models.add(self.model)
-                    use_cache = False
+                # Unsupported fields come back as ValidationException; an unsupported
+                # cachePoint as AccessDeniedException ("did not allow prompt caching").
+                if code in ("ValidationException", "AccessDeniedException") and \
+                        _learn_from_rejection(self.model, msg, features):
                     attempt -= 1  # does not count against the budget
                     continue
                 if code in _THROTTLE_CODES and attempt < self.settings.max_attempts:
@@ -313,7 +410,9 @@ class OpenAICompatTransport(_Transport):
             )
         return self._client
 
-    def build_request(self, system, messages, params) -> Dict[str, Any]:
+    def build_request(self, system, messages, params) -> Tuple[Dict[str, Any], set]:
+        """The Chat Completions request, and the optional features it uses."""
+        features: set = set()
         msgs: List[Dict[str, str]] = []
         if system:
             msgs.append({"role": "system", "content": system})
@@ -321,27 +420,37 @@ class OpenAICompatTransport(_Transport):
         req: Dict[str, Any] = {"model": self.model, "messages": msgs, "stream": False}
         if params.get("max_tokens") is not None:
             req["max_tokens"] = int(params["max_tokens"])
-        if params.get("temperature") is not None:
-            req["temperature"] = float(params["temperature"])
-        if params.get("top_p") is not None:  # never send top_p: null (openevolve #414)
-            req["top_p"] = float(params["top_p"])
-        if params.get("openai_reasoning_effort"):
-            req["reasoning_effort"] = params["openai_reasoning_effort"]
+        if not _has_quirk(self.model, NO_SAMPLING):
+            if params.get("temperature") is not None:
+                req["temperature"] = float(params["temperature"])
+            if params.get("top_p") is not None:  # never send top_p: null (openevolve #414)
+                req["top_p"] = float(params["top_p"])
+            if "temperature" in req or "top_p" in req:
+                features.add("sampling")
+        fields, shape = _reasoning_fields(self.model, params.get("effort"))
+        if fields:
+            req.update(fields)
+            features.add(shape)
         # Deliberately no `seed`: Bedrock's OpenAI-compatible endpoints do not accept it.
-        return req
+        return req, features
 
     def complete(self, system, messages, params):
         import openai
 
         attempt = 0
         throttled = 0
-        req = self.build_request(system, messages, params)
         while True:
             attempt += 1
+            req, features = self.build_request(system, messages, params)
             t0 = time.monotonic()
             try:
                 resp = self.client.chat.completions.create(**req)
                 break
+            except openai.BadRequestError as e:
+                if _learn_from_rejection(self.model, str(e), features):
+                    attempt -= 1  # does not count against the budget
+                    continue
+                raise
             except openai.RateLimitError:
                 if attempt < self.settings.max_attempts:
                     throttled += 1
@@ -373,7 +482,8 @@ class OpenAICompatTransport(_Transport):
         usage = Usage(
             model=self.model,
             transport=self.name,
-            input_tokens=prompt_tokens,
+            # prompt_tokens includes cached tokens; the ledger prices them separately
+            input_tokens=max(0, prompt_tokens - cached),
             output_tokens=completion_tokens,
             cache_read_tokens=cached,
             latency_ms=latency_ms,
@@ -443,17 +553,11 @@ class BedrockLLM(LLMInterface):
             logger.debug("Bedrock does not accept `seed`; ignoring it for %s", self.model)
             self._seed_warned = True
 
-        effort = kwargs.get("reasoning_effort", self.reasoning_effort)
-        vendor = _vendor(self.model)
-        if self.settings.thinking_budget and vendor == "anthropic":
+        # The transports turn these into each model's thinking/reasoning fields.
+        params["vendor"] = _vendor(self.model)
+        params["effort"] = kwargs.get("reasoning_effort", self.reasoning_effort)
+        if self.settings.thinking_budget and params["vendor"] == "anthropic":
             params["thinking_budget"] = self.settings.thinking_budget
-        elif effort:
-            if vendor == "anthropic":
-                params["thinking_budget"] = _THINKING_BUDGETS.get(str(effort).lower(), 4096)
-            elif vendor == "openai":
-                params["openai_reasoning_effort"] = str(effort)
-            else:
-                logger.debug("reasoning_effort ignored for %s", self.model)
         return params
 
     # -- LLMInterface ----------------------------------------------------

@@ -13,9 +13,9 @@ llm:
   provider: bedrock
   api_base: aws://us-west-2
   models:
-    - name: us.anthropic.claude-haiku-4-5-20251001-v1:0
+    - name: us.anthropic.claude-haiku-5-5
       weight: 0.8
-    - name: us.anthropic.claude-sonnet-4-5-20250929-v1:0
+    - name: us.anthropic.claude-sonnet-5-5
       weight: 0.2
   temperature: 0.7
   max_tokens: 16000

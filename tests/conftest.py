@@ -69,7 +69,7 @@ def _isolate(monkeypatch, tmp_path):
     monkeypatch.setenv("OE_BEDROCK_MAX_ATTEMPTS", "4")
     monkeypatch.setattr(prov.time, "sleep", lambda s: None)
     prov._client_cache.clear()
-    prov._no_cache_models.clear()
+    prov._quirks.clear()
     yield
 
 

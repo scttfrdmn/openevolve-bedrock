@@ -8,10 +8,22 @@
 # the ledger's id is matched exactly first, then with the prefix stripped.
 # Rows with null input/output are ignored (treated as unpriced).
 
+#
+# Geographic profiles (us., eu., ...) and global. profiles are priced
+# differently (us. is ~10% above global.); key the exact id you run to price it
+# exactly. The AWS Price List API (service AmazonBedrockFoundationModels) has
+# the current numbers per region. Claude Haiku 5.5 bills prompts over 100K
+# tokens at a higher tier, which this file does not model.
+#
+# Fill cache_read/cache_write for models that cache: left null they count as 0.
+
 models:
-  amazon.nova-micro-v1:0:        {input: null, output: null, cache_read: null, cache_write: 0}
-  amazon.nova-lite-v1:0:         {input: null, output: null, cache_read: null, cache_write: 0}
-  amazon.nova-pro-v1:0:          {input: null, output: null, cache_read: null, cache_write: 0}
+  anthropic.claude-haiku-5-5:                 {input: null, output: null, cache_read: null, cache_write: null}
+  anthropic.claude-sonnet-5-5:                {input: null, output: null, cache_read: null, cache_write: null}
+  anthropic.claude-opus-5-5:                  {input: null, output: null, cache_read: null, cache_write: null}
   anthropic.claude-haiku-4-5-20251001-v1:0:   {input: null, output: null, cache_read: null, cache_write: null}
-  anthropic.claude-sonnet-4-5-20250929-v1:0:  {input: null, output: null, cache_read: null, cache_write: null}
-  openai.gpt-oss-120b-1:0:       {input: null, output: null}
+  amazon.nova-2-lite-v1:0:                    {input: null, output: null, cache_read: null, cache_write: null}
+  openai.gpt-oss-120b-1:0:                    {input: null, output: null}
+  deepseek.v3.2:                              {input: null, output: null}
+  qwen.qwen3-coder-480b-a35b-v1:0:            {input: null, output: null}
+  mistral.devstral-2-123b:                    {input: null, output: null}
