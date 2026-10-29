@@ -9,9 +9,9 @@ llm:
   provider: bedrock
   api_base: aws://us-west-2
   models:
-    - name: us.anthropic.claude-haiku-4-5-20251001-v1:0    # breadth
+    - name: us.anthropic.claude-haiku-5-5    # breadth
       weight: 0.8
-    - name: us.anthropic.claude-sonnet-4-5-20250929-v1:0   # depth
+    - name: us.anthropic.claude-sonnet-5-5   # depth
       weight: 0.2
 ```
 
@@ -29,10 +29,11 @@ model calls and adds accounting:
 
 | | |
 |---|---|
-| **Two transports** | `api_base: aws://<region>` uses the **Converse API** through boto3 (SigV4, IAM roles, instance profiles, or a Bedrock API key in `AWS_BEARER_TOKEN_BEDROCK`). An `https://` `api_base` uses Bedrock's **OpenAI-compatible Chat Completions** (`bedrock-mantle.<region>.api.aws/v1` or `bedrock-runtime.<region>.amazonaws.com/openai/v1`) with a Bedrock API key. Same config, same ledger; swap the URL to compare endpoints. |
-| **Prompt caching** | Converse transport adds a cache point after the system message. Models that reject it are detected on the first call and the cache is turned off for that model. Cache hits require the system message to clear the model's minimum (on the order of 1–2K tokens): put the stable problem description and instructions in `prompt.system_message`, not the user turn. `OE_BEDROCK_CACHE=off` disables it. |
+| **Two transports** | `api_base: aws://<region>` uses the **Converse API** through boto3 (SigV4, IAM roles, instance profiles, or a Bedrock API key in `AWS_BEARER_TOKEN_BEDROCK`). An `https://` `api_base` uses Bedrock's **OpenAI-compatible Chat Completions** (`bedrock-mantle.<region>.api.aws/v1` or `bedrock-runtime.<region>.amazonaws.com/openai/v1`) with a Bedrock API key, or short-term keys minted from your AWS credentials when none is set. Same config, same ledger; swap the URL to compare endpoints. |
+| **Any Bedrock model** | Any text model Bedrock serves, from any vendor: Claude, Nova, Llama, Mistral, DeepSeek, Qwen, OpenAI, Moonshot, Z.AI, MiniMax, xAI, Gemma, Nemotron… Models disagree on what a request may contain (cache point, `temperature`, thinking and reasoning fields), so the provider sends the current-generation shape and, when Bedrock rejects a field, drops or swaps it for that model, retries without spending a retry attempt, and remembers for the rest of the process. One warning per model and adaptation is logged. No model table to go stale. |
+| **Prompt caching** | Converse transport adds a cache point after the system message; models that don't take one are detected on the first call. Cache hits require the system message to clear the model's minimum — 512 tokens on current Claude models, up to 4096 on some (Claude Haiku 4.5): put the stable problem description and instructions in `prompt.system_message`, not the user turn. Some models cache on their own (xAI Grok). `OE_BEDROCK_CACHE=off` disables the cache point. |
 | **Throttle-aware retry** | `ThrottlingException`, 429, `ServiceUnavailable`, `ModelNotReady` and connection errors are retried with exponential backoff and jitter (`OE_BEDROCK_MAX_ATTEMPTS`, default 8). Throttles are counted in the ledger so you can see what your island parallelism is costing in wall-clock. |
-| **Parameter hygiene** | `seed` is never sent (Bedrock rejects it); `top_p: null` is never sent (openevolve #414); `reasoning_effort` maps to Claude extended thinking (`low/medium/high` → 1K/4K/16K budget, or `OE_BEDROCK_THINKING_BUDGET=N`) or to `reasoning_effort` for `openai.*` models. |
+| **Parameter hygiene** | `seed` is never sent (Bedrock rejects it); `top_p: null` is never sent (openevolve #414); `temperature`/`top_p` are dropped for models that reject them (current Claude, GPT-5.5/6.x, Grok, Kimi K3). `reasoning_effort` maps to Claude adaptive thinking with `output_config.effort` (falling back to a `budget_tokens` budget on models without adaptive thinking, e.g. Haiku 4.5; `OE_BEDROCK_THINKING_BUDGET=N` asks for a budget), and to `reasoning_effort` or `reasoning.effort` for other vendors, dropped where neither is accepted. |
 | **Ledger** | One JSON line per call: model, transport, input/output/cache-read/cache-write tokens, latency, attempts, throttles, stop reason. Written with `O_APPEND` so OpenEvolve's worker processes share one file. Default location `<output_dir>/bedrock_ledger.jsonl`. |
 | **Cost and $/result** | `oe-bedrock cost` prices the ledger from a `pricing.yaml` you fill from the Bedrock pricing page. `--threshold X --metric combined_score` finds the first checkpoint that reached X and reports spend up to that point. |
 
@@ -44,19 +45,26 @@ cp $(python -c 'import openevolve_bedrock,os;print(os.path.dirname(openevolve_be
 ```
 
 Fill `pricing.yaml` (USD per 1K tokens; cross-region prefixes `us.`/`eu.`/… are
-matched automatically). Prices are not shipped because they change; the tool
-reports any model it can't price.
+matched automatically, but `us.` and `global.` profiles are priced differently,
+so key the exact id to price it exactly). Prices are not shipped because they
+change; the AWS Price List API (`AmazonBedrockFoundationModels`) has them per
+region. The tool reports any model without `input`/`output` prices; empty
+`cache_read`/`cache_write` count as 0.
 
 Credentials: whatever boto3 finds (`AWS_PROFILE`, instance role, SSO), or a
-Bedrock API key in `AWS_BEARER_TOKEN_BEDROCK`. Region from `api_base`,
+Bedrock API key in `AWS_BEARER_TOKEN_BEDROCK`. The `https://` transport needs a
+Bedrock API key; without one it signs short-term keys from the boto3
+credentials (as `aws-bedrock-token-generator` does) and re-signs them every
+15 minutes. Region from `api_base`,
 `OE_BEDROCK_REGION`, or `AWS_REGION`.
 
 ## Run
 
 ```bash
-oe-bedrock models --profiles --vendor anthropic      # ids enabled in your region
-oe-bedrock check --config config.yaml                # one 8-token call per model
-oe-bedrock check --config config.yaml --cache-probe  # long system prompt: do cache tokens show?
+oe-bedrock models --profiles                         # text models, profiles, lifecycle (LEGACY ...)
+oe-bedrock models --profiles --vendor mistral        # one vendor
+oe-bedrock check --config config.yaml                # one short call per model
+oe-bedrock check --config config.yaml --cache-probe  # ~5K-token system prompt twice: does the 2nd read the cache?
 oe-bedrock run initial_program.py evaluator.py --config config.yaml --iterations 100
 oe-bedrock cost openevolve_output/ --pricing pricing.yaml
 ```
@@ -87,11 +95,33 @@ fan-out of island-parallel evolution. To compare on your account:
 llm:
   provider: bedrock
   api_base: https://bedrock-mantle.us-west-2.api.aws/v1
-  api_key: "${AWS_BEARER_TOKEN_BEDROCK}"
+  # api_key: "${AWS_BEARER_TOKEN_BEDROCK}"   # optional; else minted from AWS credentials
 ```
 
 Everything else stays the same. `cost` reports throttles per run, so the
 comparison is wall-clock and throttle count at fixed `parallel_evaluations`.
+
+Notes on the OpenAI-compatible endpoints, from the
+[Bedrock endpoint docs](https://docs.aws.amazon.com/bedrock/latest/userguide/endpoints.html)
+and live runs (2026-10-28):
+
+- AWS recommends `https://bedrock-runtime.<region>.amazonaws.com/openai/v1`
+  for Chat Completions. It takes cross-region ids (`us.openai.gpt-6.1-sol`) and
+  versioned ids (`openai.gpt-oss-120b-1:0`), but has no `GET /models`.
+- Mantle has no cross-region profiles; ids are unversioned
+  (`openai.gpt-oss-120b`) and `GET /v1/models` lists them. Its base path varies
+  by model: most are under `/v1`, some (GPT-6.1 Sol) under `/openai/v1`, and
+  the wrong one answers "isn't supported on this route". Each model card's
+  Programmatic Access table gives the URL. Claude isn't served on Mantle's Chat
+  Completions; use Converse.
+- Mantle needs IAM `bedrock-mantle:CreateInference`; `bedrock-runtime` needs
+  `bedrock:InvokeModel`.
+- Prompt caching depends on the model. GPT-5.6 and later cache automatically
+  (1,024-token minimum) and report `prompt_tokens_details.cached_tokens` and
+  `cache_write_tokens`; the ledger records both. gpt-oss, Qwen, GLM and
+  Devstral report no cache usage.
+- On `bedrock-runtime`, gpt-oss returns its reasoning inline in `content` as a
+  leading `<reasoning>…</reasoning>` span; the provider strips it.
 
 ## Experiments the ledger is built for
 
@@ -145,13 +175,13 @@ is 2.609 and `1.0` is the AlphaEvolve figure.
 | `OE_BEDROCK_LEDGER` | ledger path, or `off` |
 | `OE_BEDROCK_MAX_ATTEMPTS` | retry budget for throttles/transient errors (default 8) |
 | `OE_BEDROCK_THINKING_BUDGET` | enable Claude extended thinking with this token budget |
-| `AWS_BEARER_TOKEN_BEDROCK` | Bedrock API key (both transports) |
+| `AWS_BEARER_TOKEN_BEDROCK` | Bedrock API key (both transports; optional for `https://`, which can mint one) |
 
 ## Tests
 
 ```bash
 pip install -e ".[dev]"
-pytest            # 29 tests, ~15 s, no AWS credentials needed
+pytest            # 39 tests, ~15 s, no AWS credentials needed
 ```
 
 `tests/test_e2e_spawn.py` runs a real 40-iteration OpenEvolve job twice with

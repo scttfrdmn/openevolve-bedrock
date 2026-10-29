@@ -37,12 +37,21 @@ from pathlib import Path
 
 import yaml
 
+# Any Bedrock model id works in --variant; these are shorthands (us-west-2, 2026-10).
 DEFAULT_ALIASES = {
-    "haiku": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
-    "sonnet": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-    "nova-pro": "us.amazon.nova-pro-v1:0",
-    "nova-lite": "us.amazon.nova-lite-v1:0",
+    "haiku": "us.anthropic.claude-haiku-5-5",
+    "sonnet": "us.anthropic.claude-sonnet-5-5",
+    "opus": "us.anthropic.claude-opus-5-5",
+    "haiku-4.5": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "nova-lite": "us.amazon.nova-2-lite-v1:0",
     "gpt-oss": "openai.gpt-oss-120b-1:0",
+    "gpt-oss-20b": "openai.gpt-oss-20b-1:0",
+    "deepseek": "deepseek.v3.2",
+    "qwen-coder": "qwen.qwen3-coder-480b-a35b-v1:0",
+    "devstral": "mistral.devstral-2-123b",
+    "kimi": "moonshotai.kimi-k2.5",
+    "glm": "zai.glm-5",
+    "llama4": "us.meta.llama4-maverick-17b-instruct-v1:0",
 }
 
 

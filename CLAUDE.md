@@ -27,6 +27,10 @@ OpenEvolve; this repo does not reimplement it. Three parts:
   with `_seeded_run_iteration_worker`, which reseeds the ensemble sampler from
   `(llm_seed, iteration)` (openevolve#554). The e2e test asserts exact per-model
   counts from that hash; drop the patch once a fixed OpenEvolve is the minimum.
+- No per-model capability table. Request-shape differences between models
+  (cache point, sampling params, thinking/reasoning fields) are learned from
+  Bedrock's rejections in `_classify_rejection` / `_quirks`; an unrecognised
+  rejection raises. Each adaptation is learned once per model per process.
 - Extra config for this provider rides on existing OpenEvolve fields
   (`provider`, `api_base`, `api_key`, `name`, `reasoning_effort`) or
   `OE_BEDROCK_*` env vars. OpenEvolve loads config with dacite in non-strict
@@ -51,12 +55,15 @@ oe-bedrock cost examples/circle_packing/openevolve_output/ --pricing pricing.yam
 
 ## Where the real-AWS unknowns are
 
-- Model/profile ids in `examples/*/config.yaml` and `bench/matrix.py` aliases:
-  confirm with `oe-bedrock models`.
-- Converse request shape for Claude extended thinking
-  (`additionalModelRequestFields.thinking`) — written from the API as
-  documented, not exercised live.
-- Whether the OpenAI-compatible endpoint reports `prompt_tokens_details.cached_tokens`.
+- The OpenAI-compatible transport ran live (2026-10-28, minted keys) on Mantle
+  and `bedrock-runtime` `/openai/v1`: gpt-oss, Qwen, GLM, Devstral, GPT-6.1 Sol.
+  Rejection wordings seen so far are quoted in tests; "isn't supported on this
+  route" means the wrong base path for that model, not a bad field
+  (`_ROUTE_UNSUPPORTED`). Check AWS docs (model cards, endpoints page) before
+  assuming endpoint behaviour.
+- Converse was exercised on 25 models from 13 vendors in us-west-2
+  (2026-10-28); new models can reject fields in new words. When one does, add
+  the wording to `_classify_rejection` with a test quoting it verbatim.
 
 ## Out of scope for 0.1.0
 

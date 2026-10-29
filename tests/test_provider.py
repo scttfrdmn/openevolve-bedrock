@@ -119,12 +119,127 @@ def test_non_retryable_error_raises_immediately(fake_converse):
     assert len(client.calls) == 1
 
 
-def test_anthropic_reasoning_effort_maps_to_thinking(fake_converse):
+def test_anthropic_reasoning_effort_maps_to_adaptive_thinking(fake_converse):
     client = fake_converse([converse_ok()])
     run(BedrockLLM(model_cfg(reasoning_effort="high", max_tokens=2000)).generate("x"))
     req = client.calls[0]
-    assert req["additionalModelRequestFields"] == {"thinking": {"type": "enabled", "budget_tokens": 16384}}
-    assert req["inferenceConfig"] == {"maxTokens": 16384 + 1024}   # > budget, no temperature/topP
+    assert req["additionalModelRequestFields"] == {
+        "thinking": {"type": "adaptive"}, "output_config": {"effort": "high"}}
+    assert req["inferenceConfig"] == {"maxTokens": 2000}   # no temperature/topP with thinking
+
+
+def test_adaptive_rejected_falls_back_to_budget(fake_converse):
+    # Claude Haiku 4.5's rejection, verbatim from Bedrock (2026-10-28)
+    client = fake_converse([
+        client_error("ValidationException", "The model returned the following errors: "
+                     "adaptive thinking is not supported on this model"),
+        converse_ok(), converse_ok(),
+    ])
+    llm = BedrockLLM(model_cfg(reasoning_effort="high", max_tokens=2000))
+    run(llm.generate("x"))
+    assert client.calls[1]["additionalModelRequestFields"] == {
+        "thinking": {"type": "enabled", "budget_tokens": 16384}}
+    assert client.calls[1]["inferenceConfig"] == {"maxTokens": 16384 + 1024}  # > budget
+    assert read_ledger()[0]["attempts"] == 1
+    run(llm.generate("y"))                     # remembered: budget up front
+    assert len(client.calls) == 3
+    assert client.calls[2]["additionalModelRequestFields"]["thinking"]["type"] == "enabled"
+
+
+def test_budget_rejected_falls_back_to_adaptive(fake_converse, monkeypatch):
+    # Claude 5.5's rejection of budget_tokens, verbatim from Bedrock
+    monkeypatch.setenv("OE_BEDROCK_THINKING_BUDGET", "2048")
+    client = fake_converse([
+        client_error("ValidationException", 'The model returned the following errors: '
+                     '"thinking.type.enabled" is not supported for this model. '
+                     'Use "thinking.type.adaptive" and "output_config.effort" instead.'),
+        converse_ok(),
+    ])
+    run(BedrockLLM(model_cfg(name="us.anthropic.claude-sonnet-5-5")).generate("x"))
+    assert client.calls[0]["additionalModelRequestFields"]["thinking"]["budget_tokens"] == 2048
+    assert client.calls[1]["additionalModelRequestFields"] == {"thinking": {"type": "adaptive"}}
+
+
+def test_thinking_dropped_when_neither_shape_accepted(fake_converse):
+    client = fake_converse([
+        client_error("ValidationException", "adaptive thinking is not supported on this model"),
+        client_error("ValidationException", "budget_tokens: thinking is not supported"),
+        converse_ok(),
+    ])
+    run(BedrockLLM(model_cfg(reasoning_effort="low")).generate("x"))
+    assert len(client.calls) == 3
+    assert "additionalModelRequestFields" not in client.calls[2]
+    assert client.calls[2]["inferenceConfig"]["temperature"] == 0.7  # sampling back without thinking
+
+
+def test_cache_point_access_denied_is_learned(fake_converse):
+    # How Bedrock rejects cachePoint on most non-Claude/Nova models (2026-10-28)
+    client = fake_converse([
+        client_error("AccessDeniedException", "You invoked an unsupported model or your request "
+                     "did not allow prompt caching. See the documentation for more information."),
+        converse_ok(),
+    ])
+    run(BedrockLLM(model_cfg(name="deepseek.v3.2")).generate("x"))
+    assert "cachePoint" in json.dumps(client.calls[0])
+    assert "cachePoint" not in json.dumps(client.calls[1])
+
+
+def test_temperature_rejected_then_dropped(fake_converse):
+    client = fake_converse([
+        client_error("ValidationException",
+                     "The model returned the following errors: `temperature` is deprecated for this model."),
+        converse_ok(), converse_ok(),
+    ])
+    llm = BedrockLLM(model_cfg(name="us.anthropic.claude-opus-5-5", top_p=0.9))
+    run(llm.generate("x"))
+    assert client.calls[0]["inferenceConfig"]["temperature"] == 0.7
+    assert client.calls[1]["inferenceConfig"] == {"maxTokens": 512}
+    run(llm.generate("y"))
+    assert client.calls[2]["inferenceConfig"] == {"maxTokens": 512}
+
+
+def test_reasoning_effort_field_fallbacks(fake_converse):
+    # GPT-6.1 rejects reasoning_effort and takes reasoning.effort
+    client = fake_converse([
+        client_error("ValidationException", "The model returned the following errors: "
+                     "Unknown parameter: 'reasoning_effort'."),
+        converse_ok(),
+    ])
+    run(BedrockLLM(model_cfg(name="us.openai.gpt-6.1-sol", reasoning_effort="low")).generate("x"))
+    assert client.calls[0]["additionalModelRequestFields"] == {"reasoning_effort": "low"}
+    assert client.calls[1]["additionalModelRequestFields"] == {"reasoning": {"effort": "low"}}
+
+
+def test_unexplained_rejection_drops_reasoning(fake_converse):
+    # DeepSeek R1 rejects reasoning_effort with a bare "Validation Error"
+    client = fake_converse([
+        client_error("ValidationException", "The model returned the following errors: Validation Error"),
+        converse_ok(),
+    ])
+    run(BedrockLLM(model_cfg(name="us.deepseek.r1-v1:0", reasoning_effort="low")).generate("x"))
+    assert "additionalModelRequestFields" not in client.calls[1]
+
+
+def test_reasoning_effort_sent_to_any_vendor(fake_converse):
+    client = fake_converse([converse_ok()])
+    run(BedrockLLM(model_cfg(name="deepseek.v3.2", reasoning_effort="medium")).generate("x"))
+    assert client.calls[0]["additionalModelRequestFields"] == {"reasoning_effort": "medium"}
+
+
+def test_unrecognised_or_repeated_rejection_raises(fake_converse):
+    from botocore.exceptions import ClientError
+
+    client = fake_converse([client_error("ValidationException", "Malformed input request"), converse_ok()])
+    with pytest.raises(ClientError):
+        run(BedrockLLM(model_cfg()).generate("x"))
+    assert len(client.calls) == 1
+
+    temp = "`temperature` is deprecated for this model."
+    client = fake_converse([client_error("ValidationException", temp),
+                            client_error("ValidationException", temp), converse_ok()])
+    with pytest.raises(ClientError):                 # learned once; no second adaptation, no loop
+        run(BedrockLLM(model_cfg(name="m.x")).generate("x"))
+    assert len(client.calls) == 2
 
 
 def test_thinking_budget_env(fake_converse, monkeypatch):
@@ -179,8 +294,8 @@ class _FakeOpenAI:
         return item
 
 
-def _chat_ok(text="hi", pt=50, ct=5, cached=0):
-    details = SimpleNamespace(cached_tokens=cached)
+def _chat_ok(text="hi", pt=50, ct=5, cached=0, written=0):
+    details = SimpleNamespace(cached_tokens=cached, cache_write_tokens=written)
     usage = SimpleNamespace(prompt_tokens=pt, completion_tokens=ct, prompt_tokens_details=details)
     return SimpleNamespace(
         choices=[SimpleNamespace(message=SimpleNamespace(content=text), finish_reason="stop")],
@@ -213,7 +328,7 @@ def test_openai_transport_request(fake_openai, monkeypatch):
     assert req["temperature"] == 0.7 and req["max_tokens"] == 512 and req["stream"] is False
     rec = read_ledger()[0]
     assert rec["transport"] == "openai" and rec["cache_read_tokens"] == 30
-    assert rec["input_tokens"] == 70 and rec["output_tokens"] == 7
+    assert rec["input_tokens"] == 40 and rec["output_tokens"] == 7  # 70 prompt - 30 cached
 
 
 def test_openai_transport_429_retry(fake_openai, monkeypatch):
@@ -233,11 +348,149 @@ def test_openai_transport_429_retry(fake_openai, monkeypatch):
     assert read_ledger()[0]["throttled"] == 1
 
 
-def test_openai_transport_requires_key(monkeypatch):
+def test_openai_transport_drops_rejected_temperature(fake_openai, monkeypatch):
+    import openai as _openai
+
+    try:
+        import httpx
+    except ModuleNotFoundError:
+        import httpx2 as httpx
+
+    monkeypatch.setenv("AWS_BEARER_TOKEN_BEDROCK", "k")
+    resp = httpx.Response(400, request=httpx.Request("POST", "https://x"))
+    err = _openai.BadRequestError("This model doesn't support the temperature field.", response=resp, body=None)
+    fake = fake_openai([err, _chat_ok()])
+    run(BedrockLLM(model_cfg(name="openai.gpt-6.1-sol",
+                             api_base="https://bedrock-mantle.us-east-1.api.aws/v1")).generate("x"))
+    assert fake.calls[0]["temperature"] == 0.7
+    assert "temperature" not in fake.calls[1]
+
+
+@pytest.mark.parametrize("msg", [
+    "model `openai.gpt-6.1-sol` isn't supported on this route",
+    "The model 'anthropic.claude-sonnet-5' does not support the '/v1/chat/completions' API",
+])
+def test_openai_transport_route_unsupported_is_not_learned(fake_openai, monkeypatch, msg):
+    import openai as _openai
+
+    try:
+        import httpx
+    except ModuleNotFoundError:
+        import httpx2 as httpx
+
+    monkeypatch.setenv("AWS_BEARER_TOKEN_BEDROCK", "k")
+    resp = httpx.Response(400, request=httpx.Request("POST", "https://x"))
+    fake = fake_openai([_openai.BadRequestError(msg, response=resp, body=None)])
+    llm = BedrockLLM(model_cfg(name="openai.gpt-6.1-sol", reasoning_effort="low",
+                               api_base="https://bedrock-mantle.us-east-1.api.aws/v1"))
+    with pytest.raises(ValueError, match="Programmatic Access"):
+        run(llm.generate("x"))
+    assert len(fake.calls) == 1 and not prov._quirks
+
+
+@pytest.mark.parametrize("model,expected", [
+    ("openai.gpt-oss-120b-1:0", "OK"),
+    ("us.openai.gpt-6.1-sol", "<reasoning>Just reply OK.</reasoning>OK"),  # only gpt-oss
+])
+def test_openai_transport_strips_inline_gpt_oss_reasoning(fake_openai, monkeypatch, model, expected):
+    monkeypatch.setenv("AWS_BEARER_TOKEN_BEDROCK", "k")
+    fake_openai([_chat_ok(text="<reasoning>Just reply OK.</reasoning>OK")])
+    llm = BedrockLLM(model_cfg(name=model,
+                               api_base="https://bedrock-runtime.us-west-2.amazonaws.com/openai/v1"))
+    assert run(llm.generate("x")) == expected
+
+
+def test_openai_transport_prices_cache_writes(fake_openai, monkeypatch):
+    # GPT-6.1-sol on Bedrock, first call: prompt_tokens includes the 5411 written.
+    monkeypatch.setenv("AWS_BEARER_TOKEN_BEDROCK", "k")
+    fake_openai([_chat_ok(pt=5413, ct=5, written=5411)])
+    run(BedrockLLM(model_cfg(name="openai.gpt-6.1-sol",
+                             api_base="https://bedrock-mantle.us-east-1.api.aws/openai/v1")).generate("x"))
+    rec = read_ledger()[0]
+    assert (rec["input_tokens"], rec["cache_write_tokens"], rec["cache_read_tokens"]) == (2, 5411, 0)
+
+
+def test_openai_transport_switches_to_max_completion_tokens(fake_openai, monkeypatch):
+    import openai as _openai
+
+    try:
+        import httpx
+    except ModuleNotFoundError:
+        import httpx2 as httpx
+
+    monkeypatch.setenv("AWS_BEARER_TOKEN_BEDROCK", "k")
+    resp = httpx.Response(400, request=httpx.Request("POST", "https://x"))
+    err = _openai.BadRequestError(
+        "Error code: 400 - Unsupported parameter: 'max_tokens' is not supported with this model.",
+        response=resp, body=None)
+    fake = fake_openai([err, _chat_ok(), _chat_ok()])
+    llm = BedrockLLM(model_cfg(name="openai.gpt-6.1-sol",
+                               api_base="https://bedrock-mantle.us-east-1.api.aws/openai/v1"))
+    run(llm.generate("x"))
+    run(llm.generate("y"))
+    assert fake.calls[0]["max_tokens"] == 512
+    assert [c.get("max_completion_tokens") for c in fake.calls[1:]] == [512, 512]
+    assert not any("max_tokens" in c for c in fake.calls[1:])
+
+
+def test_gpt_temperature_rejection_wording_is_learned():
+    msg = ("Error code: 400 - Unsupported value: 'temperature' does not support 0.7 with this "
+           "model. Only the default (1) value is supported.")
+    assert prov._classify_rejection(msg, {"sampling", "max_tokens"}) == prov.NO_SAMPLING
+
+
+def test_openai_transport_requires_key_or_credentials(monkeypatch):
     monkeypatch.delenv("AWS_BEARER_TOKEN_BEDROCK", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    with pytest.raises(ValueError, match="API key"):
+    monkeypatch.setattr(prov, "_aws_credentials", lambda profile: None)
+    with pytest.raises(ValueError, match="API key or AWS credentials"):
         BedrockLLM(model_cfg(api_base="https://bedrock-mantle.us-east-1.api.aws/v1"))
+
+
+def _static_credentials(monkeypatch):
+    from botocore.credentials import Credentials
+
+    monkeypatch.delenv("AWS_BEARER_TOKEN_BEDROCK", raising=False)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-not-for-bedrock")
+    monkeypatch.setattr(prov, "_aws_credentials", lambda profile: Credentials("AKIDEXAMPLE", "secret"))
+
+
+def test_openai_transport_mints_key_from_aws_credentials(monkeypatch):
+    import base64
+
+    import openai as _openai
+
+    _static_credentials(monkeypatch)
+    keys = []
+    fake = _FakeOpenAI([_chat_ok()])
+    monkeypatch.setattr(_openai, "OpenAI", lambda **k: keys.append(k["api_key"]) or fake)
+    llm = BedrockLLM(model_cfg(api_base="https://bedrock-mantle.us-east-1.api.aws/v1"))
+    assert llm.transport.region == "us-east-1"
+    run(llm.generate("x"))
+    assert keys[0].startswith("bedrock-api-key-")  # preferred over OPENAI_API_KEY
+    url = base64.b64decode(keys[0][len("bedrock-api-key-"):]).decode()
+    assert url.startswith("bedrock.amazonaws.com/?Action=CallWithBearerToken")
+    assert "us-east-1%2Fbedrock%2Faws4_request" in url and url.endswith("&Version=1")
+
+
+def test_openai_transport_re_mints_aged_key(monkeypatch):
+    import openai as _openai
+
+    _static_credentials(monkeypatch)
+    made = []
+    monkeypatch.setattr(_openai, "OpenAI", lambda **k: made.append(k) or object())
+    t = BedrockLLM(model_cfg(api_base="https://bedrock-mantle.us-west-2.api.aws/v1")).transport
+    assert t.client is t.client and len(made) == 1
+    t._minted_at -= prov._MINT_REFRESH_S + 1
+    t.client
+    assert len(made) == 2
+
+
+def test_region_from_url():
+    assert prov._region_from_url("https://bedrock-mantle.eu-west-1.api.aws/v1") == "eu-west-1"
+    assert prov._region_from_url(
+        "https://bedrock-runtime.ap-southeast-2.amazonaws.com/openai/v1") == "ap-southeast-2"
+    assert prov._region_from_url("http://127.0.0.1:8080/v1") is None
 
 
 # ---------------------------------------------------------------- registration with OpenEvolve

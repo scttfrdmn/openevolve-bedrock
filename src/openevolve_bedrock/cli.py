@@ -30,7 +30,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import yaml
 
@@ -90,35 +90,50 @@ def _bedrock_control_client(region: Optional[str], profile: Optional[str]):
 
 
 def cmd_models(args: argparse.Namespace) -> int:
+    from openevolve_bedrock.provider import _base_model_id, _vendor
+
     client, region = _bedrock_control_client(args.region, args.profile)
+    want = (args.vendor or "").lower()
+
+    def matches(model_id: str, provider_name: str = "") -> bool:
+        return not want or want == _vendor(model_id) or want in provider_name.lower()
+
     resp = client.list_foundation_models(byOutputModality="TEXT")
+    lifecycle: Dict[str, str] = {}
     rows = []
     for m in resp.get("modelSummaries", []):
         if "TEXT" not in (m.get("inputModalities") or []):
             continue
-        if args.vendor and m.get("providerName", "").lower() != args.vendor.lower():
+        mid = m["modelId"]
+        life = (m.get("modelLifecycle") or {}).get("status", "")
+        lifecycle[mid] = life
+        types = m.get("inferenceTypesSupported") or []
+        if not args.all and not {"ON_DEMAND", "INFERENCE_PROFILE"} & set(types):
+            continue  # provisioned-only
+        if not matches(mid, m.get("providerName", "")):
             continue
-        if "ON_DEMAND" not in (m.get("inferenceTypesSupported") or []) and not args.all:
-            continue
-        rows.append((m["modelId"], m.get("providerName", ""), m.get("modelName", ""),
-                     ",".join(m.get("inferenceTypesSupported") or [])))
+        call = "on-demand" if "ON_DEMAND" in types else "profile" if "INFERENCE_PROFILE" in types else "-"
+        rows.append((mid, m.get("providerName", ""), call, life))
     rows.sort()
-    _p(f"# foundation models in {region} (text in/out{'' if args.all else ', on-demand'})")
+    _p(f"# text models in {region}  (call: on-demand = use the id; profile = use a us./global. id, see --profiles)")
     for r in rows:
-        _p(f"{r[0]:<60} {r[1]:<12} {r[2]:<36} {r[3]}")
+        _p(f"{r[0]:<52} {r[1]:<12} {r[2]:<10} {r[3]}")
 
     if args.profiles:
-        _p(f"\n# inference profiles in {region} (use these ids for cross-region routing)")
+        _p(f"\n# inference profiles in {region} for text models (use these ids for profile-only models)")
         paginator = client.get_paginator("list_inference_profiles")
         prof = []
         for page in paginator.paginate():
             for p in page.get("inferenceProfileSummaries", []):
                 pid = p.get("inferenceProfileId", "")
-                if args.vendor and args.vendor.lower() not in pid.lower():
+                base = _base_model_id(pid)
+                if base not in lifecycle and not args.all:
+                    continue  # image, embedding, rerank ...
+                if not matches(pid):
                     continue
-                prof.append((pid, p.get("status", ""), p.get("type", "")))
+                prof.append((pid, p.get("status", ""), lifecycle.get(base, "")))
         for r in sorted(prof):
-            _p(f"{r[0]:<70} {r[1]:<8} {r[2]}")
+            _p(f"{r[0]:<60} {r[1]:<8} model {r[2]}")
     return 0
 
 
@@ -153,24 +168,28 @@ def cmd_check(args: argparse.Namespace) -> int:
     if provider != "bedrock":
         _p(f"warning: llm.provider is {provider!r}, expected 'bedrock'")
     ok = True
-    long_system = ("You are a careful assistant. " * 300) if args.cache_probe else None
+    # ~5.4K tokens: above every model's cache minimum (512-4096; Claude Haiku 4.5: 4096)
+    long_system = ("You are a careful assistant. " * 900) if args.cache_probe else None
     for m in models:
         try:
             llm = BedrockLLM(m)
-            t0 = time.monotonic()
-            text = asyncio.run(
-                llm.generate_with_context(
-                    system_message=long_system or "Reply with the single word OK.",
-                    messages=[{"role": "user", "content": "Reply with the single word OK."}],
-                    max_tokens=8,
+            # With --cache-probe the second identical call should read what the first wrote.
+            for call in (1, 2) if long_system else (1,):
+                t0 = time.monotonic()
+                text = asyncio.run(
+                    llm.generate_with_context(
+                        system_message=long_system or "Reply with the single word OK.",
+                        messages=[{"role": "user", "content": "Reply with the single word OK."}],
+                        max_tokens=256,  # room for reasoning models
+                    )
                 )
-            )
-            dt = (time.monotonic() - t0) * 1000
-            u = llm.last_usage or {}
-            _p(f"OK   {m.name:<60} {llm.transport.name:<9} {dt:6.0f} ms  "
-               f"in={u.get('prompt_tokens')} out={u.get('completion_tokens')} "
-               f"cache_read={u.get('cache_read_tokens')} cache_write={u.get('cache_write_tokens')}  "
-               f"-> {text.strip()[:30]!r}")
+                dt = (time.monotonic() - t0) * 1000
+                u = llm.last_usage or {}
+                tag = f" #{call}" if long_system else ""
+                _p(f"OK   {m.name + tag:<60} {llm.transport.name:<9} {dt:6.0f} ms  "
+                   f"in={u.get('prompt_tokens')} out={u.get('completion_tokens')} "
+                   f"cache_read={u.get('cache_read_tokens')} cache_write={u.get('cache_write_tokens')}  "
+                   f"-> {text.strip()[:30]!r}")
         except Exception as e:  # noqa: BLE001 - report everything
             ok = False
             _p(f"FAIL {m.name:<60} {type(e).__name__}: {e}")
@@ -295,14 +314,15 @@ def build_parser() -> argparse.ArgumentParser:
     m = sub.add_parser("models", help="list text models / inference profiles in a region")
     m.add_argument("--region")
     m.add_argument("--profile", help="boto3 profile")
-    m.add_argument("--vendor", help="filter by provider name, e.g. anthropic, amazon, openai")
+    m.add_argument("--vendor", help="filter by vendor, e.g. anthropic, amazon, mistral, deepseek, qwen")
     m.add_argument("--profiles", action="store_true", help="also list inference profiles")
-    m.add_argument("--all", action="store_true", help="include non-on-demand models")
+    m.add_argument("--all", action="store_true",
+                   help="include provisioned-only models and non-text profiles")
 
-    c = sub.add_parser("check", help="make one tiny call per model in a config")
+    c = sub.add_parser("check", help="make one short call per model in a config")
     c.add_argument("--config", "-c", required=True)
     c.add_argument("--cache-probe", action="store_true",
-                   help="send a long system prompt to see whether cache tokens are reported")
+                   help="send a ~5K-token system prompt twice; the second call should read the cache")
 
     k = sub.add_parser("cost", help="summarize a ledger; optionally $ to a metric threshold")
     k.add_argument("ledger", help="ledger file or OpenEvolve output dir")

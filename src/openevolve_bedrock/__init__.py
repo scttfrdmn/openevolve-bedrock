@@ -22,9 +22,9 @@ LLM ensemble. In a config.yaml::
       provider: bedrock
       api_base: aws://us-west-2          # Converse API, SigV4 (or Bedrock API key)
       models:
-        - name: us.amazon.nova-lite-v1:0
+        - name: us.amazon.nova-2-lite-v1:0
           weight: 0.8
-        - name: us.anthropic.claude-sonnet-4-5-20250929-v1:0
+        - name: us.anthropic.claude-sonnet-5-5
           weight: 0.2
 
 or, for the OpenAI-compatible Mantle endpoint::
