@@ -125,3 +125,106 @@ def test_bench_realized_mix_from_cost_json(tmp_path, capsys):
     assert matrix.realized_mix(by_model, configured, matrix.DEFAULT_ALIASES) == \
         "haiku:0.60,sonnet:0.20,other.model-v1:0:0.20"
     assert matrix.realized_mix({}, configured, matrix.DEFAULT_ALIASES) == ""
+
+
+def _load_matrix():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "bench_matrix", Path(__file__).resolve().parent.parent / "bench" / "matrix.py")
+    matrix = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(matrix)
+    return matrix
+
+
+def _fake_run(run_dir: Path, model: str, points, t0=1_000_000.0):
+    """points: (iteration, best metric); one call just before each checkpoint."""
+    recs = []
+    for k, (iteration, value) in enumerate(points):
+        ts = t0 + 10 * k
+        recs.append(_rec(model, 1000, 100, ts=ts))
+        d = run_dir / "checkpoints" / f"checkpoint_{iteration}"
+        d.mkdir(parents=True)
+        info = d / "best_program_info.json"
+        info.write_text(json.dumps({"metrics": {"combined_score": value}}))
+        os.utime(info, (ts + 1, ts + 1))
+    _write(run_dir / "bedrock_ledger.jsonl", recs)
+
+
+def test_bench_scores_thresholds_and_curve(tmp_path):
+    matrix = _load_matrix()
+    model = "anthropic.claude-haiku-4-5-20251001-v1:0"
+    _fake_run(tmp_path / "r", model, [(5, 0.90), (10, 0.991), (15, 0.993), (20, 0.996)])
+    pricing = tmp_path / "pricing.yaml"
+    pricing.write_text(PRICING)
+    meta = {"variant": "v", "mix": f"{model}:1.0", "seed": 1, "iterations": 15, "wall_s": 42.0}
+    row, curve = matrix.score_run(tmp_path / "r", meta, led.load_pricing(pricing),
+                                  "combined_score", 15, [0.99, 0.995, 0.999], {})
+    header = matrix.results_header(15, [0.99, 0.995, 0.999])
+    r = dict(zip(header, row))
+    per_call = 1000 * 0.001 / 1000 + 100 * 0.005 / 1000  # pricing is per 1K
+    assert r["best@15"] == 0.993                          # not the iteration-20 value
+    assert (r["iter@0.99"], r["usd@0.99"]) == (10, round(2 * per_call, 6))
+    assert (r["iter@0.995"], r["usd@0.995"]) == (20, round(4 * per_call, 6))
+    assert (r["iter@0.999"], r["usd@0.999"]) == (None, None)
+    assert (r["calls"], r["wall_s"], r["realized_mix"]) == (4, 42.0, f"{model}:1.00")
+    assert [c[3] for c in curve] == [5, 10, 15, 20]
+    assert [c[6] for c in curve] == [1, 2, 3, 4]
+    assert [c[7] for c in curve] == [1.0, 11.0, 21.0, 31.0]
+
+
+def test_bench_rescore_rebuilds_csvs_from_run_dirs(tmp_path, monkeypatch):
+    import csv as _csv
+    import sys
+
+    matrix = _load_matrix()
+    model = "anthropic.claude-haiku-4-5-20251001-v1:0"
+    out = tmp_path / "out"
+    for seed in (1, 2):
+        run = out / f"v_seed{seed}"
+        _fake_run(run, model, [(5, 0.98), (10, 0.99 + seed / 1000)])
+        (run / "run_meta.json").write_text(json.dumps(
+            {"variant": "v", "mix": f"{model}:1.0", "seed": seed, "iterations": 10, "wall_s": 1.0}))
+    ex = tmp_path / "ex"
+    ex.mkdir()
+    (ex / "config.yaml").write_text("llm: {}\n")
+    pricing = tmp_path / "pricing.yaml"
+    pricing.write_text(PRICING)
+    monkeypatch.setattr(sys, "argv", ["matrix.py", str(ex), "--pricing", str(pricing),
+                                      "--iterations", "10", "--threshold", "0.992",
+                                      "--out", str(out), "--rescore"])
+    monkeypatch.setattr(matrix.subprocess, "call", lambda *a, **k: pytest.fail("ran OpenEvolve"))
+    assert matrix.main() == 0
+    rows = list(_csv.DictReader(open(out / "results.csv")))
+    assert [(r["seed"], r["iter@0.992"]) for r in rows] == [("1", ""), ("2", "10")]
+    assert len(list(_csv.DictReader(open(out / "curves.csv")))) == 4
+
+
+def test_bench_reuses_finished_runs(tmp_path, monkeypatch):
+    import sys
+
+    matrix = _load_matrix()
+    out = tmp_path / "out"
+    (out / "v_seed1" / "checkpoints" / "checkpoint_10").mkdir(parents=True)
+    ex = tmp_path / "ex"
+    ex.mkdir()
+    (ex / "config.yaml").write_text("llm: {}\n")
+    pricing = tmp_path / "pricing.yaml"
+    pricing.write_text(PRICING)
+    ran = []
+    monkeypatch.setattr(matrix, "run_one", lambda ex, cfg, run_dir, *a: ran.append(run_dir.name))
+    monkeypatch.setattr(sys, "argv", ["matrix.py", str(ex), "--pricing", str(pricing),
+                                      "--iterations", "10", "--threshold", "0.99", "--out", str(out),
+                                      "--seeds", "1", "2", "--variant", "v", "haiku:1.0"])
+    assert matrix.main() == 0
+    assert ran == ["v_seed2"]
+
+
+def test_bench_parse_mix_accepts_versioned_ids():
+    matrix = _load_matrix()
+    a = matrix.DEFAULT_ALIASES
+    assert matrix.parse_mix("haiku:0.8,openai.gpt-oss-120b-1:0:0.2", a) == [
+        {"name": a["haiku"], "weight": 0.8}, {"name": "openai.gpt-oss-120b-1:0", "weight": 0.2}]
+    assert matrix.parse_mix("gpt-oss", a) == [{"name": a["gpt-oss"], "weight": 1.0}]
+    with pytest.raises(ValueError, match="ID:WEIGHT"):
+        matrix.parse_mix("openai.gpt-oss-120b-1:0", a)

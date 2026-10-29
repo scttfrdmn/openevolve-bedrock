@@ -6,6 +6,21 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- `bench/matrix.py`: `--threshold` takes several values, with `iter@T` and
+  `usd@T` columns per value, blank if not reached; adds a `best@N` column; and
+  writes `curves.csv` (best-so-far against cumulative $ per checkpoint) next to
+  `results.csv`. Both are rebuilt from the run dirs on every invocation;
+  `--rescore` re-scores without running. Finished runs are reused, so an
+  interrupted matrix resumes. Generated configs checkpoint every 5 iterations.
+
+### Fixed
+- `examples/circle_packing/requirements.txt` (scipy, matplotlib), copied from
+  upstream. Without it, candidates using `scipy.optimize` scored 0, which
+  capped circle packing runs below upstream's result.
+- `bench/matrix.py --variant` accepts model ids containing `:`
+  (`openai.gpt-oss-120b-1:0:1.0`); the weight now follows the last `:`.
+
 ## [0.1.0] - 2026-10-28
 
 ### Added

@@ -226,17 +226,15 @@ class ThresholdHit:
     reached_ts: float
 
 
-def first_checkpoint_at_threshold(
-    output_dir: Path, metric: str, threshold: float
-) -> Optional[ThresholdHit]:
+def checkpoint_series(output_dir: Path, metric: str) -> List[ThresholdHit]:
     """
-    Scan ``<output_dir>/checkpoints/checkpoint_N/best_program_info.json`` in
-    iteration order and return the first whose ``metrics[metric] >= threshold``.
-    The checkpoint directory's mtime is used as the time the result was reached.
+    Every ``<output_dir>/checkpoints/checkpoint_N/best_program_info.json`` that
+    has ``metrics[metric]``, in iteration order: the best-so-far curve. The info
+    file's mtime is used as the time the checkpoint was reached.
     """
     ckpt_root = output_dir / "checkpoints"
     if not ckpt_root.is_dir():
-        return None
+        return []
     dirs = []
     for d in ckpt_root.iterdir():
         if d.is_dir() and d.name.startswith("checkpoint_"):
@@ -244,6 +242,7 @@ def first_checkpoint_at_threshold(
                 dirs.append((int(d.name.split("_", 1)[1]), d))
             except ValueError:
                 continue
+    out = []
     for iteration, d in sorted(dirs):
         info = d / "best_program_info.json"
         if not info.is_file():
@@ -259,6 +258,15 @@ def first_checkpoint_at_threshold(
             fv = float(value)
         except (TypeError, ValueError):
             continue
-        if fv >= threshold:
-            return ThresholdHit(d, iteration, fv, info.stat().st_mtime)
+        out.append(ThresholdHit(d, iteration, fv, info.stat().st_mtime))
+    return out
+
+
+def first_checkpoint_at_threshold(
+    output_dir: Path, metric: str, threshold: float
+) -> Optional[ThresholdHit]:
+    """The first checkpoint in ``checkpoint_series`` whose metric is >= threshold."""
+    for point in checkpoint_series(output_dir, metric):
+        if point.metric_value >= threshold:
+            return point
     return None
