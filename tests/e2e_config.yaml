@@ -1,5 +1,5 @@
-max_iterations: 8
-checkpoint_interval: 4
+max_iterations: 40
+checkpoint_interval: 10
 random_seed: 42
 log_level: INFO
 llm:

@@ -6,6 +6,19 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- Ensemble model draws were identical across OpenEvolve workers, because
+  upstream seeds every worker's sampler with the same `llm_seed`
+  (algorithmicsuperintelligence/openevolve#554). `register()` now wraps
+  `_run_iteration_worker` to reseed the sampler per iteration from
+  `(llm_seed, iteration)`: still reproducible, with independent draws. With
+  `random_seed: null` the sampler is left alone. (#3)
+
+### Added
+- `realized_mix` column in `bench/matrix.py` results, computed from the ledger's
+  calls per model. The script refuses to append to a `results.csv` with
+  different columns.
+
 ## [0.1.0] - 2026-10-28
 
 ### Added

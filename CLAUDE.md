@@ -23,6 +23,10 @@ OpenEvolve; this repo does not reimplement it. Three parts:
   openevolve_bedrock` satisfy this because the `__main__` module imports the
   package. `tests/test_e2e_spawn.py` is the proof — keep it passing.
 - Never send `seed` or `top_p: null` to Bedrock.
+- `register()` replaces `openevolve.process_parallel._run_iteration_worker`
+  with `_seeded_run_iteration_worker`, which reseeds the ensemble sampler from
+  `(llm_seed, iteration)` (openevolve#554). The e2e test asserts exact per-model
+  counts from that hash; drop the patch once a fixed OpenEvolve is the minimum.
 - Extra config for this provider rides on existing OpenEvolve fields
   (`provider`, `api_base`, `api_key`, `name`, `reasoning_effort`) or
   `OE_BEDROCK_*` env vars. OpenEvolve loads config with dacite in non-strict
@@ -37,7 +41,7 @@ OpenEvolve; this repo does not reimplement it. Three parts:
 
 ```bash
 pip install -e ".[dev]"
-pytest                        # offline, ~3 s
+pytest                        # offline, ~15 s
 oe-bedrock models --profiles --vendor anthropic
 oe-bedrock check --config examples/function_minimization/config.yaml
 oe-bedrock run examples/circle_packing/initial_program.py examples/circle_packing/evaluator.py \

@@ -282,3 +282,52 @@ def test_register_is_idempotent():
     prov.register()
     prov.register()
     assert ensemble._PROVIDER_REGISTRY["bedrock"] is not None
+
+
+# ---------------------------------------------------------------- per-iteration seeding
+
+
+def test_iteration_worker_is_patched_and_pickles_by_reference():
+    import pickle
+
+    from openevolve import process_parallel as pp
+
+    prov.register()
+    assert pp._run_iteration_worker is prov._seeded_run_iteration_worker
+    assert prov._original_run_iteration_worker is not prov._seeded_run_iteration_worker
+    assert b"openevolve_bedrock.provider" in pickle.dumps(pp._run_iteration_worker)
+
+
+def _fake_worker(monkeypatch, llm_seed):
+    import random
+
+    from openevolve import process_parallel as pp
+
+    ens = SimpleNamespace(random_state=random.Random(7))
+    cfg = SimpleNamespace(llm=SimpleNamespace(models=[SimpleNamespace(random_seed=llm_seed)]))
+    monkeypatch.setattr(pp, "_lazy_init_worker_components", lambda: None)
+    monkeypatch.setattr(pp, "_worker_llm_ensemble", ens, raising=False)
+    monkeypatch.setattr(pp, "_worker_config", cfg, raising=False)
+    seen = []
+    monkeypatch.setattr(
+        prov, "_original_run_iteration_worker",
+        lambda it, *a, **k: seen.append((it, ens.random_state.random())) or "result",
+    )
+    return seen
+
+
+def test_seeded_worker_reseeds_per_iteration(monkeypatch):
+    seen = _fake_worker(monkeypatch, llm_seed=12345)
+    for it in (1, 2, 1):
+        assert prov._seeded_run_iteration_worker(it, {}, "p", []) == "result"
+    (_, a1), (_, a2), (_, b1) = seen
+    assert a1 == b1, "same (seed, iteration) must give the same draw on any worker"
+    assert a1 != a2
+
+
+def test_seeded_worker_leaves_unseeded_rng_alone(monkeypatch):
+    import random
+
+    seen = _fake_worker(monkeypatch, llm_seed=None)
+    prov._seeded_run_iteration_worker(1, {}, "p", [])
+    assert seen[0][1] == random.Random(7).random()

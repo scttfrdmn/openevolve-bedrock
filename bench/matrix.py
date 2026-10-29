@@ -16,6 +16,9 @@ Model aliases used in --variant come from --alias (defaults below). Each
 (variant, seed) run gets its own output dir and ledger under bench_out/.
 Results accumulate in bench_out/results.csv; a row per run.
 
+`realized_mix` is the share of ledger calls per model, in the same syntax as
+the configured mix; compare the two before reading anything into a row.
+
 Metric is `combined_score` unless --metric says otherwise. The threshold is a
 metric value; "iterations to threshold" is the first checkpoint whose
 best_program_info.json meets it, so set checkpoint_interval small (10).
@@ -51,6 +54,23 @@ def parse_mix(spec: str, aliases: dict) -> list:
     return out
 
 
+def realized_mix(by_model: dict, configured: list, aliases: dict) -> str:
+    """Share of ledger calls per model, in the MIX syntax: 'haiku:0.80,sonnet:0.20'."""
+    total = sum(v.get("calls", 0) for v in by_model.values())
+    if not total:
+        return ""
+    short = {v: k for k, v in aliases.items()}
+    names = [m["name"] for m in configured]
+    names += sorted(n for n in by_model if n not in names)
+    return ",".join(
+        f"{short.get(n, n)}:{by_model.get(n, {}).get('calls', 0) / total:.2f}" for n in names
+    )
+
+
+HEADER = ["variant", "mix", "realized_mix", "seed", "iterations", "best_metric",
+          "iter_to_threshold", "usd_total", "usd_to_threshold", "calls", "throttled", "wall_s"]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("example_dir", help="directory with initial_program.py, evaluator.py, config.yaml")
@@ -72,19 +92,25 @@ def main() -> int:
     out_root.mkdir(parents=True, exist_ok=True)
     results_csv = out_root / "results.csv"
     new_file = not results_csv.exists()
+    if not new_file:
+        with open(results_csv, newline="") as fh:
+            existing = next(csv.reader(fh), None)
+        if existing != HEADER:
+            print(f"{results_csv} has different columns; use a new --out", file=sys.stderr)
+            return 2
 
     with open(results_csv, "a", newline="") as fh:
         w = csv.writer(fh)
         if new_file:
-            w.writerow(["variant", "mix", "seed", "iterations", "best_metric", "iter_to_threshold",
-                        "usd_total", "usd_to_threshold", "calls", "throttled", "wall_s"])
+            w.writerow(HEADER)
         for vname, mix in args.variant:
             for seed in args.seeds:
                 run_dir = out_root / f"{vname}_seed{seed}"
                 run_dir.mkdir(parents=True, exist_ok=True)
                 cfg = json.loads(json.dumps(base_cfg))  # deep copy
                 cfg["random_seed"] = seed
-                cfg.setdefault("llm", {})["models"] = parse_mix(mix, aliases)
+                models = parse_mix(mix, aliases)
+                cfg.setdefault("llm", {})["models"] = models
                 cfg["llm"].pop("primary_model", None)
                 cfg["llm"].pop("secondary_model", None)
                 if args.api_base:
@@ -124,7 +150,8 @@ def main() -> int:
                 if info.is_file():
                     best = (json.loads(info.read_text()).get("metrics") or {}).get(args.metric)
                 hit = to_thr.get("threshold") or {}
-                row = [vname, mix, seed, args.iterations, best,
+                row = [vname, mix, realized_mix(total.get("by_model") or {}, models, aliases),
+                       seed, args.iterations, best,
                        hit.get("iteration"), total.get("usd"),
                        to_thr.get("usd") if hit else None,
                        total.get("calls"), total.get("throttled"), round(wall, 1)]
