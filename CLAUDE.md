@@ -13,7 +13,8 @@ OpenEvolve; this repo does not reimplement it. Three parts:
   `LLMInterface`), two transports (Converse via boto3; OpenAI-compatible via the
   `openai` SDK), retry, `register()`.
 - `src/openevolve_bedrock/ledger.py` — JSONL append, pricing, cost summary,
-  first-checkpoint-at-threshold.
+  first-checkpoint-at-threshold, and the best-so-far series behind the bench
+  curves (`checkpoint_series`).
 - `src/openevolve_bedrock/cli.py` — `oe-bedrock run|models|check|cost|install-hook`.
 
 ## Invariants (tests enforce these)

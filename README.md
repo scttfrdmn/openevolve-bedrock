@@ -146,18 +146,30 @@ and live runs (2026-10-28):
 
 ## Experiments the ledger is built for
 
-`bench/matrix.py` runs one problem under several ensemble mixes and seeds and
-writes a CSV of configured and realized model mix, best metric,
-iterations-to-threshold, $ total, $ to threshold, calls, throttles and wall time:
+`bench/matrix.py` runs one problem under several ensemble mixes and seeds,
+checkpointing every 5 iterations, and writes two CSVs under `--out`:
+
+- `results.csv`, a row per run: configured and realized mix, `best@N`, then
+  for each `--threshold` the iteration and $ at which it was first reached
+  (blank if never), then $ total, calls, throttles and wall time.
+- `curves.csv`, a row per checkpoint per run: best-so-far, cumulative $ and
+  calls, seconds since the first call. This is the $/result curve: what each
+  extra dollar bought, which no single threshold shows.
 
 ```bash
 python bench/matrix.py examples/circle_packing --pricing pricing.yaml \
-    --iterations 100 --threshold 0.99 --seeds 1 2 3 \
+    --iterations 100 --threshold 0.99 0.995 0.999 --seeds 1 2 3 \
     --variant fast-only "haiku:1.0" \
+    --variant gpt-oss   "gpt-oss:1.0" \
     --variant 80-20     "haiku:0.8,sonnet:0.2" \
-    --variant 50-50     "haiku:0.5,sonnet:0.5" \
-    --variant open      "gpt-oss:0.8,sonnet:0.2"
+    --variant 50-50     "haiku:0.5,sonnet:0.5"
 ```
+
+Thresholds only affect scoring. Both CSVs are rebuilt from every run dir
+under `--out`, so `--rescore` re-scores finished runs at other thresholds
+without calling Bedrock. A run whose final checkpoint exists is reused, so an
+interrupted matrix resumes. In `--variant`, a model id that contains `:`
+needs an explicit weight (`openai.gpt-oss-120b-1:0:1.0`); aliases don't.
 
 Three measurements this makes cheap:
 
@@ -171,13 +183,15 @@ Three measurements this makes cheap:
    0.2 weight can land anywhere from roughly 0.12 to 0.28.
 2. **Endpoint** — same config with `--api-base` set to the Mantle URL; compare
    throttles and wall-clock at the same island parallelism.
-3. **Open-weight on Bedrock vs. local** — `openai.gpt-oss-120b` (or any
-   open-weight model Bedrock serves) in the same loop, same evaluator, same
-   seeds; the local side of that comparison is any OpenAI-compatible server
-   (vLLM, llama.cpp) via a plain `api_base`.
+3. **Open-weight on Bedrock vs. local** — gpt-oss-120b ships its weights in
+   MXFP4, so Bedrock and a local server run the same weights and the
+   comparison is $/result and wall time alone, with no quantization
+   difference. Run it fast-only (`gpt-oss:1.0`) against Haiku fast-only to
+   isolate the model. The local side is any OpenAI-compatible server (vLLM,
+   llama.cpp) via a plain `api_base`.
 
 `combined_score` for circle packing is `sum_radii / 2.635`, so `--threshold 0.99`
-is 2.609 and `1.0` is the AlphaEvolve figure.
+is 2.609, `0.995` is 2.622 and `1.0` is the AlphaEvolve figure.
 
 ## Configuration reference
 
