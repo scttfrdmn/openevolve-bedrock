@@ -1,6 +1,6 @@
 # openevolve-bedrock
 
-Amazon Bedrock as the LLM backend for [OpenEvolve](https://github.com/codelion/openevolve),
+Amazon Bedrock as the LLM backend for [OpenEvolve](https://github.com/algorithmicsuperintelligence/openevolve),
 the open-source AlphaEvolve-class evolutionary coding agent — plus a per-call
 usage ledger so a run reports what it cost, not just what it found.
 
