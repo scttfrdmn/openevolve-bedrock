@@ -15,6 +15,9 @@ All notable changes to this project are documented here. The format follows
   interrupted matrix resumes. Generated configs checkpoint every 5 iterations.
 
 ### Fixed
+- `examples/circle_packing/requirements.txt` (scipy, matplotlib), copied from
+  upstream. Without it, candidates using `scipy.optimize` scored 0, which
+  capped circle packing runs below upstream's result.
 - `bench/matrix.py --variant` accepts model ids containing `:`
   (`openai.gpt-oss-120b-1:0:1.0`); the weight now follows the last `:`.
 
