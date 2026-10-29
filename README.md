@@ -101,6 +101,27 @@ llm:
 Everything else stays the same. `cost` reports throttles per run, so the
 comparison is wall-clock and throttle count at fixed `parallel_evaluations`.
 
+The transport is chosen per model, so one ensemble can mix them. Set
+`api_base` on a model to override the `llm`-level one:
+
+```yaml
+llm:
+  provider: bedrock
+  api_base: aws://us-west-2                     # default: Converse
+  models:
+    - name: us.anthropic.claude-haiku-5-5       # Converse
+      weight: 0.6
+    - name: us.openai.gpt-6.1-sol               # bedrock-runtime Chat Completions
+      weight: 0.2
+      api_base: https://bedrock-runtime.us-west-2.amazonaws.com/openai/v1
+    - name: openai.gpt-oss-120b                 # Mantle Chat Completions
+      weight: 0.2
+      api_base: https://bedrock-mantle.us-west-2.api.aws/v1
+```
+
+All three share one set of AWS credentials and one ledger; `cost` breaks the
+run down per model.
+
 Notes on the OpenAI-compatible endpoints, from the
 [Bedrock endpoint docs](https://docs.aws.amazon.com/bedrock/latest/userguide/endpoints.html)
 and live runs (2026-10-28):
@@ -166,6 +187,7 @@ is 2.609 and `1.0` is the AlphaEvolve figure.
 | `llm.api_base` | `aws://<region>` (Converse) or an `https://` OpenAI-compatible Bedrock endpoint |
 | `llm.api_key` | Bedrock API key for the `https://` transport; `"${VAR}"` is resolved from the environment |
 | `llm.models[].name` | model id or inference-profile id (`us.`, `eu.`, `global.` …) |
+| `llm.models[].api_base`, `.api_key` | per-model override, e.g. to mix Converse and OpenAI-compatible models in one ensemble |
 | `temperature`, `top_p`, `max_tokens`, `timeout`, `reasoning_effort` | as in OpenEvolve; `retries`/`retry_delay` are superseded by `OE_BEDROCK_MAX_ATTEMPTS` |
 
 | environment | meaning |
@@ -181,7 +203,7 @@ is 2.609 and `1.0` is the AlphaEvolve figure.
 
 ```bash
 pip install -e ".[dev]"
-pytest            # 39 tests, ~15 s, no AWS credentials needed
+pytest            # 50 tests, ~15 s, no AWS credentials needed
 ```
 
 `tests/test_e2e_spawn.py` runs a real 40-iteration OpenEvolve job twice with

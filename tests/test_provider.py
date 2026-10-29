@@ -529,6 +529,27 @@ def test_openevolve_config_builds_bedrock_models(fake_converse):
     assert client.calls[0]["modelId"].startswith("us.anthropic")
 
 
+def test_ensemble_mixes_transports_per_model(monkeypatch):
+    """A model-level api_base overrides the llm-level one, in parent and worker."""
+    from dataclasses import asdict
+
+    from openevolve.config import Config, LLMModelConfig
+    from openevolve.llm.ensemble import LLMEnsemble
+
+    monkeypatch.setenv("AWS_BEARER_TOKEN_BEDROCK", "k")
+    cfg = Config.from_dict({"llm": {"provider": "bedrock", "api_base": "aws://us-west-2", "models": [
+        {"name": "us.anthropic.claude-haiku-5-5", "weight": 0.6},
+        {"name": "us.openai.gpt-6.1-sol", "weight": 0.2,
+         "api_base": "https://bedrock-runtime.us-west-2.amazonaws.com/openai/v1"},
+        {"name": "openai.gpt-oss-120b", "weight": 0.2,
+         "api_base": "https://bedrock-mantle.us-west-2.api.aws/v1"},
+    ]}})
+    for models in (cfg.llm.models, [LLMModelConfig(**asdict(m)) for m in cfg.llm.models]):
+        ens = LLMEnsemble(models)
+        assert [m.transport.name for m in ens.models] == ["converse", "openai", "openai"]
+        assert ens.models[2].transport.base_url == "https://bedrock-mantle.us-west-2.api.aws/v1"
+
+
 def test_register_is_idempotent():
     from openevolve.llm import ensemble
 
