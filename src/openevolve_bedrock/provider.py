@@ -751,4 +751,7 @@ def register() -> None:
 
         ensemble._create_model = _create_model
     _patch_iteration_worker()
+    from openevolve_bedrock import stopping
+
+    stopping.install()
     _registered = True

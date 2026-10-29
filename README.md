@@ -69,6 +69,22 @@ oe-bedrock run initial_program.py evaluator.py --config config.yaml --iterations
 oe-bedrock cost openevolve_output/ --pricing pricing.yaml
 ```
 
+### Stopping early
+
+- `--target-score T` is OpenEvolve's own: stop once a program's
+  `combined_score` reaches T.
+- `--budget-usd X --pricing pricing.yaml` stops once the run's ledger, priced
+  with that file, reaches $X. It is checked before each new iteration is
+  submitted. Iterations already in flight finish and are recorded, so the
+  overshoot is at most `2 × parallel_evaluations` calls. Every model in the
+  config must have a price, or the run refuses to start. Also settable as
+  `OE_BEDROCK_BUDGET_USD` / `OE_BEDROCK_PRICING`.
+
+After either stop, the last checkpoint is the iteration where the run
+stopped. On its own, OpenEvolve labels its final checkpoint with the maximum
+iteration (`checkpoint_100` for a run that stopped at 57). OpenEvolve then logs
+"stopped due to shutdown request", which is expected.
+
 `oe-bedrock run` is OpenEvolve's own CLI with the provider registered and the
 ledger pointed at the output directory; extra flags pass through. The Python API works
 too — importing the package is the registration:
@@ -167,8 +183,10 @@ python bench/matrix.py examples/circle_packing --pricing pricing.yaml \
 
 Thresholds only affect scoring. Both CSVs are rebuilt from every run dir
 under `--out`, so `--rescore` re-scores finished runs at other thresholds
-without calling Bedrock. A run whose final checkpoint exists is reused, so an
-interrupted matrix resumes. In `--variant`, a model id that contains `:`
+without calling Bedrock. `--target-score` and `--budget-usd` are passed to
+every run. A finished run is reused, so an interrupted matrix resumes; an
+interrupted run's dir is moved aside (`*.interrupted-<time>`) and rerun from
+scratch. In `--variant`, a model id that contains `:`
 needs an explicit weight (`openai.gpt-oss-120b-1:0:1.0`); aliases don't.
 
 Three measurements this makes cheap:
@@ -211,6 +229,7 @@ is 2.609, `0.995` is 2.622 and `1.0` is the AlphaEvolve figure.
 | `OE_BEDROCK_LEDGER` | ledger path, or `off` |
 | `OE_BEDROCK_MAX_ATTEMPTS` | retry budget for throttles/transient errors (default 8) |
 | `OE_BEDROCK_THINKING_BUDGET` | enable Claude extended thinking with this token budget |
+| `OE_BEDROCK_BUDGET_USD`, `OE_BEDROCK_PRICING` | stop the run at this spend, priced with this file (same as `run --budget-usd --pricing`) |
 | `AWS_BEARER_TOKEN_BEDROCK` | Bedrock API key (both transports; optional for `https://`, which can mint one) |
 
 ## Tests

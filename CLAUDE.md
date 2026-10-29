@@ -15,6 +15,8 @@ OpenEvolve; this repo does not reimplement it. Three parts:
 - `src/openevolve_bedrock/ledger.py` — JSONL append, pricing, cost summary,
   first-checkpoint-at-threshold, and the best-so-far series behind the bench
   curves (`checkpoint_series`).
+- `src/openevolve_bedrock/stopping.py` — budget stop and last-checkpoint fix,
+  wrapping `ProcessParallelController._submit_iteration` / `run_evolution`.
 - `src/openevolve_bedrock/cli.py` — `oe-bedrock run|models|check|cost|install-hook`.
 
 ## Invariants (tests enforce these)

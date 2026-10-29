@@ -228,3 +228,33 @@ def test_bench_parse_mix_accepts_versioned_ids():
     assert matrix.parse_mix("gpt-oss", a) == [{"name": a["gpt-oss"], "weight": 1.0}]
     with pytest.raises(ValueError, match="ID:WEIGHT"):
         matrix.parse_mix("openai.gpt-oss-120b-1:0", a)
+
+
+def test_bench_moves_interrupted_run_aside_and_reuses_stopped_ones(tmp_path, monkeypatch):
+    import sys
+
+    matrix = _load_matrix()
+    out = tmp_path / "out"
+    stopped = out / "v_seed1"          # stopped early at the target: no checkpoint_10
+    (stopped / "checkpoints" / "checkpoint_5").mkdir(parents=True)
+    (stopped / "run_meta.json").write_text(json.dumps({"variant": "v", "mix": "haiku:1.0", "seed": 1,
+                                                       "iterations": 10, "rc": 0}))
+    broken = out / "v_seed2"           # killed mid-run: partial ledger, no run_meta.json
+    (broken / "checkpoints" / "checkpoint_5").mkdir(parents=True)
+    _write(broken / "bedrock_ledger.jsonl", [_rec("m", 1, 1)])
+    ex = tmp_path / "ex"
+    ex.mkdir()
+    (ex / "config.yaml").write_text("llm: {}\n")
+    pricing = tmp_path / "pricing.yaml"
+    pricing.write_text(PRICING)
+    ran = []
+    monkeypatch.setattr(matrix, "run_one", lambda ex, cfg, run_dir, meta, *a: ran.append((run_dir.name, a[-1])))
+    monkeypatch.setattr(sys, "argv", ["matrix.py", str(ex), "--pricing", str(pricing),
+                                      "--iterations", "10", "--threshold", "0.99", "--out", str(out),
+                                      "--seeds", "1", "2", "--variant", "v", "haiku:1.0",
+                                      "--target-score", "1.0", "--budget-usd", "2"])
+    assert matrix.main() == 0
+    assert ran == [("v_seed2", ["--target-score", "1.0", "--budget-usd", "2.0",
+                                "--pricing", str(pricing.resolve())])]
+    assert not broken.exists()
+    assert len(list(out.glob("v_seed2.interrupted-*"))) == 1
