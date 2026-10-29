@@ -42,6 +42,7 @@ Environment knobs (all optional):
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
 import os
 import random
@@ -491,6 +492,55 @@ class BedrockLLM(LLMInterface):
 # --------------------------------------------------------------------------
 
 _registered = False
+_original_run_iteration_worker = None
+
+
+def _iteration_seed(llm_seed: int, iteration: int) -> int:
+    """Sampler seed for one iteration; mirrors OpenEvolve's own llm_seed derivation."""
+    digest = hashlib.md5(f"{llm_seed}:{iteration}".encode(), usedforsecurity=False)
+    return int(digest.hexdigest()[:8], 16)
+
+
+def _seeded_run_iteration_worker(iteration: int, *args, **kwargs):
+    """
+    OpenEvolve's ``_run_iteration_worker`` with the ensemble sampler reseeded
+    from ``(llm_seed, iteration)`` first.
+
+    Upstream seeds every worker's ``LLMEnsemble`` with the same ``llm_seed``, so
+    all workers draw the same model sequence (openevolve#554). Seeding per
+    iteration makes draws independent across iterations and still reproducible,
+    whichever worker runs which iteration. With ``random_seed: null`` the
+    sampler is unseeded and already independent, so it is left alone.
+
+    Pickled by reference to this module, so unpickling it in a spawned worker
+    imports the package and registers the provider there.
+    """
+    from openevolve import process_parallel as pp
+
+    try:
+        pp._lazy_init_worker_components()
+        models = pp._worker_config.llm.models
+        llm_seed = getattr(models[0], "random_seed", None) if models else None
+        if llm_seed is not None:
+            pp._worker_llm_ensemble.random_state.seed(_iteration_seed(llm_seed, iteration))
+    except Exception:  # leave error reporting to the original
+        logger.debug("per-iteration reseed skipped", exc_info=True)
+    return _original_run_iteration_worker(iteration, *args, **kwargs)
+
+
+def _patch_iteration_worker() -> None:
+    global _original_run_iteration_worker
+    try:
+        from openevolve import process_parallel as pp
+    except ImportError:
+        return
+    current = getattr(pp, "_run_iteration_worker", None)
+    if current is None or not hasattr(pp, "_lazy_init_worker_components"):
+        logger.debug("OpenEvolve layout not recognised; per-iteration seeding not installed")
+        return
+    if current is not _seeded_run_iteration_worker:
+        _original_run_iteration_worker = current
+        pp._run_iteration_worker = _seeded_run_iteration_worker
 
 
 def register() -> None:
@@ -514,4 +564,5 @@ def register() -> None:
             return original(model_cfg)
 
         ensemble._create_model = _create_model
+    _patch_iteration_worker()
     _registered = True

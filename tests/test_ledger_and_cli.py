@@ -103,3 +103,25 @@ def test_ledger_off(tmp_path, monkeypatch):
     monkeypatch.setenv("OE_BEDROCK_LEDGER", "off")
     assert led.ledger_path() is None
     led.append(led.Usage(model="m", transport="converse"))  # no-op, no error
+
+
+def test_bench_realized_mix_from_cost_json(tmp_path, capsys):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "bench_matrix", Path(__file__).resolve().parent.parent / "bench" / "matrix.py")
+    matrix = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(matrix)
+
+    haiku, sonnet = matrix.DEFAULT_ALIASES["haiku"], matrix.DEFAULT_ALIASES["sonnet"]
+    _write(tmp_path / "bedrock_ledger.jsonl",
+           [_rec(haiku, 10, 1)] * 3 + [_rec(sonnet, 10, 1)] + [_rec("other.model-v1:0", 10, 1)])
+    pricing = tmp_path / "pricing.yaml"
+    pricing.write_text(PRICING)
+    assert cli_main(["cost", str(tmp_path), "--pricing", str(pricing), "--json"]) == 0
+    by_model = json.loads(capsys.readouterr().out)["by_model"]
+
+    configured = matrix.parse_mix("haiku:0.8,sonnet:0.2", matrix.DEFAULT_ALIASES)
+    assert matrix.realized_mix(by_model, configured, matrix.DEFAULT_ALIASES) == \
+        "haiku:0.60,sonnet:0.20,other.model-v1:0:0.20"
+    assert matrix.realized_mix({}, configured, matrix.DEFAULT_ALIASES) == ""

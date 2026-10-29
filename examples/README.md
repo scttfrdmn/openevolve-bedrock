@@ -1,7 +1,7 @@
 # Examples
 
 `initial_program.py` and `evaluator.py` in each directory are copied verbatim
-from [OpenEvolve](https://github.com/codelion/openevolve) (Apache License 2.0,
+from [OpenEvolve](https://github.com/algorithmicsuperintelligence/openevolve) (Apache License 2.0,
 Copyright Asankhaya Sharma). Only the `config.yaml` files are new: they point
 the same problems at Amazon Bedrock.
 

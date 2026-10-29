@@ -27,7 +27,7 @@ references:
       - family-names: Sharma
         given-names: Asankhaya
     year: 2025
-    url: "https://github.com/codelion/openevolve"
+    url: "https://github.com/algorithmicsuperintelligence/openevolve"
   - type: report
     title: "AlphaEvolve: A coding agent for scientific and algorithmic discovery"
     authors:

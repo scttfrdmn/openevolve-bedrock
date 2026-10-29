@@ -1,6 +1,6 @@
 # openevolve-bedrock
 
-Amazon Bedrock as the LLM backend for [OpenEvolve](https://github.com/codelion/openevolve),
+Amazon Bedrock as the LLM backend for [OpenEvolve](https://github.com/algorithmicsuperintelligence/openevolve),
 the open-source AlphaEvolve-class evolutionary coding agent — plus a per-call
 usage ledger so a run reports what it cost, not just what it found.
 
@@ -96,8 +96,8 @@ comparison is wall-clock and throttle count at fixed `parallel_evaluations`.
 ## Experiments the ledger is built for
 
 `bench/matrix.py` runs one problem under several ensemble mixes and seeds and
-writes a CSV of best metric, iterations-to-threshold, $ total, $ to threshold,
-calls, throttles and wall time:
+writes a CSV of configured and realized model mix, best metric,
+iterations-to-threshold, $ total, $ to threshold, calls, throttles and wall time:
 
 ```bash
 python bench/matrix.py examples/circle_packing --pricing pricing.yaml \
@@ -111,10 +111,13 @@ python bench/matrix.py examples/circle_packing --pricing pricing.yaml \
 Three measurements this makes cheap:
 
 1. **Ensemble mix** — the paper's fast-heavy/strong-light split against all-fast
-   and 50/50, on iterations-to-threshold and $. Check the *realized* mix in the
-   ledger (`cost` prints calls per model): OpenEvolve seeds each worker's
-   ensemble RNG identically, so with few iterations the realized split can
-   drift from the configured weights.
+   and 50/50, on iterations-to-threshold and $. OpenEvolve seeds every
+   worker's ensemble RNG identically, so all workers draw the same model
+   sequence ([openevolve#554](https://github.com/algorithmicsuperintelligence/openevolve/issues/554));
+   this package reseeds the sampler per iteration from `(llm_seed, iteration)`,
+   which keeps runs reproducible with independent draws. The `realized_mix`
+   column still reports what each run actually got: with 100 iterations a
+   0.2 weight can land anywhere from roughly 0.12 to 0.28.
 2. **Endpoint** — same config with `--api-base` set to the Mantle URL; compare
    throttles and wall-clock at the same island parallelism.
 3. **Open-weight on Bedrock vs. local** — `openai.gpt-oss-120b` (or any
@@ -148,13 +151,15 @@ is 2.609 and `1.0` is the AlphaEvolve figure.
 
 ```bash
 pip install -e ".[dev]"
-pytest            # 25 tests, ~4 s, no AWS credentials needed
+pytest            # 29 tests, ~15 s, no AWS credentials needed
 ```
 
-`tests/test_e2e_spawn.py` runs a real 8-iteration OpenEvolve job with
+`tests/test_e2e_spawn.py` runs a real 40-iteration OpenEvolve job twice with
 process-parallel workers under the spawn start method against a fake Mantle
 server that returns programs, reports usage and throws 429s at random — the
-case that matters for macOS users and for the retry path.
+case that matters for macOS users and for the retry path. It asserts that
+per-model call counts match the per-iteration seeding exactly and repeat
+across runs.
 
 ## Not in scope (yet)
 
