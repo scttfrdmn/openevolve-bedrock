@@ -1,0 +1,17 @@
+# On-demand prices in USD per 1,000 tokens. Fill from
+# https://aws.amazon.com/bedrock/pricing/ for your region, then:
+#
+#   oe-bedrock cost openevolve_output/ --pricing pricing.yaml
+#
+# Keys: input, output (required); cache_read, cache_write (optional, default 0).
+# Model ids may be given with or without a cross-region prefix (us., eu., ...);
+# the ledger's id is matched exactly first, then with the prefix stripped.
+# Rows with null input/output are ignored (treated as unpriced).
+
+models:
+  amazon.nova-micro-v1:0:        {input: null, output: null, cache_read: null, cache_write: 0}
+  amazon.nova-lite-v1:0:         {input: null, output: null, cache_read: null, cache_write: 0}
+  amazon.nova-pro-v1:0:          {input: null, output: null, cache_read: null, cache_write: 0}
+  anthropic.claude-haiku-4-5-20251001-v1:0:   {input: null, output: null, cache_read: null, cache_write: null}
+  anthropic.claude-sonnet-4-5-20250929-v1:0:  {input: null, output: null, cache_read: null, cache_write: null}
+  openai.gpt-oss-120b-1:0:       {input: null, output: null}

@@ -1,0 +1,105 @@
+# Copyright 2026 Scott Friedman
+# SPDX-License-Identifier: Apache-2.0
+import json
+import os
+import time
+from pathlib import Path
+
+import pytest
+
+from openevolve_bedrock import ledger as led
+from openevolve_bedrock.cli import main as cli_main
+
+
+def _write(path: Path, recs):
+    path.write_text("".join(json.dumps(r) + "\n" for r in recs))
+
+
+def _rec(model, inp, out, cr=0, cw=0, ts=None, throttled=0):
+    return {"ts": ts or time.time(), "model": model, "transport": "converse",
+            "input_tokens": inp, "output_tokens": out, "cache_read_tokens": cr,
+            "cache_write_tokens": cw, "latency_ms": 1.0, "attempts": 1,
+            "throttled": throttled, "stop_reason": "end_turn", "role": "unknown"}
+
+
+PRICING = """
+models:
+  anthropic.claude-haiku-4-5-20251001-v1:0: {input: 0.001, output: 0.005, cache_read: 0.0001, cache_write: 0.00125}
+  amazon.nova-lite-v1:0: {input: null, output: null}
+"""
+
+
+def test_pricing_prefix_match_and_cost(tmp_path):
+    p = tmp_path / "pricing.yaml"
+    p.write_text(PRICING)
+    pricing = led.load_pricing(p)
+    assert "amazon.nova-lite-v1:0" not in pricing  # null rows ignored
+    recs = [
+        _rec("us.anthropic.claude-haiku-4-5-20251001-v1:0", 1000, 200, cr=500, cw=100),
+        _rec("us.amazon.nova-lite-v1:0", 10, 10),
+    ]
+    s = led.summarize(recs, pricing)
+    # 1000*0.001 + 200*0.005 + 500*0.0001 + 100*0.00125 = 1 + 1 + 0.05 + 0.125 = 2.175 per 1K -> /1000
+    assert s.total_usd == pytest.approx(2.175 / 1000)
+    assert s.unpriced_models == ["us.amazon.nova-lite-v1:0"]
+    assert s.total_calls == 2 and s.input_tokens == 1010
+
+
+def test_until_ts_filter():
+    recs = [_rec("m", 1, 1, ts=100.0), _rec("m", 1, 1, ts=200.0)]
+    s = led.summarize(recs, {}, until_ts=150.0)
+    assert s.total_calls == 1
+
+
+def test_first_checkpoint_at_threshold(tmp_path):
+    ck = tmp_path / "checkpoints"
+    for i, score in [(10, 0.5), (20, 0.9), (30, 0.99), (40, 1.0)]:
+        d = ck / f"checkpoint_{i}"
+        d.mkdir(parents=True)
+        (d / "best_program_info.json").write_text(json.dumps({"metrics": {"combined_score": score}}))
+        os.utime(d / "best_program_info.json", (1000 + i, 1000 + i))
+    hit = led.first_checkpoint_at_threshold(tmp_path, "combined_score", 0.95)
+    assert hit.iteration == 30 and hit.metric_value == 0.99
+    assert hit.reached_ts == pytest.approx(1030)
+    assert led.first_checkpoint_at_threshold(tmp_path, "combined_score", 2.0) is None
+
+
+def test_cost_cli_json_with_threshold(tmp_path, capsys):
+    out = tmp_path / "openevolve_output"
+    (out / "checkpoints" / "checkpoint_10").mkdir(parents=True)
+    info = out / "checkpoints" / "checkpoint_10" / "best_program_info.json"
+    info.write_text(json.dumps({"metrics": {"combined_score": 0.97}}))
+    os.utime(info, (5000, 5000))
+    _write(out / "bedrock_ledger.jsonl", [
+        _rec("anthropic.claude-haiku-4-5-20251001-v1:0", 1000, 100, ts=4000.0),
+        _rec("anthropic.claude-haiku-4-5-20251001-v1:0", 1000, 100, ts=6000.0, throttled=2),
+    ])
+    pricing = tmp_path / "pricing.yaml"
+    pricing.write_text(PRICING)
+
+    rc = cli_main(["cost", str(out), "--pricing", str(pricing), "--json"])
+    assert rc == 0
+    full = json.loads(capsys.readouterr().out)
+    assert full["calls"] == 2 and full["throttled"] == 2
+    assert full["usd"] == pytest.approx(2 * (1000 * 0.001 + 100 * 0.005) / 1000)
+
+    rc = cli_main(["cost", str(out), "--pricing", str(pricing), "--json", "--threshold", "0.95"])
+    assert rc == 0
+    part = json.loads(capsys.readouterr().out)
+    assert part["calls"] == 1                      # only the call before the checkpoint
+    assert part["threshold"]["iteration"] == 10
+
+
+def test_ledger_append_is_line_oriented(tmp_path, monkeypatch):
+    p = tmp_path / "l.jsonl"
+    monkeypatch.setenv("OE_BEDROCK_LEDGER", str(p))
+    led.append(led.Usage(model="m", transport="converse", input_tokens=1, output_tokens=2))
+    led.append(led.Usage(model="m", transport="converse", input_tokens=3, output_tokens=4))
+    recs = list(led.read(p))
+    assert [r["input_tokens"] for r in recs] == [1, 3]
+
+
+def test_ledger_off(tmp_path, monkeypatch):
+    monkeypatch.setenv("OE_BEDROCK_LEDGER", "off")
+    assert led.ledger_path() is None
+    led.append(led.Usage(model="m", transport="converse"))  # no-op, no error

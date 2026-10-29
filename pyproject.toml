@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openevolve-bedrock"
+version = "0.1.0"
+description = "Amazon Bedrock as the LLM backend for OpenEvolve (AlphaEvolve-class evolutionary coding), with a per-call cost ledger."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Scott Friedman" }]
+requires-python = ">=3.10"
+keywords = ["openevolve", "alphaevolve", "bedrock", "evolutionary", "llm"]
+classifiers = [
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "openevolve>=0.4.0",
+  "boto3>=1.35",
+  "openai>=1.0",
+  "pyyaml>=6",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "numpy"]
+
+[project.scripts]
+oe-bedrock = "openevolve_bedrock.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+openevolve_bedrock = ["pricing.example.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

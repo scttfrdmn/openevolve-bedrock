@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "openevolve-bedrock: Amazon Bedrock as the LLM backend for OpenEvolve"
+type: software
+version: 0.1.0
+date-released: 2026-10-28
+license: Apache-2.0
+repository-code: "https://github.com/scttfrdmn/openevolve-bedrock"
+authors:
+  - family-names: Friedman
+    given-names: Scott
+abstract: >-
+  A provider plugin that runs OpenEvolve, an open-source implementation of the
+  AlphaEvolve evolutionary coding architecture, against Amazon Bedrock models
+  via the Converse API or Bedrock's OpenAI-compatible endpoints, with a
+  per-call usage ledger and cost-to-result reporting.
+keywords:
+  - OpenEvolve
+  - AlphaEvolve
+  - Amazon Bedrock
+  - evolutionary computation
+  - large language models
+references:
+  - type: software
+    title: "OpenEvolve: Open-source implementation of AlphaEvolve"
+    authors:
+      - family-names: Sharma
+        given-names: Asankhaya
+    year: 2025
+    url: "https://github.com/codelion/openevolve"
+  - type: report
+    title: "AlphaEvolve: A coding agent for scientific and algorithmic discovery"
+    authors:
+      - name: "Novikov, Alexander and others (Google DeepMind)"
+    year: 2025

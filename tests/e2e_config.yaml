@@ -1,0 +1,29 @@
+max_iterations: 8
+checkpoint_interval: 4
+random_seed: 42
+log_level: INFO
+llm:
+  provider: bedrock
+  api_base: http://127.0.0.1:__PORT__/v1
+  api_key: "${AWS_BEARER_TOKEN_BEDROCK}"
+  models:
+    - name: us.anthropic.claude-haiku-4-5-20251001-v1:0
+      weight: 0.8
+    - name: us.anthropic.claude-sonnet-4-5-20250929-v1:0
+      weight: 0.2
+  temperature: 0.7
+  max_tokens: 4000
+  timeout: 60
+prompt:
+  system_message: "You are an expert programmer. Improve search_algorithm."
+database:
+  population_size: 20
+  archive_size: 10
+  num_islands: 2
+evaluator:
+  timeout: 30
+  cascade_thresholds: [1.3]
+  parallel_evaluations: 3
+diff_based_evolution: false
+allow_full_rewrites: true
+max_code_length: 20000

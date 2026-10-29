@@ -1,0 +1,10 @@
+__pycache__/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+openevolve_output/
+bench_out/
+bedrock_ledger.jsonl
+pricing.yaml
+.venv/

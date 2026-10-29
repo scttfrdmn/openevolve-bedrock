@@ -1,0 +1,9 @@
+openevolve-bedrock
+Copyright 2026 Scott Friedman
+
+Licensed under the Apache License, Version 2.0.
+
+This project plugs into OpenEvolve (https://github.com/codelion/openevolve),
+Copyright Asankhaya Sharma, Apache License 2.0. The example problems under
+examples/ (circle_packing, function_minimization) are copied from the
+OpenEvolve repository under that license; see examples/README.md.
