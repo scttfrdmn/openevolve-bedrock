@@ -6,6 +6,21 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- `oe-bedrock run --budget-usd X --pricing FILE` (or `OE_BEDROCK_BUDGET_USD` /
+  `OE_BEDROCK_PRICING`): no new iterations once the priced ledger reaches $X;
+  in-flight ones finish and are recorded. (#11)
+- `bench/matrix.py --target-score` / `--budget-usd`, passed to every run.
+
+### Fixed
+- After an early stop (`--target-score` or budget), the last checkpoint is
+  saved at the iteration where the run stopped. OpenEvolve labelled it with
+  the maximum iteration, so `iter@T` and the curves read a run that stopped at
+  57 as reaching its best at 100. (#11)
+- `bench/matrix.py` treats a run with a clean `run_meta.json` as finished (a
+  run stopped early has no final checkpoint), and moves an interrupted run's
+  dir aside instead of appending to its partial ledger.
+
 ### Changed
 - `bench/matrix.py`: `--threshold` takes several values, with `iter@T` and
   `usd@T` columns per value, blank if not reached; adds a `best@N` column; and

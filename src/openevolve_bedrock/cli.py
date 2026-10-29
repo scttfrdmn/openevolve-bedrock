@@ -15,7 +15,8 @@
 """
 oe-bedrock — run OpenEvolve on Amazon Bedrock and account for what it cost.
 
-  oe-bedrock run   PROGRAM EVALUATOR --config cfg.yaml [--iterations N] [...]
+  oe-bedrock run   PROGRAM EVALUATOR --config cfg.yaml [--iterations N]
+                   [--target-score T] [--budget-usd X --pricing pricing.yaml] [...]
   oe-bedrock models [--region R] [--vendor anthropic] [--profiles]
   oe-bedrock check  --config cfg.yaml            # one tiny call per model
   oe-bedrock cost   LEDGER --pricing pricing.yaml [--output-dir DIR --metric M --threshold X]
@@ -36,6 +37,7 @@ import yaml
 
 from openevolve_bedrock import __version__, register
 from openevolve_bedrock import ledger as led
+from openevolve_bedrock import stopping
 from openevolve_bedrock.ledger import DEFAULT_LEDGER_ENV, DEFAULT_LEDGER_NAME
 
 
@@ -55,6 +57,14 @@ def cmd_run(args: argparse.Namespace, passthrough: List[str]) -> int:
         out = args.output or str(Path(args.initial_program).resolve().parent / "openevolve_output")
         os.environ[DEFAULT_LEDGER_ENV] = str(Path(out) / DEFAULT_LEDGER_NAME)
     _p(f"openevolve-bedrock {__version__}: ledger -> {os.environ[DEFAULT_LEDGER_ENV]}")
+    if args.budget_usd is not None:
+        if not args.pricing:
+            _p("--budget-usd needs --pricing")
+            return 2
+        os.environ[stopping.BUDGET_ENV] = str(args.budget_usd)
+        os.environ[stopping.PRICING_ENV] = str(Path(args.pricing).resolve())
+        stopping.budget_from_env()  # fail now on a bad pricing file, not mid-run
+        _p(f"budget ${args.budget_usd:g} priced from {os.environ[stopping.PRICING_ENV]}")
 
     from openevolve.cli import main as oe_main
 
@@ -310,6 +320,9 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--output", "-o")
     r.add_argument("--iterations", "-i", type=int)
     r.add_argument("--checkpoint")
+    r.add_argument("--budget-usd", type=float,
+                   help="stop once the ledger, priced with --pricing, reaches this many USD")
+    r.add_argument("--pricing", help="pricing.yaml for --budget-usd")
 
     m = sub.add_parser("models", help="list text models / inference profiles in a region")
     m.add_argument("--region")

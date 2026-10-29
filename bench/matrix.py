@@ -14,8 +14,14 @@ score each run by best-so-far against iterations and dollars.
 
 Model aliases used in --variant come from --alias (defaults below). Each
 (variant, seed) run gets its own dir under --out with its config, ledger,
-checkpoints and run_meta.json. A run whose final checkpoint exists is reused,
-not rerun, so an interrupted matrix resumes where it stopped.
+checkpoints and run_meta.json. A run that finished (``run_meta.json`` with
+rc 0, or its final checkpoint) is reused, not rerun, so an interrupted matrix
+resumes; an interrupted run's dir is moved aside first so its partial ledger
+isn't appended to.
+
+``--target-score`` and ``--budget-usd`` are passed to every run (``oe-bedrock
+run``); a run stopped early has fewer checkpoints and ``best@N`` is its final
+best.
 
 Thresholds only affect scoring. After the runs, results.csv and curves.csv
 are rebuilt from every run dir under --out; ``--rescore`` rebuilds them without
@@ -137,8 +143,18 @@ def score_run(run_dir: Path, meta: dict, pricing: dict, metric: str, iterations:
     return row, curve
 
 
+def _finished(run_dir: Path, iterations: int) -> bool:
+    """A run that exited cleanly (run_meta.json, rc 0), or ran all its iterations."""
+    meta = run_dir / "run_meta.json"
+    if meta.is_file():
+        m = json.loads(meta.read_text())
+        if m.get("rc", 0) == 0 and m.get("iterations") == iterations:
+            return True
+    return (run_dir / "checkpoints" / f"checkpoint_{iterations}").is_dir()
+
+
 def run_one(ex: Path, base_cfg: dict, run_dir: Path, meta: dict, models: list,
-            iterations: int, api_base) -> None:
+            iterations: int, api_base, stop_args=()) -> None:
     run_dir.mkdir(parents=True, exist_ok=True)
     cfg = json.loads(json.dumps(base_cfg))  # deep copy
     cfg["random_seed"] = meta["seed"]
@@ -156,7 +172,7 @@ def run_one(ex: Path, base_cfg: dict, run_dir: Path, meta: dict, models: list,
     cmd = [sys.executable, "-m", "openevolve_bedrock", "run",
            str(ex / "initial_program.py"), str(ex / "evaluator.py"),
            "--config", str(cfg_path), "--output", str(run_dir),
-           "--iterations", str(iterations)]
+           "--iterations", str(iterations), *stop_args]
     print(f"\n=== {meta['variant']} seed={meta['seed']}: {' '.join(cmd)}", flush=True)
     t0 = time.time()
     rc = subprocess.call(cmd, env=env, cwd=str(ex))
@@ -178,6 +194,9 @@ def main() -> int:
     ap.add_argument("--alias", nargs=2, action="append", metavar=("ALIAS", "MODEL_ID"), default=[])
     ap.add_argument("--out", default="bench_out")
     ap.add_argument("--api-base", help="override llm.api_base (e.g. Mantle URL for the endpoint experiment)")
+    ap.add_argument("--target-score", type=float,
+                    help="stop each run once combined_score reaches this (OpenEvolve's --target-score)")
+    ap.add_argument("--budget-usd", type=float, help="stop each run once it has spent this, priced with --pricing")
     ap.add_argument("--rescore", action="store_true", help="don't run; rebuild the CSVs from --out")
     args = ap.parse_args()
     if not args.variant and not args.rescore:
@@ -190,16 +209,27 @@ def main() -> int:
     out_root.mkdir(parents=True, exist_ok=True)
     pricing = led.load_pricing(Path(args.pricing))
 
+    stop_args = []
+    if args.target_score is not None:
+        stop_args += ["--target-score", str(args.target_score)]
+    if args.budget_usd is not None:
+        stop_args += ["--budget-usd", str(args.budget_usd), "--pricing", str(Path(args.pricing).resolve())]
+
     if not args.rescore:
         for vname, mix in args.variant:
             for seed in args.seeds:
                 run_dir = out_root / f"{vname}_seed{seed}"
-                if (run_dir / "checkpoints" / f"checkpoint_{args.iterations}").is_dir():
-                    print(f"reusing {run_dir.name} (checkpoint_{args.iterations} exists)", flush=True)
+                if _finished(run_dir, args.iterations):
+                    print(f"reusing {run_dir.name}", flush=True)
                     continue
-                meta = {"variant": vname, "mix": mix, "seed": seed, "iterations": args.iterations}
+                if run_dir.exists():  # interrupted: its ledger would be appended to
+                    stale = run_dir.with_name(f"{run_dir.name}.interrupted-{int(time.time())}")
+                    run_dir.rename(stale)
+                    print(f"moved interrupted {run_dir.name} to {stale.name}", flush=True)
+                meta = {"variant": vname, "mix": mix, "seed": seed, "iterations": args.iterations,
+                        "target_score": args.target_score, "budget_usd": args.budget_usd}
                 run_one(ex, base_cfg, run_dir, meta, parse_mix(mix, aliases), args.iterations,
-                        args.api_base)
+                        args.api_base, stop_args)
 
     rows, curves = [], []
     for meta_path in sorted(out_root.glob("*/run_meta.json")):
