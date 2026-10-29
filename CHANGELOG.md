@@ -6,79 +6,57 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-### Fixed
-- Ensemble model draws were identical across OpenEvolve workers, because
-  upstream seeds every worker's sampler with the same `llm_seed`
-  (algorithmicsuperintelligence/openevolve#554). `register()` now wraps
-  `_run_iteration_worker` to reseed the sampler per iteration from
-  `(llm_seed, iteration)`: still reproducible, with independent draws. With
-  `random_seed: null` the sampler is left alone. (#3)
-
-- Any Bedrock text model from any vendor now works (#6). Probed live on 25
-  models from 13 vendors in us-west-2: before, most non-Claude models failed
-  because their cache-point rejection (`AccessDeniedException` "did not allow
-  prompt caching") wasn't recognised, and every current Claude model failed on
-  `temperature`. The provider now learns per model from Bedrock's rejections:
-  drops the cache point or `temperature`/`top_p`, switches Claude thinking
-  between adaptive and `budget_tokens`, and moves reasoning effort between
-  `reasoning_effort`, `reasoning.effort` and none.
-- OpenAI-compatible transport: `input_tokens` no longer includes cached tokens,
-  which the ledger prices separately (cache reads were billed twice).
-- OpenAI-compatible transport no longer needs `AWS_BEARER_TOKEN_BEDROCK`:
-  without a key it mints short-term Bedrock API keys from the AWS credentials
-  (re-signed every 15 minutes).
-- OpenAI-compatible transport records `cache_write_tokens` (GPT-5.6 and later)
-  and no longer bills them as plain input; switches to `max_completion_tokens`
-  for models that reject `max_tokens`; strips gpt-oss's inline leading
-  `<reasoning>` span on `bedrock-runtime`; and reports a wrong base path
-  ("isn't supported on this route") as such instead of learning a reasoning
-  quirk from it.
-- `check --cache-probe` sends a ~5K-token system prompt twice, above every
-  model's cache minimum (Haiku 4.5: 4096), so the second call shows a read.
-
-### Changed
-- `reasoning_effort` on Claude maps to adaptive thinking with
-  `output_config.effort` (current models reject `budget_tokens`); models without
-  adaptive thinking fall back to a budget. Non-Anthropic vendors get
-  `reasoning_effort` too, not only `openai.*`.
-- Examples, bench aliases and `pricing.example.yaml` use current models
-  (Claude Haiku/Sonnet 5.5; Sonnet 4.5 is LEGACY on Bedrock) and add
-  non-Anthropic aliases.
-- `oe-bedrock models`: lists profile-only models, shows lifecycle (LEGACY),
-  matches `--vendor` on the model-id prefix (`mistral`, `moonshotai`, `zai`),
-  and lists only text-model profiles unless `--all`.
-
-### Added
-- `realized_mix` column in `bench/matrix.py` results, computed from the ledger's
-  calls per model. The script refuses to append to a `results.csv` with
-  different columns.
-
 ## [0.1.0] - 2026-10-28
 
 ### Added
 - `provider: bedrock` for OpenEvolve ≥ 0.4.0, registered on import through
   OpenEvolve's `_PROVIDER_REGISTRY`.
 - Converse transport (`api_base: aws://<region>`): boto3/SigV4 or Bedrock API
-  key; system-message cache point with per-model auto-disable on rejection;
-  `reasoning_effort` → Claude extended thinking or `openai.*` reasoning effort;
-  cross-region inference-profile ids.
+  key; cross-region inference-profile ids; system-message cache point.
 - OpenAI-compatible transport (`api_base: https://…`) for `bedrock-mantle` and
-  `bedrock-runtime/openai/v1`; never sends `seed` or `top_p: null`.
+  `bedrock-runtime/openai/v1`. Never sends `seed` or `top_p: null`. Without
+  `api_key` or `AWS_BEARER_TOKEN_BEDROCK` it mints short-term Bedrock API keys
+  from the AWS credentials, re-signed every 15 minutes. Records
+  `cached_tokens` and `cache_write_tokens` separately from input. Strips
+  gpt-oss's leading inline `<reasoning>` span. Reports a wrong base path
+  ("isn't supported on this route") as such.
+- The transport is chosen per model, so one ensemble can mix Converse, Mantle
+  and `bedrock-runtime` Chat Completions models (`llm.models[].api_base`).
+- Any Bedrock text model from any vendor (#6). Models disagree on what a
+  request may contain, so the provider sends the current-generation shape and,
+  when Bedrock rejects a field, adapts for that model and remembers: drops the
+  cache point or `temperature`/`top_p`; switches Claude thinking between
+  adaptive (`output_config.effort`) and `budget_tokens`; moves reasoning effort
+  between `reasoning_effort`, `reasoning.effort` and none; switches
+  `max_tokens` to `max_completion_tokens`.
+- `reasoning_effort` maps to Claude adaptive thinking and to other vendors'
+  reasoning effort.
+- Per-iteration reseeding of the ensemble's model sampler from
+  `(llm_seed, iteration)`, because upstream seeds every worker identically
+  (algorithmicsuperintelligence/openevolve#554). Draws stay reproducible and
+  become independent across workers. Left alone with `random_seed: null`. (#3)
 - Throttle-aware retry with jittered exponential backoff; throttles counted.
 - JSONL usage ledger (tokens incl. cache read/write, latency, attempts,
   throttles, stop reason), `O_APPEND`-safe across OpenEvolve worker processes.
-- `oe-bedrock` CLI: `run`, `models`, `check` (`--cache-probe`), `cost`
-  (`--threshold` for $-to-result), `install-hook`.
-- `bench/matrix.py` ensemble-mix × seed experiment runner → CSV.
-- Examples: circle packing (n=26) and function minimization, with Bedrock configs.
-- Tests: 24 unit tests with fake clients; one offline end-to-end run with
+- `oe-bedrock` CLI: `run`; `models` (profile-only models, lifecycle,
+  vendor-prefix match, text-only profiles unless `--all`); `check`
+  (`--cache-probe` sends a ~5K-token system prompt twice); `cost`
+  (`--threshold` for $-to-result); `install-hook`.
+- `bench/matrix.py` ensemble-mix × seed experiment runner → CSV, with a
+  `realized_mix` column from the ledger.
+- Examples: circle packing (n=26) and function minimization, on Claude Haiku
+  and Sonnet 5.5; `pricing.example.yaml` for current models.
+- Tests: 50 unit tests with fake clients; one offline end-to-end run with
   process-parallel workers under the spawn start method against a fake Mantle
   server.
 
-### Not verified
-- No run against live Bedrock in this release; model ids in example configs
-  and the extended-thinking request shape are to be confirmed with
-  `oe-bedrock models` and `oe-bedrock check`.
+### Verified live (us-west-2, us-east-1; #2)
+- Converse: 25 models from 13 vendors, with and without `reasoning_effort`;
+  cache reads and writes on Claude; a 10-iteration `function_minimization`
+  run priced by `oe-bedrock cost` ($0.016).
+- OpenAI-compatible, with minted keys: gpt-oss, Qwen, GLM, Devstral and
+  GPT-6.1 Sol on Mantle and `bedrock-runtime`; GPT-6.1 Sol cache writes and
+  reads; one ensemble mixing Converse, Mantle and `bedrock-runtime` models.
 
 [Unreleased]: https://github.com/scttfrdmn/openevolve-bedrock/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/scttfrdmn/openevolve-bedrock/releases/tag/v0.1.0
