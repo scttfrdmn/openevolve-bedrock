@@ -17,6 +17,9 @@ OpenEvolve; this repo does not reimplement it. Three parts:
   curves (`checkpoint_series`).
 - `src/openevolve_bedrock/stopping.py` — budget stop and last-checkpoint fix,
   wrapping `ProcessParallelController._submit_iteration` / `run_evolution`.
+- `src/openevolve_bedrock/pool.py` — run an evaluation on a spore.host `spawn
+  pool` worker: content-addressed bundle in S3, `spawn pool submit`, poll the
+  completion record, read `metrics.json`; one `kind: "eval"` ledger line each.
 - `src/openevolve_bedrock/cli.py` — `oe-bedrock run|models|check|cost|install-hook`.
 
 ## Invariants (tests enforce these)
@@ -40,7 +43,8 @@ OpenEvolve; this repo does not reimplement it. Three parts:
   mode, so unknown YAML keys are silently dropped — a new key would never reach
   the provider and nothing would say so. Do not add new ones to the YAML schema.
 - The ledger is append-only, one JSON object per line, written with
-  `O_APPEND`. Don't buffer or rewrite it.
+  `O_APPEND`. Don't buffer or rewrite it. LLM-call lines have no `kind`; other
+  records (`kind: "eval"`) are summed separately and never counted as calls.
 - No prices are hardcoded. `pricing.yaml` is user-supplied; `cost` reports
   unpriced models rather than guessing.
 
@@ -67,10 +71,6 @@ oe-bedrock cost examples/circle_packing/openevolve_output/ --pricing pricing.yam
 - Converse was exercised on 25 models from 13 vendors in us-west-2
   (2026-10-28); new models can reject fields in new words. When one does, add
   the wording to `_classify_rejection` with a test quoting it verbatim.
-
-## Out of scope for 0.1.0
-
-Evaluator fan-out to EC2 — tracked in a GitHub issue, not here.
 
 ## Style
 

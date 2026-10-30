@@ -1,0 +1,233 @@
+{
+ "cap": 300,
+ "budget_factor": 3.0,
+ "kissat_commit": "8af8e56f174b778aef3aa45af9f739b2a5f492c2",
+ "split_sha256": "2bea1ccac5dcb634ca4f585c31a69a5f6d39c290984e14a6105da14fe13dd5bf",
+ "measured_on": "arm64 (terror, 2026-10-30T04:14:37Z); ticks and conflicts are machine-independent",
+ "sets": {
+  "stage1": {
+   "eddd68e14d69cce7190b99f4e7abdafb": {
+    "status": "sat",
+    "conflicts": 163375,
+    "ticks": 388314498
+   },
+   "697c96ac45534726c7dbd96faa11a86a": {
+    "status": "sat",
+    "conflicts": 251237,
+    "ticks": 576814145
+   },
+   "ad4e151d80c7012d88dd79bcfceaade5": {
+    "status": "unsat",
+    "conflicts": 329021,
+    "ticks": 733806040
+   }
+  },
+  "train": {
+   "eddd68e14d69cce7190b99f4e7abdafb": {
+    "status": "sat",
+    "conflicts": 163375,
+    "ticks": 388314498
+   },
+   "697c96ac45534726c7dbd96faa11a86a": {
+    "status": "sat",
+    "conflicts": 251237,
+    "ticks": 576814145
+   },
+   "ad4e151d80c7012d88dd79bcfceaade5": {
+    "status": "unsat",
+    "conflicts": 329021,
+    "ticks": 733806040
+   },
+   "f296fe701a562022c0de0cf565fbca7d": {
+    "status": "unsat",
+    "conflicts": 353471,
+    "ticks": 770056589
+   },
+   "475803537529d9d14a034957f48a6d38": {
+    "status": "unsat",
+    "conflicts": 584987,
+    "ticks": 1285577152
+   },
+   "c3e53c353f30d9e2eb54ed93d6ce4f02": {
+    "status": "unsat",
+    "conflicts": 634510,
+    "ticks": 1490805041
+   },
+   "57f4ea7ab160d996e38e69fac59869c4": {
+    "status": "unsat",
+    "conflicts": 687662,
+    "ticks": 1592405749
+   },
+   "ded23680dfeab2879c05bc0e4de21126": {
+    "status": "unsat",
+    "conflicts": 722345,
+    "ticks": 1657201636
+   },
+   "13ae2628d8e113db1786dba41a65fe38": {
+    "status": "sat",
+    "conflicts": 752209,
+    "ticks": 1896881124
+   },
+   "8b18bb75459a4161633ba2a3c8ee183e": {
+    "status": "sat",
+    "conflicts": 877196,
+    "ticks": 2191005301
+   },
+   "915a25bd189357e4c6d7771b69a6849f": {
+    "status": "unsat",
+    "conflicts": 896641,
+    "ticks": 2193560796
+   },
+   "d195412a62cdcbb851136f60af76f463": {
+    "status": "unsat",
+    "conflicts": 1172738,
+    "ticks": 3087200671
+   },
+   "3a75ad246dbc750a7391ad887c5b0835": {
+    "status": "sat",
+    "conflicts": 1289889,
+    "ticks": 3374749854
+   },
+   "1507d9812624b3e0eaf15e40100be020": {
+    "status": "sat",
+    "conflicts": 1362362,
+    "ticks": 3813145157
+   },
+   "54c2da6d387a6f5ad6e014ae4d4decfc": {
+    "status": "sat",
+    "conflicts": 1560843,
+    "ticks": 4540822313
+   },
+   "f376d4c191518ed704326960b6b19a4b": {
+    "status": "unsat",
+    "conflicts": 1729937,
+    "ticks": 4665032599
+   },
+   "e08f11f0a3bd266ee5c78ce332de107f": {
+    "status": "unsat",
+    "conflicts": 2000532,
+    "ticks": 5786335463
+   },
+   "c6568fc8805127e876c4c23551bf49fa": {
+    "status": "unsat",
+    "conflicts": 2240946,
+    "ticks": 6592628487
+   },
+   "0265448c232e3a25aa5bcd29b1b14567": {
+    "status": "unsat",
+    "conflicts": 2767642,
+    "ticks": 8089057019
+   },
+   "b7273af3d468ea2595f11a6dbd6ef6ce": {
+    "status": "unsat",
+    "conflicts": 2844597,
+    "ticks": 8896684498
+   },
+   "c5a98231dd54cbca06135293bb7e1985": {
+    "status": "sat",
+    "conflicts": 2775827,
+    "ticks": 8921607255
+   },
+   "195852083a05edee1902233698eec14a": {
+    "status": "sat",
+    "conflicts": 3559935,
+    "ticks": 11936132777
+   },
+   "aa9b67fd19d54ad51b93ee4ba5dc75fc": {
+    "status": "unsat",
+    "conflicts": 3915915,
+    "ticks": 13039792619
+   },
+   "b44ea915362c3a140269003d45b1d053": {
+    "status": "sat",
+    "conflicts": 4742252,
+    "ticks": 15641040415
+   }
+  },
+  "heldout": {
+   "19e2c3a0865c8c1b4543d11213bebe5f": {
+    "status": "unsat",
+    "conflicts": 546717,
+    "ticks": 1221428994
+   },
+   "bbfed8974655bca520259deb10d2347b": {
+    "status": "sat",
+    "conflicts": 579744,
+    "ticks": 1369984806
+   },
+   "edceb8782e72e290fa54757dbfdd0173": {
+    "status": "unsat",
+    "conflicts": 658730,
+    "ticks": 1481715661
+   },
+   "7fb202a51c0223f3119887a57086ca4d": {
+    "status": "unsat",
+    "conflicts": 850294,
+    "ticks": 2066018604
+   },
+   "a45a0358685867bd4f1c7f7c0b0e379c": {
+    "status": "sat",
+    "conflicts": 1207563,
+    "ticks": 3270007936
+   },
+   "f45e5faf1bcccbdd3065dd6367c3bd16": {
+    "status": "unsat",
+    "conflicts": 1890282,
+    "ticks": 5559666062
+   },
+   "c0e6e6eeebd48ca600cfc7d662fa804c": {
+    "status": "unsat",
+    "conflicts": 2337696,
+    "ticks": 6629391454
+   },
+   "df1bd67978b9b0ec1d326ba174bc273c": {
+    "status": "sat",
+    "conflicts": 2384725,
+    "ticks": 7251356146
+   },
+   "3c6e1d1c4b8d3d08aa4c1df3805f4f7d": {
+    "status": "unsat",
+    "conflicts": 3506525,
+    "ticks": 11795852121
+   },
+   "14e4cfcf0d83b2185fad41684d00d4dc": {
+    "status": "sat",
+    "conflicts": 3886195,
+    "ticks": 13036241430
+   }
+  },
+  "frontier": {
+   "09c1b79b1cfe3522364fe60aef780703": {
+    "status": "unknown",
+    "conflicts": null,
+    "ticks": null
+   },
+   "09b61bbf19748094a7d896aac314ab36": {
+    "status": "unknown",
+    "conflicts": null,
+    "ticks": null
+   },
+   "9d9c4fa425282759eb9e98b82fb5f56e": {
+    "status": "unknown",
+    "conflicts": null,
+    "ticks": null
+   },
+   "5e1c11b77cdf3717b81b957120f0f477": {
+    "status": "unknown",
+    "conflicts": null,
+    "ticks": null
+   },
+   "af05a6b68a1cff165b684d9ff0ae3b3b": {
+    "status": "unknown",
+    "conflicts": null,
+    "ticks": null
+   },
+   "5865fb9a6575d2ae6542c36ab96646a9": {
+    "status": "unknown",
+    "conflicts": null,
+    "ticks": null
+   }
+  }
+ },
+ "note": "frontier: stock solves none within 300 s; its runs end at the wall cap, so no deterministic ticks are recorded"
+}

@@ -69,10 +69,16 @@ def test_par2_counts_unsolved_twice_the_cap():
     assert ev.par2(rows, 300) == (10 + 30 + 600 + 600) / 4
 
 
-def test_tick_par2_doubles_unsolved_ticks():
-    rows = [{"status": "sat", "ticks": 100}, {"status": "unsat", "ticks": 300},
-            {"status": "unknown", "ticks": 500}]
-    assert ev.tick_par2(rows) == (100 + 300 + 1000) / 3
+def test_tick_par2_penalty_is_fixed_by_stock(monkeypatch):
+    monkeypatch.setenv("KISSAT_EVAL_BUDGET", "3")
+    stock = [{"status": "sat", "ticks": 100}, {"status": "unsat", "ticks": 300},
+             {"status": "sat", "ticks": 50}]
+    cand = [{"status": "sat", "ticks": 80}, {"status": "unsat", "ticks": 330},
+            {"status": "unknown", "ticks": 12345}]          # its own ticks don't matter
+    assert ev.tick_par2(cand, stock) == (80 + 330 + 2 * 3 * 50) / 3
+    assert ev.tick_par2(stock, stock) == (100 + 300 + 50) / 3
+    frontier = [{"status": "unknown", "ticks": 999}]        # stock unsolved: no tick reference
+    assert ev.tick_par2(frontier, frontier) is None
 
 
 def test_conflict_budget_is_a_multiple_of_stock(monkeypatch):

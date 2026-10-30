@@ -57,7 +57,10 @@ def build_kissat(home: Path) -> None:
         print(f"fetching {KISSAT_URL}")
         fetch(KISSAT_URL, tarball)
     with tarfile.open(tarball) as t:
-        t.extractall(home, filter="data")
+        try:
+            t.extractall(home, filter="data")
+        except TypeError:  # Python without extraction filters (e.g. AL2023's 3.9)
+            t.extractall(home)
     (home / f"kissat-{KISSAT_COMMIT}").rename(tree)
     subprocess.run(["./configure"], cwd=tree, check=True, stdout=subprocess.DEVNULL)
     subprocess.run(["make", f"-j{os.cpu_count() or 1}"], cwd=tree, check=True,
@@ -71,9 +74,15 @@ def fetch_instances(home: Path, rows: list) -> None:
     inst.mkdir(parents=True, exist_ok=True)
     todo = [r for r in rows if not (inst / f"{r['hash']}.cnf.xz").is_file()]
 
+    mirror = os.environ.get("KISSAT_EVAL_INSTANCES_S3", "").rstrip("/")
+
     def one(r):
         dest = inst / f"{r['hash']}.cnf.xz"
-        fetch(GBD_URL.format(r["hash"]), dest)
+        if mirror:  # e.g. s3://oeb-kissat-<account>-us-west-2/main_2024, staged in #13
+            subprocess.run(["aws", "s3", "cp", "--quiet", f"{mirror}/{r['hash']}.cnf.xz", str(dest)],
+                           check=True)
+        else:
+            fetch(GBD_URL.format(r["hash"]), dest)
 
     with ThreadPoolExecutor(8) as ex:
         list(ex.map(one, todo))
@@ -111,7 +120,7 @@ def main() -> int:
                           for r in results}
         print(f"  {name:9} solved {sum(r['status'] in ('sat', 'unsat') for r in results)}"
               f"/{len(results)}  PAR-2 {evaluator.par2(results, a.cap):.1f} s"
-              f"  tick-PAR-2 {evaluator.tick_par2(results):.3g}"
+              f"  tick-PAR-2 {evaluator.tick_par2(results, results) or float('nan'):.3g}"
               f"  ({time.time() - t0:.0f} s elapsed)")
     base = {
         "host": platform.node(),

@@ -258,3 +258,37 @@ def test_bench_moves_interrupted_run_aside_and_reuses_stopped_ones(tmp_path, mon
                                 "--pricing", str(pricing.resolve())])]
     assert not broken.exists()
     assert len(list(out.glob("v_seed2.interrupted-*"))) == 1
+
+
+def _pricing(tmp_path):
+    p = tmp_path / "pricing.yaml"
+    p.write_text(PRICING)
+    return p
+
+
+def test_eval_records_are_summed_apart_from_llm_calls(tmp_path, capsys):
+    model = "anthropic.claude-haiku-4-5-20251001-v1:0"
+    recs = [_rec(model, 1000, 100, ts=10.0),
+            {"ts": 11.0, "kind": "eval", "backend": "spawn-pool", "task_id": "a",
+             "state": "completed", "eval_s": 120.0, "cost_usd": 0.05},
+            {"ts": 12.0, "kind": "eval", "backend": "spawn-pool", "task_id": "b",
+             "state": "failed", "eval_s": 30.0, "cost_usd": None},
+            {"ts": 13.0, "kind": "something-new"}]
+    s = led.summarize(recs, led.load_pricing(_pricing(tmp_path)))
+    assert s.total_calls == 1 and list(s.by_model) == [model] and not s.unpriced_models
+    assert (s.evals, s.eval_usd, s.eval_s, s.evals_unpriced) == (2, 0.05, 150.0, 1)
+    assert led.summarize(recs, {}, until_ts=11.0).evals == 1
+
+    _write(tmp_path / "bedrock_ledger.jsonl", recs)
+    assert cli_main(["cost", str(tmp_path), "--pricing", str(_pricing(tmp_path)), "--json"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["evals"] == {"count": 2, "usd": 0.05, "seconds": 150.0, "unpriced": 1}
+    assert out["usd_with_evals"] == pytest.approx(out["usd"] + 0.05)
+
+
+def test_append_accepts_dict_records(tmp_path):
+    p = tmp_path / "l.jsonl"
+    led.append({"kind": "eval", "task_id": "x"}, p)
+    led.append(led.Usage(model="m", transport="converse"), p)
+    rows = list(led.read(p))
+    assert rows[0] == {"kind": "eval", "task_id": "x"} and rows[1]["model"] == "m"

@@ -18,6 +18,12 @@ Record fields:
     stop_reason   as reported by the API, if any
     role          "evolve" | "evaluate" | "unknown" (which ensemble this model
                   serves, when known)
+
+Evaluations run remotely (``pool.py``) add lines with ``kind: "eval"``:
+    ts, kind, backend ("spawn-pool"), run_id, task_id, state, exit_code,
+    eval_s (wall seconds from submit to result), cost_usd (spawn's
+    ``cost_estimate`` for the task, if it had one), retry_class.
+LLM-call lines have no ``kind``.
 """
 
 from __future__ import annotations
@@ -77,12 +83,14 @@ def ledger_path() -> Optional[Path]:
     return Path(value).expanduser()
 
 
-def append(record: Usage, path: Optional[Path] = None) -> None:
+def append(record, path: Optional[Path] = None) -> None:
+    """Append one record: a ``Usage``, or a dict for other kinds (``kind`` set)."""
     path = ledger_path() if path is None else path
     if path is None:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
-    line = json.dumps(asdict(record), separators=(",", ":")) + "\n"
+    data = record if isinstance(record, dict) else asdict(record)
+    line = json.dumps(data, separators=(",", ":")) + "\n"
     fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
     try:
         os.write(fd, line.encode("utf-8"))
@@ -163,6 +171,10 @@ class CostSummary:
     cache_read_tokens: int
     cache_write_tokens: int
     throttled: int
+    evals: int = 0
+    eval_usd: float = 0.0
+    eval_s: float = 0.0
+    evals_unpriced: int = 0
 
 
 def summarize(
@@ -175,9 +187,21 @@ def summarize(
     total = 0.0
     calls = 0
     in_t = out_t = cr_t = cw_t = thr = 0
+    evals = evals_unpriced = 0
+    eval_usd = eval_s = 0.0
     for rec in records:
         if until_ts is not None and float(rec.get("ts", 0)) > until_ts:
             continue
+        if rec.get("kind") == "eval":
+            evals += 1
+            eval_s += float(rec.get("eval_s") or 0.0)
+            if rec.get("cost_usd") is None:
+                evals_unpriced += 1
+            else:
+                eval_usd += float(rec["cost_usd"])
+            continue
+        if rec.get("kind"):
+            continue  # unknown record kinds are not LLM calls
         model = str(rec.get("model"))
         slot = by_model.setdefault(
             model,
@@ -210,6 +234,10 @@ def summarize(
         cache_read_tokens=cr_t,
         cache_write_tokens=cw_t,
         throttled=thr,
+        evals=evals,
+        eval_usd=eval_usd,
+        eval_s=eval_s,
+        evals_unpriced=evals_unpriced,
     )
 
 

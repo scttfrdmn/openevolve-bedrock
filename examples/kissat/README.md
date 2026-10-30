@@ -15,6 +15,9 @@ wrote the candidate.
 | `prepare.py` | fetches and builds the pinned Kissat, downloads the instances, measures the stock baseline |
 | `hamiltonian_split.jsonl` | the 40 instances, their split, known result and stock numbers from the Graviton calibration |
 | `config.yaml` | OpenEvolve config: Bedrock models, prompt, cascade |
+| `evaluator_pool.py` | the same evaluation, run on a spore.host `spawn pool` worker (issue #1) |
+| `remote.py` | worker entry point for `evaluator_pool.py` |
+| `stock_ticks.json` | stock Kissat's conflicts and ticks per instance set (machine-independent), used when no local `baseline.json` exists |
 | `LICENSE.kissat` | Kissat's MIT licence, which covers `initial_program.c` |
 
 ## Instances and split
@@ -99,8 +102,42 @@ KISSAT_EVAL_SPLIT=heldout python -c "import sys; sys.path.insert(0, 'examples/ki
 | `KISSAT_EVAL_BUDGET` | 3 | conflict budget as a multiple of stock's conflicts; must match `prepare.py` |
 
 With the tick metric, a laptop gives the same scores as Graviton, only slower. Wall
-time (`time` mode) belongs on a fixed, dedicated Graviton instance type, through the
-spawn pool evaluator of issue #1.
+time (`time` mode) belongs on a fixed, dedicated Graviton instance type.
+
+## Run on a spawn pool (Graviton)
+
+`evaluator_pool.py` sends each evaluation to a [spore.host](https://spore.host)
+worker pool. Each worker builds Kissat once and fetches the instances, then scores
+candidates exactly as `evaluator.py` would, against `stock_ticks.json`.
+
+```bash
+B=oeb-kissat-<account>-us-west-2                 # private bucket, instances staged under main_2024/
+spawn pool create --run-id kissat-1 --workers 4 --instance-type c8g.8xlarge \
+    --ttl 4h --idle-timeout 15m --cost-limit 5 --visibility-timeout 2400 \
+    --s3-read $B --s3-write $B --region us-west-2
+export OE_BEDROCK_POOL_RUN_ID=kissat-1 OE_BEDROCK_POOL_STAGING=s3://$B/pool \
+       OE_BEDROCK_POOL_REGION=us-west-2 KISSAT_EVAL_INSTANCES_S3=s3://$B/main_2024
+oe-bedrock run examples/kissat/initial_program.c examples/kissat/evaluator_pool.py \
+    --config config.yaml --iterations 50 --budget-usd 20 --pricing pricing.yaml   # parallel_evaluations: 4
+spawn pool drain --run-id kissat-1
+oe-bedrock cost openevolve_output/ --pricing pricing.yaml   # LLM $ and evaluation $ separately
+```
+
+- Set `parallel_evaluations` to the number of workers.
+- `--visibility-timeout` must exceed one evaluation, or SQS hands it to a second
+  worker.
+- One stage-2 evaluation runs 24 instances in parallel, so use a worker type with
+  at least 24 vCPUs.
+- Each evaluation's cost is spawn's `cost_estimate` for the task, recorded in the
+  ledger as a `kind: "eval"` line. Worker idle and boot time isn't attributed to
+  any task.
+
+Measured 2026-10-29 on c8g.8xlarge ($1.276/h):
+- Stock Kissat scored `tick_score` exactly 1.0 on both stages against the Mac-measured
+  baseline (gcc 11 on Amazon Linux against clang on macOS: same ticks).
+- Stage 1 took 52 s end to end and cost $0.009.
+- Stage 2 (24 instances, 218 s on the worker) took 254 s end to end and cost $0.083.
+- Worker setup (build and instance fetch) took about 13 s.
 
 ## Source
 
