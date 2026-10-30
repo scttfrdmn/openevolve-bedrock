@@ -7,6 +7,15 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- `openevolve_bedrock.pool.SpawnPool`: run an evaluation on a spore.host
+  `spawn pool` worker. The problem directory is staged as a content-addressed
+  bundle, each candidate submitted as a TaskSpec, and `metrics.json` read back
+  from S3. Configured by `OE_BEDROCK_POOL_*`. Each evaluation adds a
+  `kind: "eval"` ledger line with spawn's `cost_estimate`, and `oe-bedrock cost`
+  reports evaluation $ apart from LLM $ (#1).
+- `examples/kissat/evaluator_pool.py` and `remote.py`: the Kissat evaluation on
+  a Graviton pool. Workers build Kissat once and score against the committed
+  `stock_ticks.json`.
 - `examples/kissat/`: evolve Kissat 4.0.4's restart policy on 24
   Hamiltonian-cycle instances from the SAT Competition 2024 main track. Fitness
   is PAR-2 in Kissat's deterministic `search_ticks` relative to stock, with a

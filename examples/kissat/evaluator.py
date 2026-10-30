@@ -198,18 +198,39 @@ def par2(results: list, time_cap: int) -> float:
                for r in results) / len(results)
 
 
-def tick_par2(results: list) -> float:
-    """PAR-2 in search ticks: an unsolved instance counts twice the ticks it used
-    before hitting its conflict budget. Deterministic for a given binary."""
-    return sum((r["ticks"] or 0) * (1 if r["status"] in ("sat", "unsat") else 2)
-               for r in results) / len(results)
+def tick_par2(results: list, stock: list) -> float | None:
+    """PAR-2 in search ticks. A solved instance counts its ticks; an unsolved one
+    (budget or wall cap) counts 2 x budget factor x stock's ticks there, a fixed
+    penalty, so the score depends only on which instances were solved and how
+    much search solving took. None if stock has no tick count for an instance."""
+    total = 0.0
+    for r, s in zip(results, stock):
+        if r["status"] in ("sat", "unsat"):
+            total += r["ticks"] or 0
+        elif s.get("ticks") is None or s.get("status") not in ("sat", "unsat"):
+            return None
+        else:
+            total += 2 * budget_factor() * s["ticks"]
+    return total / len(results)
+
+
+STOCK_TICKS = HERE / "stock_ticks.json"
 
 
 def baseline() -> dict:
+    """Stock Kissat's numbers per instance set.
+
+    ``baseline.json`` from prepare.py, measured on this machine, if present.
+    Otherwise, in ticks mode, the committed ``stock_ticks.json``: ticks and
+    conflicts are deterministic and machine-independent, so stock's are shipped
+    with the example. It has no wall times, so ``time_score`` is then None.
+    """
     path = home() / "baseline.json"
-    if not path.is_file():
-        raise RuntimeError(f"no stock baseline at {path}; run examples/kissat/prepare.py")
-    return json.loads(path.read_text())
+    if path.is_file():
+        return json.loads(path.read_text())
+    if metric() == "ticks" and STOCK_TICKS.is_file():
+        return json.loads(STOCK_TICKS.read_text())
+    raise RuntimeError(f"no stock baseline at {path}; run examples/kissat/prepare.py")
 
 
 def run_batch(kissat: Path, rows: list, time_cap: int) -> list:
@@ -240,16 +261,24 @@ def score(program_path: str, set_name: str, time_cap: int) -> dict:
 
     wrong = [r["hash"] for r in results if r["wrong"]]
     stock = [base["sets"][set_name][r["hash"]] for r in rows]
-    stock_par2 = par2(stock, time_cap)
+    stock_par2 = par2(stock, time_cap) if all("wall_s" in s for s in stock) else None
     cand_par2 = par2(results, time_cap)
-    stock_ticks, cand_ticks = tick_par2(stock), tick_par2(results)
-    time_score = stock_par2 / cand_par2
-    tick_score = stock_ticks / cand_ticks if cand_ticks else 0.0
+    stock_ticks, cand_ticks = tick_par2(stock, stock), tick_par2(results, stock)
+    time_score = stock_par2 / cand_par2 if stock_par2 is not None else None
+    tick_score = stock_ticks / cand_ticks if stock_ticks and cand_ticks else None
     solved = sum(r["status"] in ("sat", "unsat") for r in results)
     conflicts = sum(r["conflicts"] or 0 for r in results)
     stock_conflicts = sum(s["conflicts"] or 0 for s in stock)
+    if wrong:
+        combined = 0.0
+    elif tick_score is None:  # frontier: stock solves none, so score instances solved
+        combined = solved / len(rows)
+    else:
+        combined = tick_score if metric() == "ticks" else time_score
+    wall_capped = sum(r["status"] == "unknown" and (r["conflicts"] or 0) < conflict_budget(row)
+                      for r, row in zip(results, rows))
     metrics = {
-        "combined_score": 0.0 if wrong else (tick_score if metric() == "ticks" else time_score),
+        "combined_score": combined,
         "tick_score": tick_score,
         "time_score": time_score,
         "par2_s": cand_par2,
@@ -257,6 +286,7 @@ def score(program_path: str, set_name: str, time_cap: int) -> dict:
         "solved": solved,
         "instances": len(rows),
         "wrong_answers": len(wrong),
+        "wall_capped": wall_capped,
         "conflicts_ratio": conflicts / stock_conflicts if stock_conflicts else None,
     }
     if wrong:
