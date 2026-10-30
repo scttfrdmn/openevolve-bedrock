@@ -7,3 +7,10 @@ This project plugs into OpenEvolve (https://github.com/algorithmicsuperintellige
 Copyright Asankhaya Sharma, Apache License 2.0. The example problems under
 examples/ (circle_packing, function_minimization) are copied from the
 OpenEvolve repository under that license; see examples/README.md.
+
+examples/kissat/initial_program.c is src/restart.c from Kissat 4.0.4
+(https://github.com/arminbiere/kissat), Copyright (c) 2019-2025 Armin Biere,
+Mathias Fleury, Florian Pollitt and contributors, MIT License; the license text
+is in examples/kissat/LICENSE.kissat. The SAT instances it is evaluated on are
+downloaded at run time from the Global Benchmark Database
+(https://benchmark-database.de/) and are not distributed here.

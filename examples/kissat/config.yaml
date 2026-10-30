@@ -1,0 +1,86 @@
+# Evolve Kissat's restart policy on Amazon Bedrock (issue #13).
+#
+#   python examples/kissat/prepare.py      # build Kissat, fetch instances, stock baseline
+#   oe-bedrock run examples/kissat/initial_program.c examples/kissat/evaluator.py \
+#       --config examples/kissat/config.yaml --iterations 50 --budget-usd 20 --pricing pricing.yaml
+#
+# combined_score = tick-PAR-2(stock Kissat) / tick-PAR-2(candidate) on the 24
+# training instances: Kissat's deterministic search_ticks, so the score is the same
+# on every machine; > 1 means less search than stock (README: Fitness).
+
+max_iterations: 50
+checkpoint_interval: 5
+log_level: "INFO"
+random_seed: 42
+language: "c"
+diff_based_evolution: true
+enforce_evolve_blocks: true
+max_code_length: 20000
+
+llm:
+  provider: bedrock
+  api_base: aws://us-west-2
+  models:
+    - name: us.anthropic.claude-haiku-5-5
+      weight: 0.8
+    - name: us.anthropic.claude-sonnet-5-5
+      weight: 0.2
+  max_tokens: 16000
+  timeout: 600
+
+prompt:
+  system_message: |
+    You are improving the restart policy of Kissat 4.0.4, a state-of-the-art CDCL
+    SAT solver written in C. The program is Kissat's src/restart.c. Only the two
+    functions inside the EVOLVE-BLOCK may change, and their signatures must stay:
+
+      bool kissat_restarting (kissat *solver);
+          Consulted on each pass of the search loop that ends without a
+          conflict, after the clause-reduction and mode-switch checks have
+          declined; return true to restart now.
+      void kissat_update_focused_restart_limit (kissat *solver);
+          Called at search start and on each switch into focused mode, and
+          after each focused-mode restart; sets solver->limits.restart.conflicts,
+          the conflict count before which kissat_restarting does not restart.
+
+    Kissat alternates between two modes: focused (solver->stable == false; the
+    stock policy compares a fast and a slow exponential moving average of
+    learned-clause glue/LBD, AVERAGE (fast_glue) vs AVERAGE (slow_glue), with a
+    margin from GET_OPTION (restartmargin)) and stable (solver->stable == true;
+    stock uses reluctant doubling, a Luby-style sequence, via
+    kissat_reluctant_triggered (&solver->reluctant), which consumes the trigger
+    when it returns true). Useful state:
+    CONFLICTS (total conflicts), solver->level (decision level),
+    solver->statistics.restarts, AVERAGE (fast_glue), AVERAGE (slow_glue),
+    AVERAGE (decision_rate), solver->limits.restart.conflicts,
+    kissat_logn (n), GET_OPTION (restartint), GET_OPTION (restartmargin).
+    Keep the stock guards: no restart at decision level 0, and none when
+    GET_OPTION (restart) is 0.
+
+    Fitness is PAR-2 in Kissat's search ticks (its deterministic effort counter) on
+    24 Hamiltonian-cycle instances (10 SAT, 14 UNSAT) from the SAT Competition 2024
+    main track, relative to stock Kissat. Each instance has a budget of 3x stock's
+    conflicts; an instance not solved within it counts double. Less search is
+    better. Every answer is checked, so a wrong answer scores 0.
+    Do not add includes, macros, I/O or calls to exit/abort inside the block; such
+    candidates are rejected before building. Prefer small, well-reasoned changes
+    and explain the hypothesis behind each one.
+  num_top_programs: 3
+
+database:
+  population_size: 40
+  archive_size: 20
+  num_islands: 2
+  elite_selection_ratio: 0.3
+  exploitation_ratio: 0.7
+
+evaluator:
+  # Stage 1 builds and runs the 3 fastest training instances; a candidate must be
+  # at least half as fast as stock there to reach the full 24-instance stage 2.
+  cascade_evaluation: true
+  cascade_thresholds: [0.5]
+  # One evaluation runs its instances in parallel (KISSAT_EVAL_JOBS, default all
+  # cores), so evaluate one candidate at a time on a laptop.
+  parallel_evaluations: 1
+  timeout: 1800
+  use_llm_feedback: false

@@ -8,3 +8,6 @@ bench_out/
 bedrock_ledger.jsonl
 pricing.yaml
 .venv/
+
+# examples/kissat prepare.py cache
+examples/kissat/.cache/
