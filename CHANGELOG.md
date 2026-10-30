@@ -7,6 +7,17 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- `examples/kissat/`: evolve Kissat 4.0.4's restart policy on 24
+  Hamiltonian-cycle instances from the SAT Competition 2024 main track. Fitness
+  is PAR-2 in Kissat's deterministic `search_ticks` relative to stock, with a
+  per-instance conflict budget, so a score is the same on every run and machine.
+  Wall-clock PAR-2 is reported too, and is the fitness with
+  `KISSAT_EVAL_METRIC=time`. Every SAT witness is verified, a wrong answer,
+  crash, build failure or forbidden code in the EVOLVE-BLOCK scores 0, and a
+  two-stage cascade is included. `prepare.py`
+  builds the pinned Kissat, downloads the instances from GBD and measures the
+  stock baseline for each instance set. The split was chosen from a Graviton4
+  calibration of all 400 main-track instances (#13).
 - `oe-bedrock run --budget-usd X --pricing FILE` (or `OE_BEDROCK_BUDGET_USD` /
   `OE_BEDROCK_PRICING`): no new iterations once the priced ledger reaches $X;
   in-flight ones finish and are recorded. (#11)
