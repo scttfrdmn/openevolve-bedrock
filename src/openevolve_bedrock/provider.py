@@ -714,8 +714,21 @@ def _seeded_run_iteration_worker(iteration: int, *args, **kwargs):
     return _original_run_iteration_worker(iteration, *args, **kwargs)
 
 
+def upstream_reseeds_per_iteration() -> bool:
+    """True if OpenEvolve seeds model sampling per iteration itself (its fix for
+    openevolve#554, ``LLMEnsemble.reseed``, released in 0.4.1)."""
+    try:
+        from openevolve.llm.ensemble import LLMEnsemble
+    except ImportError:
+        return False
+    return hasattr(LLMEnsemble, "reseed")
+
+
 def _patch_iteration_worker() -> None:
     global _original_run_iteration_worker
+    if upstream_reseeds_per_iteration():
+        logger.debug("OpenEvolve reseeds per iteration itself; not installing our reseed")
+        return
     try:
         from openevolve import process_parallel as pp
     except ImportError:
