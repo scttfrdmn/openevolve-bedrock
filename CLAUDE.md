@@ -29,10 +29,13 @@ OpenEvolve; this repo does not reimplement it. Three parts:
   openevolve_bedrock` satisfy this because the `__main__` module imports the
   package. `tests/test_e2e_spawn.py` is the proof — keep it passing.
 - Never send `seed` or `top_p: null` to Bedrock.
-- `register()` replaces `openevolve.process_parallel._run_iteration_worker`
-  with `_seeded_run_iteration_worker`, which reseeds the ensemble sampler from
-  `(llm_seed, iteration)` (openevolve#554). The e2e test asserts exact per-model
-  counts from that hash; drop the patch once a fixed OpenEvolve is the minimum.
+- Per-iteration model sampling (openevolve#554): OpenEvolve >= 0.4.1 does it
+  itself (`LLMEnsemble.reseed`, seeded from `f"{llm_seed}:{iteration}"`). On
+  older versions `register()` replaces `process_parallel._run_iteration_worker`
+  with `_seeded_run_iteration_worker` (md5 of the same pair). The patch is
+  skipped when `reseed` exists (`upstream_reseeds_per_iteration`). The e2e test
+  asserts exact per-model counts from whichever derivation is active. Drop the
+  patch once 0.4.1 is the minimum. Tests pass on 0.4.0 and 0.4.1.
 - No per-model capability table. Request-shape differences between models
   (cache point, sampling params, thinking/reasoning fields) are learned from
   Bedrock's rejections in `_classify_rejection` / `_quirks`; an unrecognised

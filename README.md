@@ -192,11 +192,12 @@ needs an explicit weight (`openai.gpt-oss-120b-1:0:1.0`); aliases don't.
 Three measurements this makes cheap:
 
 1. **Ensemble mix** — the paper's fast-heavy/strong-light split against all-fast
-   and 50/50, on iterations-to-threshold and $. OpenEvolve seeds every
+   and 50/50, on iterations-to-threshold and $. OpenEvolve 0.4.0 seeds every
    worker's ensemble RNG identically, so all workers draw the same model
-   sequence ([openevolve#554](https://github.com/algorithmicsuperintelligence/openevolve/issues/554));
-   this package reseeds the sampler per iteration from `(llm_seed, iteration)`,
-   which keeps runs reproducible with independent draws. The `realized_mix`
+   sequence ([openevolve#554](https://github.com/algorithmicsuperintelligence/openevolve/issues/554)).
+   OpenEvolve 0.4.1 reseeds per iteration itself (`LLMEnsemble.reseed`). On
+   0.4.0 this package does the same from `(llm_seed, iteration)`. Either way,
+   runs are reproducible with independent draws. The `realized_mix`
    column still reports what each run actually got: with 100 iterations a
    0.2 weight can land anywhere from roughly 0.12 to 0.28.
 2. **Endpoint** — same config with `--api-base` set to the Mantle URL; compare

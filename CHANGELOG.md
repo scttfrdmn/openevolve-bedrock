@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- The per-iteration reseed of the model sampler is skipped on OpenEvolve
+  0.4.1 and later, which reseeds per iteration itself (`LLMEnsemble.reseed`,
+  upstream #559). On 0.4.1 ours was overridden anyway, and the spawn test,
+  which predicted counts from our hash, failed there. The test now predicts
+  from whichever derivation is active (#5).
+
 ### Added
 - `openevolve_bedrock.pool.SpawnPool`: run an evaluation on a spore.host
   `spawn pool` worker. The problem directory is staged as a content-addressed

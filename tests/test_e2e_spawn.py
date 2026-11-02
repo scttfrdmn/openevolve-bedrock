@@ -34,7 +34,10 @@ if __name__ == "__main__":
 
 
 def _expected_counts(cfg: dict) -> Counter:
-    """Model calls per name if iteration i draws from Random(md5(f"{llm_seed}:{i}"))."""
+    """Model calls per name under the per-iteration seeding that is active: OpenEvolve's
+    own (>= 0.4.1, Random(f"{llm_seed}:{i}")) or ours (Random(md5(f"{llm_seed}:{i}")))."""
+    from openevolve_bedrock.provider import upstream_reseeds_per_iteration
+
     base = str(cfg["random_seed"]).encode()
     llm_seed = int(hashlib.md5(base + b"llm", usedforsecurity=False).hexdigest()[:8], 16) % (2**31)
     models = cfg["llm"]["models"]
@@ -42,8 +45,12 @@ def _expected_counts(cfg: dict) -> Counter:
     weights = [m["weight"] / total for m in models]
     counts = Counter()
     for i in range(1, cfg["max_iterations"] + 1):
-        seed = int(hashlib.md5(f"{llm_seed}:{i}".encode(), usedforsecurity=False).hexdigest()[:8], 16)
-        idx = random.Random(seed).choices(range(len(models)), weights=weights, k=1)[0]
+        if upstream_reseeds_per_iteration():
+            rng = random.Random(f"{llm_seed}:{i}")
+        else:
+            rng = random.Random(int(hashlib.md5(f"{llm_seed}:{i}".encode(),
+                                                usedforsecurity=False).hexdigest()[:8], 16))
+        idx = rng.choices(range(len(models)), weights=weights, k=1)[0]
         counts[models[idx]["name"]] += 1
     return counts
 

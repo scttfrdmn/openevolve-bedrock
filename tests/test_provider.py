@@ -561,6 +561,8 @@ def test_register_is_idempotent():
 # ---------------------------------------------------------------- per-iteration seeding
 
 
+@pytest.mark.skipif(prov.upstream_reseeds_per_iteration(),
+                    reason="OpenEvolve reseeds per iteration itself (>= 0.4.1)")
 def test_iteration_worker_is_patched_and_pickles_by_reference():
     import pickle
 
@@ -588,6 +590,17 @@ def _fake_worker(monkeypatch, llm_seed):
         lambda it, *a, **k: seen.append((it, ens.random_state.random())) or "result",
     )
     return seen
+
+
+def test_patch_is_skipped_when_upstream_reseeds(monkeypatch):
+    from openevolve import process_parallel as pp
+    from openevolve.llm.ensemble import LLMEnsemble
+
+    monkeypatch.setattr(LLMEnsemble, "reseed", lambda self, it: None, raising=False)
+    original = object()
+    monkeypatch.setattr(pp, "_run_iteration_worker", original)
+    prov._patch_iteration_worker()
+    assert pp._run_iteration_worker is original
 
 
 def test_seeded_worker_reseeds_per_iteration(monkeypatch):
