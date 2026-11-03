@@ -179,7 +179,7 @@ def test_repeat_penalty_requires_a_run_scoped_cache(monkeypatch, tmp_path):
 def test_detail_lists_per_instance_results(monkeypatch, tmp_path):
     monkeypatch.setenv("KISSAT_EVAL_DETAIL", "1")
     monkeypatch.setattr(ev, "baseline", lambda: {"cap": 300, "budget_factor": 3.0,
-                                                 "sets": {"stage1": {r["hash"]: {**r, "wall_s": r["wall_s"]}
+                                                 "sets": {"stage1": {r["hash"]: {**r, "ticks": 1}
                                                                      for r in ev.instance_sets()["stage1"]}}})
     monkeypatch.setattr(ev, "build", lambda prog, tmp: Path("/bin/true"))
     monkeypatch.setattr(ev, "run_batch", lambda k, rows, cap: [
