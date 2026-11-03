@@ -24,6 +24,13 @@ All notable changes to this project are documented here. The format follows
   writes that file, and `remote.py baseline:SET` measures it on a pool worker.
   On it, none of six restart policies that did well on Hamiltonian is
   distinguishable from stock (#13).
+- `examples/kissat/mixed_frontier_split.jsonl`: the mixed split plus 45
+  instances stock fails in 300 s but a 2024 competitor solves in 300 s, so a
+  candidate can gain instances as well as lose them. A split row may set its own
+  conflict `budget`. A stock run that ends at it is recorded as
+  `budget_reached`, and an unsolved instance then costs twice stock's ticks
+  there. Six policies score 1.01–1.26 on it, and stock with only its seed
+  changed scores 0.93–1.17, so none of them is distinguishable from chance (#13).
 - `examples/kissat`: the system message tells the model that the programs shown
   are already evaluated and asks for a different modification. Copies of the
   best program in a 60-iteration run's final population fell from 19 to 2.

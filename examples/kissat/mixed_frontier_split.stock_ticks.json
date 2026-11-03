@@ -1,0 +1,1041 @@
+{
+ "cap": 1200,
+ "budget_factor": 3.0,
+ "kissat_commit": "8af8e56f174b778aef3aa45af9f739b2a5f492c2",
+ "split_sha256": "b36dbda267c2cd07d67f3aca8b03d34145ba344c4b845e80129718e152858156",
+ "measured_on": "aarch64 (oeb-mixedf-1-worker-1, 2026-11-03T15:55:13Z); ticks and conflicts are machine-independent",
+ "note": "cap 1200 s, as for mixed_split; the 45 rows with a budget are stock failures at that budget (budget_reached)",
+ "sets": {
+  "stage1": {
+   "f50eaf02a8041510b64104998cc81d2f": {
+    "status": "sat",
+    "conflicts": 169679,
+    "ticks": 461249762
+   },
+   "c8e64404361f2426490d39459832c66a": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 1271921
+   },
+   "ad4e151d80c7012d88dd79bcfceaade5": {
+    "status": "unsat",
+    "conflicts": 329021,
+    "ticks": 733806040
+   }
+  },
+  "train": {
+   "8b31606e10656ff7eb2936262b647443": {
+    "status": "sat",
+    "conflicts": 761400,
+    "ticks": 974160591
+   },
+   "a58b8a5eb61d3110d9fa36a03de588d2": {
+    "status": "unsat",
+    "conflicts": 4540429,
+    "ticks": 8679327860
+   },
+   "7b9d8b9b31b530effd634f5a8f1f4411": {
+    "status": "unsat",
+    "conflicts": 4162359,
+    "ticks": 9903898827
+   },
+   "5cb1ca8fe8a9d9125ea9accd498445f1": {
+    "status": "unsat",
+    "conflicts": 4539955,
+    "ticks": 10627629599
+   },
+   "79b9e24dd9af185dbec18c9b0a32b1e2": {
+    "status": "sat",
+    "conflicts": 216904,
+    "ticks": 737527400
+   },
+   "ecca77b5350eca6a4323edd5b38208c6": {
+    "status": "sat",
+    "conflicts": 2268161,
+    "ticks": 4820952155
+   },
+   "7f2b4b2bde9b866b93fbfe01341213da": {
+    "status": "unsat",
+    "conflicts": 91530,
+    "ticks": 5806069682
+   },
+   "9cd3acdb765c15163bc239ae3a57f880": {
+    "status": "unsat",
+    "conflicts": 377701,
+    "ticks": 440947491
+   },
+   "ad4e151d80c7012d88dd79bcfceaade5": {
+    "status": "unsat",
+    "conflicts": 329021,
+    "ticks": 733806040
+   },
+   "19e2c3a0865c8c1b4543d11213bebe5f": {
+    "status": "unsat",
+    "conflicts": 546717,
+    "ticks": 1221428994
+   },
+   "bbfed8974655bca520259deb10d2347b": {
+    "status": "sat",
+    "conflicts": 579744,
+    "ticks": 1369984806
+   },
+   "c3e53c353f30d9e2eb54ed93d6ce4f02": {
+    "status": "unsat",
+    "conflicts": 634510,
+    "ticks": 1490805041
+   },
+   "57f4ea7ab160d996e38e69fac59869c4": {
+    "status": "unsat",
+    "conflicts": 687662,
+    "ticks": 1592405749
+   },
+   "7fb202a51c0223f3119887a57086ca4d": {
+    "status": "unsat",
+    "conflicts": 850294,
+    "ticks": 2066018604
+   },
+   "8b18bb75459a4161633ba2a3c8ee183e": {
+    "status": "sat",
+    "conflicts": 877196,
+    "ticks": 2191005301
+   },
+   "d195412a62cdcbb851136f60af76f463": {
+    "status": "unsat",
+    "conflicts": 1172738,
+    "ticks": 3087200671
+   },
+   "3a75ad246dbc750a7391ad887c5b0835": {
+    "status": "sat",
+    "conflicts": 1289889,
+    "ticks": 3374749854
+   },
+   "54c2da6d387a6f5ad6e014ae4d4decfc": {
+    "status": "sat",
+    "conflicts": 1560843,
+    "ticks": 4540822313
+   },
+   "f45e5faf1bcccbdd3065dd6367c3bd16": {
+    "status": "unsat",
+    "conflicts": 1890282,
+    "ticks": 5559666062
+   },
+   "c6568fc8805127e876c4c23551bf49fa": {
+    "status": "unsat",
+    "conflicts": 2240946,
+    "ticks": 6592628487
+   },
+   "0265448c232e3a25aa5bcd29b1b14567": {
+    "status": "unsat",
+    "conflicts": 2767642,
+    "ticks": 8089057019
+   },
+   "c5a98231dd54cbca06135293bb7e1985": {
+    "status": "sat",
+    "conflicts": 2775827,
+    "ticks": 8921607255
+   },
+   "3c6e1d1c4b8d3d08aa4c1df3805f4f7d": {
+    "status": "unsat",
+    "conflicts": 3506525,
+    "ticks": 11795852121
+   },
+   "12b4a08e412a3bffb513ca65639c7c69": {
+    "status": "sat",
+    "conflicts": 1230016,
+    "ticks": 2203219779
+   },
+   "72c0d81e16d91bcaed808efcde2e5069": {
+    "status": "sat",
+    "conflicts": 1614647,
+    "ticks": 2924526680
+   },
+   "b3167d999edd81291f33636464f2f8e6": {
+    "status": "sat",
+    "conflicts": 2064371,
+    "ticks": 3884053271
+   },
+   "30f0db845937bbda3ffde60e5ed4cb3f": {
+    "status": "sat",
+    "conflicts": 3167846,
+    "ticks": 6274699247
+   },
+   "50019e4419d48196bb4b95933a8b5030": {
+    "status": "sat",
+    "conflicts": 1134584,
+    "ticks": 1708097319
+   },
+   "b8c7c777e76995e5bf7b517f2db234ba": {
+    "status": "sat",
+    "conflicts": 1207648,
+    "ticks": 1815003740
+   },
+   "05c8e94aaee86390eaf6e68dd3ec3570": {
+    "status": "sat",
+    "conflicts": 4777402,
+    "ticks": 7029178818
+   },
+   "dd5fc8da5454a990a0e7999884158c64": {
+    "status": "unsat",
+    "conflicts": 945804,
+    "ticks": 2627091547
+   },
+   "7429e380834066c206394139c9e1e17d": {
+    "status": "sat",
+    "conflicts": 652222,
+    "ticks": 3341833913
+   },
+   "71a3dd6156463c0c55c4b38394faa753": {
+    "status": "sat",
+    "conflicts": 1463189,
+    "ticks": 7442449221
+   },
+   "8ffd718f763ed7a3f691cf46e57f8d98": {
+    "status": "sat",
+    "conflicts": 2272663,
+    "ticks": 5227500354
+   },
+   "c8e64404361f2426490d39459832c66a": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 1271921
+   },
+   "282a02a1743eb47c6b340e52ecce40a2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 5853463
+   },
+   "aceab5a3452e2901e645065bda3e8847": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 7823731
+   },
+   "0cace8a29a1d6b225a8da561d35e8f5a": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9793999
+   },
+   "26b648475cfd06695a17ac95f4469744": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 7144143
+   },
+   "210fe1c0ffefde5bcd03d59b1efa6984": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 8491479
+   },
+   "a14d9ee17051ec08a4334ba43089502c": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9369346
+   },
+   "c6e03256680b96b52e3345a497333c2b": {
+    "status": "unsat",
+    "conflicts": 3732869,
+    "ticks": 5922955967
+   },
+   "093fa3ff9f7bc9979c43f9d2310ac21d": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 11753893
+   },
+   "ec84eecb124c63d4757e083dd0e5a9ff": {
+    "status": "unsat",
+    "conflicts": 1718380,
+    "ticks": 2321940055
+   },
+   "2a53e9c6a25a50d753a94ead66065826": {
+    "status": "unsat",
+    "conflicts": 741764,
+    "ticks": 1749430616
+   },
+   "8e720686372c5037f30b4fc7b1c71d48": {
+    "status": "sat",
+    "conflicts": 38725,
+    "ticks": 230921551
+   },
+   "fb0e505b8bd19a34f1f80b8e020e7856": {
+    "status": "unsat",
+    "conflicts": 352045,
+    "ticks": 1762563379
+   },
+   "6add7e416c1126607afeb2666af330ac": {
+    "status": "unsat",
+    "conflicts": 861357,
+    "ticks": 2777297985
+   },
+   "fb51311320bb42bdb893249998a77f40": {
+    "status": "unsat",
+    "conflicts": 2153807,
+    "ticks": 4319352005
+   },
+   "543e67dd5abc272c37775b1b742a1d9a": {
+    "status": "sat",
+    "conflicts": 158935,
+    "ticks": 1313213713
+   },
+   "170b13af977e962321c493544b2bd0a9": {
+    "status": "sat",
+    "conflicts": 316866,
+    "ticks": 578955571
+   },
+   "6f7a0e1cf94b6b26eafc08a827a692ce": {
+    "status": "sat",
+    "conflicts": 511215,
+    "ticks": 1318920069
+   },
+   "7ac7fabd8c078aea420087a0c80e5563": {
+    "status": "sat",
+    "conflicts": 1626857,
+    "ticks": 1762483927
+   },
+   "e2deb375e56da2360ecd08fc1179fb7d": {
+    "status": "sat",
+    "conflicts": 2051075,
+    "ticks": 2553957212
+   },
+   "396fd56f3fd7b85afbba4254ea6e746c": {
+    "status": "sat",
+    "conflicts": 1887569,
+    "ticks": 4431086802
+   },
+   "511a2d81661a185c2115daec42270dec": {
+    "status": "sat",
+    "conflicts": 2581310,
+    "ticks": 5888217541
+   },
+   "0fa9521ff633b27be11525a7b0f7d8b6": {
+    "status": "sat",
+    "conflicts": 2481889,
+    "ticks": 7676963843
+   },
+   "e99e266b422513a2898c13898a1de501": {
+    "status": "sat",
+    "conflicts": 2989229,
+    "ticks": 6746010788
+   },
+   "2a15a30186afdad41a49c5c5366d01be": {
+    "status": "sat",
+    "conflicts": 31966,
+    "ticks": 167840730
+   },
+   "22b4cf412c811872d6ba5078106aeb6c": {
+    "status": "sat",
+    "conflicts": 232935,
+    "ticks": 1116476627
+   },
+   "bd8bc25be2b36c64b38459c17e815814": {
+    "status": "unsat",
+    "conflicts": 1104006,
+    "ticks": 1230933807
+   },
+   "eda4aa84aeeb306468396fa82a6bba5a": {
+    "status": "sat",
+    "conflicts": 72421,
+    "ticks": 748912140
+   },
+   "7f1c7da531539f3be4a1e0e916913086": {
+    "status": "unsat",
+    "conflicts": 2521517,
+    "ticks": 2957777652
+   },
+   "e481a97a93fd6b4303f39024d19c2867": {
+    "status": "sat",
+    "conflicts": 872564,
+    "ticks": 2773177016
+   },
+   "0d3fcbb89bfb8e821058ba3ea4284de1": {
+    "status": "sat",
+    "conflicts": 1163511,
+    "ticks": 3230573169
+   },
+   "32585e66749f42e161e94fc49fd64750": {
+    "status": "unsat",
+    "conflicts": 5595346,
+    "ticks": 5816902031
+   },
+   "e8abb9c83efdd96a99990f3b914ea873": {
+    "status": "unsat",
+    "conflicts": 8752,
+    "ticks": 969985565
+   },
+   "c21cea390a50204944aa00babd56b53c": {
+    "status": "unsat",
+    "conflicts": 13264,
+    "ticks": 1114856377
+   },
+   "02f6ca52f1ada872d82035088701b66a": {
+    "status": "unsat",
+    "conflicts": 11147,
+    "ticks": 1657422801
+   },
+   "573cc82ec61e01fd6e6308493ee56289": {
+    "status": "unsat",
+    "conflicts": 16986,
+    "ticks": 1531763716
+   },
+   "c03f7f84f6ac9e523c17e391c3895183": {
+    "status": "unsat",
+    "conflicts": 17500,
+    "ticks": 3004609930
+   },
+   "aaa3654cc92d80da84ecf5d18040c634": {
+    "status": "unsat",
+    "conflicts": 45945,
+    "ticks": 4148147729
+   },
+   "f50eaf02a8041510b64104998cc81d2f": {
+    "status": "sat",
+    "conflicts": 169679,
+    "ticks": 461249762
+   },
+   "aa39c6d885d283a085d033ab7b89f8c8": {
+    "status": "unsat",
+    "conflicts": 10255109,
+    "ticks": 6673663209
+   },
+   "b5028686db9bd1073fa09cbd8c805f47": {
+    "status": "unknown",
+    "conflicts": 1553589,
+    "ticks": 5876985775,
+    "budget_reached": true
+   },
+   "18c0eb461bda29214bd43b84199a3b61": {
+    "status": "unknown",
+    "conflicts": 10771025,
+    "ticks": 13409980273,
+    "budget_reached": true
+   },
+   "cdd131110acc861a5a01fae6c4936c91": {
+    "status": "unknown",
+    "conflicts": 306772,
+    "ticks": 7023963009,
+    "budget_reached": true
+   },
+   "768956cc8d1f2d18ae1929f6bb26557a": {
+    "status": "unknown",
+    "conflicts": 9605446,
+    "ticks": 13457726103,
+    "budget_reached": true
+   },
+   "1e3c3e8d349759b8b482a6f2721762c4": {
+    "status": "unknown",
+    "conflicts": 5919155,
+    "ticks": 12787807064,
+    "budget_reached": true
+   },
+   "c82eee3badbc8432dad72d1d575a0ea6": {
+    "status": "unknown",
+    "conflicts": 862722,
+    "ticks": 9589612015,
+    "budget_reached": true
+   },
+   "f18c7c7b8666458fd04ea7a253ae1e20": {
+    "status": "unknown",
+    "conflicts": 25813689,
+    "ticks": 13414107114,
+    "budget_reached": true
+   },
+   "09b61bbf19748094a7d896aac314ab36": {
+    "status": "unknown",
+    "conflicts": 5162345,
+    "ticks": 18215359148,
+    "budget_reached": true
+   },
+   "5e1c11b77cdf3717b81b957120f0f477": {
+    "status": "unknown",
+    "conflicts": 4994224,
+    "ticks": 17693767038,
+    "budget_reached": true
+   },
+   "47e1ada0070708c2953d322c06aea00d": {
+    "status": "unknown",
+    "conflicts": 7320959,
+    "ticks": 13449146527,
+    "budget_reached": true
+   },
+   "c73edc350cfa8e07af58db50054aea45": {
+    "status": "unknown",
+    "conflicts": 7547492,
+    "ticks": 14197295915,
+    "budget_reached": true
+   },
+   "ff9e9b01d50d01ecb6740472d7dd36cd": {
+    "status": "unknown",
+    "conflicts": 2181548,
+    "ticks": 10746947732,
+    "budget_reached": true
+   },
+   "f32bb347996c351bc3e9a91c58e8601d": {
+    "status": "unknown",
+    "conflicts": 2070164,
+    "ticks": 12199489878,
+    "budget_reached": true
+   },
+   "0bad2ce307bf5b68db26fa34e252c9d4": {
+    "status": "unknown",
+    "conflicts": 2175269,
+    "ticks": 11655704684,
+    "budget_reached": true
+   },
+   "d11944fbca2dd6540f18bd05b6ccda0c": {
+    "status": "unknown",
+    "conflicts": 6499141,
+    "ticks": 16951081183,
+    "budget_reached": true
+   },
+   "16c27d738cb45b766b8823ca4f428cf0": {
+    "status": "unknown",
+    "conflicts": 7425659,
+    "ticks": 14314577804,
+    "budget_reached": true
+   },
+   "1156429862d3c03160406d6d1a786f11": {
+    "status": "unknown",
+    "conflicts": 7060338,
+    "ticks": 6889831104,
+    "budget_reached": true
+   },
+   "f7e855b18105170b0718086d3f5b5923": {
+    "status": "unknown",
+    "conflicts": 3571598,
+    "ticks": 15830525284,
+    "budget_reached": true
+   },
+   "a08e66296d00f480e9ccadd79fa8b904": {
+    "status": "unknown",
+    "conflicts": 3914279,
+    "ticks": 12352179913,
+    "budget_reached": true
+   },
+   "b3f53d4c67b234d27e21f5e56bfd39e8": {
+    "status": "unknown",
+    "conflicts": 11748603,
+    "ticks": 14945721137,
+    "budget_reached": true
+   },
+   "556cf803f9de4b2ec688825b5ff7e325": {
+    "status": "unknown",
+    "conflicts": 39526766,
+    "ticks": 13445990779,
+    "budget_reached": true
+   },
+   "24bdfb34654b1aa703fae31ea91e7c7f": {
+    "status": "unknown",
+    "conflicts": 31681739,
+    "ticks": 13984000513,
+    "budget_reached": true
+   }
+  },
+  "heldout": {
+   "bd19da88800086971e554e9d66bc641d": {
+    "status": "unsat",
+    "conflicts": 3111412,
+    "ticks": 8439035315
+   },
+   "05ed64e4e6229f446082752936768489": {
+    "status": "unsat",
+    "conflicts": 4567095,
+    "ticks": 8798359231
+   },
+   "e84b00b1f134e0e071a2baf54cfc90e8": {
+    "status": "unsat",
+    "conflicts": 5622654,
+    "ticks": 8020856430
+   },
+   "0876c518e5653369e20fb1ee0bb8db40": {
+    "status": "sat",
+    "conflicts": 64149,
+    "ticks": 638341776
+   },
+   "9276ce38c625b2d00de247f8588f1542": {
+    "status": "sat",
+    "conflicts": 2217965,
+    "ticks": 5440076607
+   },
+   "6969c86fbc5814332ab8615031334fa8": {
+    "status": "sat",
+    "conflicts": 16875,
+    "ticks": 1678493611
+   },
+   "b8f5fc2425facb3aec52a665f32a500c": {
+    "status": "unsat",
+    "conflicts": 127187,
+    "ticks": 6764228556
+   },
+   "9dcbf221b8d2bb01f30bcca283f3608d": {
+    "status": "sat",
+    "conflicts": 230843,
+    "ticks": 1922750618
+   },
+   "f296fe701a562022c0de0cf565fbca7d": {
+    "status": "unsat",
+    "conflicts": 353471,
+    "ticks": 770056589
+   },
+   "475803537529d9d14a034957f48a6d38": {
+    "status": "unsat",
+    "conflicts": 584987,
+    "ticks": 1285577152
+   },
+   "edceb8782e72e290fa54757dbfdd0173": {
+    "status": "unsat",
+    "conflicts": 658730,
+    "ticks": 1481715661
+   },
+   "ded23680dfeab2879c05bc0e4de21126": {
+    "status": "unsat",
+    "conflicts": 722345,
+    "ticks": 1657201636
+   },
+   "13ae2628d8e113db1786dba41a65fe38": {
+    "status": "sat",
+    "conflicts": 752209,
+    "ticks": 1896881124
+   },
+   "915a25bd189357e4c6d7771b69a6849f": {
+    "status": "unsat",
+    "conflicts": 896641,
+    "ticks": 2193560796
+   },
+   "a45a0358685867bd4f1c7f7c0b0e379c": {
+    "status": "sat",
+    "conflicts": 1207563,
+    "ticks": 3270007936
+   },
+   "1507d9812624b3e0eaf15e40100be020": {
+    "status": "sat",
+    "conflicts": 1362362,
+    "ticks": 3813145157
+   },
+   "f376d4c191518ed704326960b6b19a4b": {
+    "status": "unsat",
+    "conflicts": 1729937,
+    "ticks": 4665032599
+   },
+   "e08f11f0a3bd266ee5c78ce332de107f": {
+    "status": "unsat",
+    "conflicts": 2000532,
+    "ticks": 5786335463
+   },
+   "c0e6e6eeebd48ca600cfc7d662fa804c": {
+    "status": "unsat",
+    "conflicts": 2337696,
+    "ticks": 6629391454
+   },
+   "df1bd67978b9b0ec1d326ba174bc273c": {
+    "status": "sat",
+    "conflicts": 2384725,
+    "ticks": 7251356146
+   },
+   "b7273af3d468ea2595f11a6dbd6ef6ce": {
+    "status": "unsat",
+    "conflicts": 2844597,
+    "ticks": 8896684498
+   },
+   "195852083a05edee1902233698eec14a": {
+    "status": "sat",
+    "conflicts": 3559935,
+    "ticks": 11936132777
+   },
+   "907e7dc703e16ad2c7e56a33fe3b3e5f": {
+    "status": "unsat",
+    "conflicts": 2001345,
+    "ticks": 3657821240
+   },
+   "773f3bd29e202ff700d8b5b459857a2c": {
+    "status": "sat",
+    "conflicts": 1239361,
+    "ticks": 2214278328
+   },
+   "eed5189b73738270ae3fdb8b33bf31c8": {
+    "status": "sat",
+    "conflicts": 2101972,
+    "ticks": 3868408627
+   },
+   "77b7f7bbf75faaee28f473b9941de103": {
+    "status": "sat",
+    "conflicts": 2460246,
+    "ticks": 4633080248
+   },
+   "d40a68825bdbcdd7642b249325a7b6a2": {
+    "status": "sat",
+    "conflicts": 3173194,
+    "ticks": 6297472759
+   },
+   "0d81711a3d73c828e8c6e12607eda82d": {
+    "status": "sat",
+    "conflicts": 1228313,
+    "ticks": 1825306445
+   },
+   "de7a6b03999e2bc5bd750831c2662a4d": {
+    "status": "sat",
+    "conflicts": 2023322,
+    "ticks": 3476322428
+   },
+   "6c52aca5b5fd284bf1940b84df90a367": {
+    "status": "unsat",
+    "conflicts": 947561,
+    "ticks": 2652251022
+   },
+   "4a8285a53f30b35016b0c85ea17ba155": {
+    "status": "unsat",
+    "conflicts": 1791548,
+    "ticks": 4805327392
+   },
+   "e067414e153ee98a7842bd6d6dafeee5": {
+    "status": "sat",
+    "conflicts": 771493,
+    "ticks": 4808633743
+   },
+   "04ded94454830d4ea960327e8b91f5a3": {
+    "status": "sat",
+    "conflicts": 1718121,
+    "ticks": 3085738704
+   },
+   "d1940d3d830eb16a7d2270ca4af4acba": {
+    "status": "sat",
+    "conflicts": 4036039,
+    "ticks": 8453500394
+   },
+   "65c5a5d228ec5e52d1a72f918086f584": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 2658129
+   },
+   "e85fb114c33f450dc2622c78bc6fa019": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 6838597
+   },
+   "812926407774771b3bd9885f7bfa4841": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 8808865
+   },
+   "d7dbb2cba940af33b2bce37ea99b8110": {
+    "status": "unsat",
+    "conflicts": 1365405,
+    "ticks": 1570002561
+   },
+   "88e89266e58f1f125ebc4e0f66e2c060": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 5250729
+   },
+   "c214f1eb2576af00e3fb09f7d0305764": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 7055796
+   },
+   "84c6d7e4a18aacf166105aaa3cd6e3de": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9449018
+   },
+   "e371cd7cdde3e7ccb9834290fd4a92d0": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9139629
+   },
+   "dd57f6ebf07a7f932a82bed1877788e6": {
+    "status": "unsat",
+    "conflicts": 2324136,
+    "ticks": 8902842577
+   },
+   "04e219c640ed59dc68ea2d50493de5b5": {
+    "status": "sat",
+    "conflicts": 2038365,
+    "ticks": 4134635886
+   },
+   "c76f3c6c2e2eae85fc5f3d499f3db88d": {
+    "status": "unsat",
+    "conflicts": 305691,
+    "ticks": 461130763
+   },
+   "b4b41b2ff14427e5715cb9bee06d4602": {
+    "status": "unsat",
+    "conflicts": 393040,
+    "ticks": 1544908518
+   },
+   "8530c911b75ab1b276042043d118a875": {
+    "status": "unsat",
+    "conflicts": 873904,
+    "ticks": 2703487284
+   },
+   "f8443057c188f6c9cfb711ff3d4aa6ff": {
+    "status": "unsat",
+    "conflicts": 305066,
+    "ticks": 1966759229
+   },
+   "70ef2b6bdc4101a0e35cf3d165571fe3": {
+    "status": "sat",
+    "conflicts": 62866,
+    "ticks": 421954362
+   },
+   "dc7817dfa2817916b266c1cfacd2ee66": {
+    "status": "unsat",
+    "conflicts": 3235375,
+    "ticks": 7821354589
+   },
+   "adf6dacdd64c93f9de1aa0eadf427faa": {
+    "status": "sat",
+    "conflicts": 388067,
+    "ticks": 724787680
+   },
+   "37ca184832fc6fa43a22ae900f1756a2": {
+    "status": "sat",
+    "conflicts": 1651420,
+    "ticks": 2084546764
+   },
+   "70bfbd054dc9ffd394fab32845b492d3": {
+    "status": "sat",
+    "conflicts": 1790097,
+    "ticks": 2004139960
+   },
+   "b68ae7866df5e852c3acb97a46da2faf": {
+    "status": "sat",
+    "conflicts": 1232454,
+    "ticks": 3807275192
+   },
+   "9e6c2e7b0d6f58e449716deb9305525a": {
+    "status": "sat",
+    "conflicts": 2268150,
+    "ticks": 5079552814
+   },
+   "c2bfe541b7cff948fa3193e9ca0eddee": {
+    "status": "sat",
+    "conflicts": 2164208,
+    "ticks": 4893701624
+   },
+   "3ed56242f55e3653dbceeb4a70221787": {
+    "status": "sat",
+    "conflicts": 1735748,
+    "ticks": 3250804424
+   },
+   "5411047bc24f4321f0e490e01e4a0910": {
+    "status": "unsat",
+    "conflicts": 368165,
+    "ticks": 2546985040
+   },
+   "1afa2d7a3d817c3149da432eece66da8": {
+    "status": "sat",
+    "conflicts": 2003,
+    "ticks": 114379234
+   },
+   "be6411f4784a3c879886dda807cdc607": {
+    "status": "sat",
+    "conflicts": 226323,
+    "ticks": 1071518241
+   },
+   "07e6413459f92b613498a719125b6239": {
+    "status": "unsat",
+    "conflicts": 281101,
+    "ticks": 1210802562
+   },
+   "43e492bccfd57029b758897b17d7f04f": {
+    "status": "sat",
+    "conflicts": 46678,
+    "ticks": 637783868
+   },
+   "83b330c934d6dd35d56e1b1ca3638b3c": {
+    "status": "sat",
+    "conflicts": 572238,
+    "ticks": 2792524208
+   },
+   "0ac6aaf6db6a0e4ec3a06e865d01086f": {
+    "status": "unsat",
+    "conflicts": 4678003,
+    "ticks": 5787036752
+   },
+   "5ea72bcdccc86bd1a924029f7b81aec5": {
+    "status": "sat",
+    "conflicts": 1432297,
+    "ticks": 4802173774
+   },
+   "878bcc11e1e243680f7946bcf428f465": {
+    "status": "unsat",
+    "conflicts": 10263,
+    "ticks": 715647354
+   },
+   "1e0da402100982e53001a64281149dd9": {
+    "status": "unsat",
+    "conflicts": 12873,
+    "ticks": 1198580692
+   },
+   "0d3160b80aa406bfc718c007265b9e73": {
+    "status": "unsat",
+    "conflicts": 10588,
+    "ticks": 1505056349
+   },
+   "f54b352934be08821aa75b3424112956": {
+    "status": "unsat",
+    "conflicts": 18892,
+    "ticks": 2003263550
+   },
+   "6008b958ff6877f32c26b72728df4523": {
+    "status": "unsat",
+    "conflicts": 13307,
+    "ticks": 3090377277
+   },
+   "c8b129b9e4835b8a40d5ef0d27a45bef": {
+    "status": "unsat",
+    "conflicts": 28293,
+    "ticks": 3074896671
+   },
+   "0f262afd5b117000f8b4734d175aadab": {
+    "status": "unsat",
+    "conflicts": 35646,
+    "ticks": 4370845764
+   },
+   "f054205a7cef98e5021016f864c69816": {
+    "status": "sat",
+    "conflicts": 232337,
+    "ticks": 981006579
+   },
+   "e6cdc2687fa53506021f05b60ad0c6a2": {
+    "status": "sat",
+    "conflicts": 803724,
+    "ticks": 1994148932
+   },
+   "fa5c6d6736a42650656c5bc018413254": {
+    "status": "unknown",
+    "conflicts": 20077850,
+    "ticks": 16809627488,
+    "budget_reached": true
+   },
+   "c5ae0ec49de0959cd14431ce851c14f8": {
+    "status": "unknown",
+    "conflicts": 3479503,
+    "ticks": 17282326690,
+    "budget_reached": true
+   },
+   "973d699ec01b88da869233a79aaa1912": {
+    "status": "unknown",
+    "conflicts": 12603916,
+    "ticks": 14111973680,
+    "budget_reached": true
+   },
+   "67c533489a498495525efee429340958": {
+    "status": "unknown",
+    "conflicts": 12759453,
+    "ticks": 14362664160,
+    "budget_reached": true
+   },
+   "bbfe2b27182d2ee7fefdb557f458ac9c": {
+    "status": "unknown",
+    "conflicts": 11698081,
+    "ticks": 13782884174,
+    "budget_reached": true
+   },
+   "cd33a862b81ba7b887845d3510c41c62": {
+    "status": "unknown",
+    "conflicts": 2605542,
+    "ticks": 21600102688,
+    "budget_reached": true
+   },
+   "26254890fa7107f85242ec9190da2a7a": {
+    "status": "unknown",
+    "conflicts": 4814696,
+    "ticks": 10683796825,
+    "budget_reached": true
+   },
+   "09c1b79b1cfe3522364fe60aef780703": {
+    "status": "unknown",
+    "conflicts": 5161548,
+    "ticks": 18010652546,
+    "budget_reached": true
+   },
+   "af05a6b68a1cff165b684d9ff0ae3b3b": {
+    "status": "unknown",
+    "conflicts": 5087249,
+    "ticks": 17991598388,
+    "budget_reached": true
+   },
+   "5865fb9a6575d2ae6542c36ab96646a9": {
+    "status": "unknown",
+    "conflicts": 5472462,
+    "ticks": 18333619291,
+    "budget_reached": true
+   },
+   "0a27eb7c16c1e69ff4d087d217ac89cb": {
+    "status": "unknown",
+    "conflicts": 8204005,
+    "ticks": 12992612205,
+    "budget_reached": true
+   },
+   "5690b9b0380aa9508699e56cae5918b5": {
+    "status": "unknown",
+    "conflicts": 4797674,
+    "ticks": 17326493230,
+    "budget_reached": true
+   },
+   "2b032f8a8976a302ad125eb50a3e8445": {
+    "status": "unknown",
+    "conflicts": 2165721,
+    "ticks": 9391667493,
+    "budget_reached": true
+   },
+   "be18894105e006399cc018abc14b204f": {
+    "status": "unknown",
+    "conflicts": 3167170,
+    "ticks": 14801078858,
+    "budget_reached": true
+   },
+   "a9cb77454c6cfdf4092fb304d3aae8b7": {
+    "status": "unknown",
+    "conflicts": 6747712,
+    "ticks": 16319727008,
+    "budget_reached": true
+   },
+   "c0293283432a9b15cd743702163f5184": {
+    "status": "unknown",
+    "conflicts": 3065146,
+    "ticks": 8921785688,
+    "budget_reached": true
+   },
+   "5e5fe73a2e0ffc8e19873298566919fb": {
+    "status": "unknown",
+    "conflicts": 6601360,
+    "ticks": 14342825022,
+    "budget_reached": true
+   },
+   "2dd4b14a8a820e7baa073554ae2c6cb0": {
+    "status": "unknown",
+    "conflicts": 6081656,
+    "ticks": 6436162071,
+    "budget_reached": true
+   },
+   "9e85aad5707405fb349c6c5548040cf4": {
+    "status": "unknown",
+    "conflicts": 3879456,
+    "ticks": 7778138489,
+    "budget_reached": true
+   },
+   "41f4cb4992a481c9d43e2e1a4e2349ac": {
+    "status": "unknown",
+    "conflicts": 6590312,
+    "ticks": 17236385489,
+    "budget_reached": true
+   },
+   "f746dae2050dd4aa48bcd53e8bd897b4": {
+    "status": "unknown",
+    "conflicts": 3750339,
+    "ticks": 12298519890,
+    "budget_reached": true
+   },
+   "07b476c83150d3cb7e08f5d045e255ab": {
+    "status": "unknown",
+    "conflicts": 40622486,
+    "ticks": 14943698930,
+    "budget_reached": true
+   },
+   "c69c5163c9087ffe770743bd4cdafcc9": {
+    "status": "unknown",
+    "conflicts": 30156498,
+    "ticks": 13538842267,
+    "budget_reached": true
+   }
+  }
+ }
+}

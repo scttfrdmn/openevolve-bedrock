@@ -215,3 +215,28 @@ def test_split_file_selects_its_own_stock_numbers(monkeypatch, tmp_path):
     assert len(ev.instance_sets()["train"]) == 74
     monkeypatch.setenv("KISSAT_EVAL_CAP", "77")
     assert ev.cap() == 77
+
+
+def test_frontier_rows_use_their_own_budget_and_stock_penalty(monkeypatch):
+    monkeypatch.setenv("KISSAT_EVAL_BUDGET", "3")
+    assert ev.conflict_budget({"conflicts": 5_000_000, "budget": 5_000_000}) == 5_000_000
+    stock = [{"status": "sat", "ticks": 100}, {"status": "unknown", "ticks": 1000, "budget_reached": True}]
+    # stock: 100 + 2 x its own 1000 at the budget
+    assert ev.tick_par2(stock, stock) == (100 + 2000) / 2
+    gained = [{"status": "sat", "ticks": 100}, {"status": "unsat", "ticks": 700}]
+    assert ev.tick_par2(gained, stock) == (100 + 700) / 2
+    lost = [{"status": "unknown", "ticks": 300}, {"status": "unknown", "ticks": 1000}]
+    assert ev.tick_par2(lost, stock) == (2 * 3 * 100 + 2000) / 2
+    wall_capped = [stock[0], {"status": "unknown", "ticks": 400, "budget_reached": False}]
+    assert ev.tick_par2(wall_capped, wall_capped) is None      # stock score undefined: frontier fallback
+
+
+def test_mixed_frontier_split_adds_reachable_stock_failures():
+    rows = [json.loads(l) for l in (EXAMPLE / "mixed_frontier_split.jsonl").read_text().splitlines()]
+    mixed = {json.loads(l)["hash"]: json.loads(l) for l in (EXAMPLE / "mixed_split.jsonl").read_text().splitlines()}
+    extra = [r for r in rows if r["hash"] not in mixed]
+    assert len(rows) == len({r["hash"] for r in rows}) == 193 and len(extra) == 45
+    assert all(r == mixed[r["hash"]] for r in rows if r["hash"] in mixed)
+    assert all(r["status"] == "unknown" and r["budget"] == r["conflicts"] and r["sc2024_best_s"] <= 300
+               for r in extra)
+    assert sorted(sum(r["split"] == s for r in extra) for s in ("train", "heldout")) == [22, 23]
