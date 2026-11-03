@@ -174,3 +174,17 @@ def test_repeat_penalty_requires_a_run_scoped_cache(monkeypatch, tmp_path):
     p.write_text(INITIAL)
     with pytest.raises(RuntimeError, match="KISSAT_EVAL_CACHE"):
         ev.cached(str(p), "train", 300, lambda: {"combined_score": 1.0})
+
+
+def test_detail_lists_per_instance_results(monkeypatch, tmp_path):
+    monkeypatch.setenv("KISSAT_EVAL_DETAIL", "1")
+    monkeypatch.setattr(ev, "baseline", lambda: {"cap": 300, "budget_factor": 3.0,
+                                                 "sets": {"stage1": {r["hash"]: {**r, "wall_s": r["wall_s"]}
+                                                                     for r in ev.instance_sets()["stage1"]}}})
+    monkeypatch.setattr(ev, "build", lambda prog, tmp: Path("/bin/true"))
+    monkeypatch.setattr(ev, "run_batch", lambda k, rows, cap: [
+        {"hash": r["hash"], "status": "sat", "ticks": 1, "conflicts": 1, "wall_s": 1.0, "wrong": False}
+        for r in rows])
+    m = ev.score(str(EXAMPLE / "initial_program.c"), "stage1", 300)
+    assert [d["hash"] for d in m["detail"]] == [r["hash"] for r in ev.instance_sets()["stage1"]]
+    assert set(m["detail"][0]) == {"hash", "status", "ticks", "conflicts", "wall_s"}

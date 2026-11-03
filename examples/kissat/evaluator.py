@@ -43,6 +43,8 @@ machine. Environment (all optional):
     KISSAT_EVAL_METRIC ticks (default) or time
     KISSAT_EVAL_BUDGET conflict budget as a multiple of stock's conflicts (default: 3)
     KISSAT_EVAL_CACHE  result cache dir (default: <home>/eval-cache); "off" disables
+    KISSAT_EVAL_DETAIL set to add per-instance results ("detail") to the metrics;
+                       for analysis, not for OpenEvolve runs
     KISSAT_EVAL_REPEATS  "reuse" (default): a repeat gets the stored score;
                        "penalize": a repeat scores 0, so copies of a good program
                        don't fill the population (issue #13). Needs a per-run
@@ -305,6 +307,9 @@ def score(program_path: str, set_name: str, time_cap: int) -> dict:
     }
     if wrong:
         metrics["error"] = f"wrong answer on {', '.join(h[:8] for h in wrong)}"
+    if os.environ.get("KISSAT_EVAL_DETAIL"):  # per-instance results, for analysis runs
+        metrics["detail"] = [{k: r[k] for k in ("hash", "status", "ticks", "conflicts", "wall_s")}
+                             for r in results]
     return metrics
 
 
