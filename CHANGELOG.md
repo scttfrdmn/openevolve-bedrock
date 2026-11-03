@@ -16,6 +16,11 @@ All notable changes to this project are documented here. The format follows
   from whichever derivation is active (#5).
 
 ### Added
+- `examples/kissat`: the system message tells the model that the programs shown
+  are already evaluated and asks for a different modification. Copies of the
+  best program in a 60-iteration run's final population fell from 19 to 2.
+  `KISSAT_EVAL_REPEATS=penalize` scores exact repeats 0; distinct programs rose
+  from 18 to 34 of ~45 (#13).
 - `examples/kissat`: results are cached by the candidate's C token sequence,
   ignoring comments and spacing (`KISSAT_EVAL_CACHE`). In a 60-iteration
   pool run, 30 of 59 evaluations were repeats answered from the cache, and

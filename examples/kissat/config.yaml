@@ -65,6 +65,11 @@ prompt:
     Do not add includes, macros, I/O or calls to exit/abort inside the block; such
     candidates are rejected before building. Prefer small, well-reasoned changes
     and explain the hypothesis behind each one.
+
+    The programs shown as top performers and inspirations have already been
+    evaluated, and copying one of their changes gains nothing: an identical
+    program scores no better than the one it copies. Build on the parent with a
+    modification that differs from every change shown, and say how it differs.
   num_top_programs: 3
 
 database:

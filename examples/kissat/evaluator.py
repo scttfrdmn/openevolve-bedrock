@@ -43,6 +43,12 @@ machine. Environment (all optional):
     KISSAT_EVAL_METRIC ticks (default) or time
     KISSAT_EVAL_BUDGET conflict budget as a multiple of stock's conflicts (default: 3)
     KISSAT_EVAL_CACHE  result cache dir (default: <home>/eval-cache); "off" disables
+    KISSAT_EVAL_REPEATS  "reuse" (default): a repeat gets the stored score;
+                       "penalize": a repeat scores 0, so copies of a good program
+                       don't fill the population (issue #13). Needs a per-run
+                       KISSAT_EVAL_CACHE: with the shared default, programs from
+                       earlier runs, the initial program included, would count
+                       as repeats
 
 Results are cached by the candidate's C token sequence (comments and spacing
 removed) plus everything that affects the score. Fitness is deterministic, so a
@@ -332,6 +338,10 @@ def cached(program_path: str, set_name: str, time_cap: int, compute) -> dict:
     """Return stored metrics for this program and set, or compute and store them.
     Concurrent callers with the same key wait for the first (one evaluation)."""
     where = os.environ.get("KISSAT_EVAL_CACHE", "")
+    penalize = os.environ.get("KISSAT_EVAL_REPEATS", "reuse") == "penalize"
+    if penalize and where in ("", "off"):
+        raise RuntimeError("KISSAT_EVAL_REPEATS=penalize needs KISSAT_EVAL_CACHE set to a "
+                           "directory for this run only")
     if where == "off":
         return compute()
     root = Path(where) if where else home() / "eval-cache"
@@ -341,7 +351,13 @@ def cached(program_path: str, set_name: str, time_cap: int, compute) -> dict:
     with open(root / f"{key}.lock", "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         if stored.is_file():
-            return {**json.loads(stored.read_text()), "cache_hit": 1.0}
+            metrics = {**json.loads(stored.read_text()), "cache_hit": 1.0}
+            if penalize:
+                return {"combined_score": 0.0, "cache_hit": 1.0, "repeat": 1.0,
+                        "repeat_of_score": metrics.get("combined_score"),
+                        "error": "repeat of an already evaluated program (same C tokens); "
+                                 "it scored %s" % metrics.get("combined_score")}
+            return metrics
         metrics = compute()
         # Pool infrastructure failures are not properties of the program.
         if not str(metrics.get("error", "")).startswith("pool task"):
