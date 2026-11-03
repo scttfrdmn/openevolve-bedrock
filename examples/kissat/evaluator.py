@@ -42,10 +42,18 @@ machine. Environment (all optional):
     KISSAT_EVAL_SPLIT  split to score (default: train)
     KISSAT_EVAL_METRIC ticks (default) or time
     KISSAT_EVAL_BUDGET conflict budget as a multiple of stock's conflicts (default: 3)
+    KISSAT_EVAL_CACHE  result cache dir (default: <home>/eval-cache); "off" disables
+
+Results are cached by the candidate's C token sequence (comments and spacing
+removed) plus everything that affects the score. Fitness is deterministic, so a
+repeat of an already-evaluated program, which evolution produces often, returns
+the stored metrics without building or running anything.
 """
 
 from __future__ import annotations
 
+import fcntl
+import hashlib
 import json
 import lzma
 import os
@@ -294,12 +302,62 @@ def score(program_path: str, set_name: str, time_cap: int) -> dict:
     return metrics
 
 
+# C tokens; comments are matched as tokens (and dropped) so a "//" inside a string
+# literal is not mistaken for one.
+_C_TOKEN = re.compile(
+    r"/\*.*?\*/|//[^\n]*|\"(?:\\.|[^\"\\\n])*\"|'(?:\\.|[^'\\\n])*'"
+    r"|[A-Za-z_]\w*|\.?\d(?:[\w.]|[eEpP][+-])*"
+    r"|<<=|>>=|->|\+\+|--|<<|>>|<=|>=|==|!=|&&|\|\||[-+*/%&|^]=|##|\S",
+    re.S,
+)
+
+
+def c_tokens(code: str) -> list:
+    return [t for t in _C_TOKEN.findall(code) if not t.startswith(("/*", "//"))]
+
+
+def cache_key(code: str, set_name: str, time_cap: int) -> str:
+    """Same key only for the same token sequence scored the same way."""
+    base = baseline()
+    material = {
+        "tokens": c_tokens(code), "set": set_name, "cap": time_cap, "metric": metric(),
+        "budget": budget_factor(),
+        "split": hashlib.sha256((HERE / "hamiltonian_split.jsonl").read_bytes()).hexdigest(),
+        "stock": hashlib.sha256(json.dumps(base["sets"].get(set_name), sort_keys=True).encode()).hexdigest(),
+    }
+    return hashlib.sha256(json.dumps(material, sort_keys=True).encode()).hexdigest()[:32]
+
+
+def cached(program_path: str, set_name: str, time_cap: int, compute) -> dict:
+    """Return stored metrics for this program and set, or compute and store them.
+    Concurrent callers with the same key wait for the first (one evaluation)."""
+    where = os.environ.get("KISSAT_EVAL_CACHE", "")
+    if where == "off":
+        return compute()
+    root = Path(where) if where else home() / "eval-cache"
+    root.mkdir(parents=True, exist_ok=True)
+    key = cache_key(Path(program_path).read_text(), set_name, time_cap)
+    stored = root / f"{key}.json"
+    with open(root / f"{key}.lock", "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if stored.is_file():
+            return {**json.loads(stored.read_text()), "cache_hit": 1.0}
+        metrics = compute()
+        # Pool infrastructure failures are not properties of the program.
+        if not str(metrics.get("error", "")).startswith("pool task"):
+            tmp = stored.with_suffix(".tmp")
+            tmp.write_text(json.dumps(metrics))
+            tmp.rename(stored)
+    return {**metrics, "cache_hit": 0.0}
+
+
 def evaluate_stage1(program_path: str) -> dict:
-    return score(program_path, "stage1", cap())
+    return cached(program_path, "stage1", cap(), lambda: score(program_path, "stage1", cap()))
 
 
 def evaluate_stage2(program_path: str) -> dict:
-    return score(program_path, os.environ.get("KISSAT_EVAL_SPLIT", "train"), cap())
+    set_name = os.environ.get("KISSAT_EVAL_SPLIT", "train")
+    return cached(program_path, set_name, cap(), lambda: score(program_path, set_name, cap()))
 
 
 def evaluate(program_path: str) -> dict:
