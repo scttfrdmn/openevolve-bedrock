@@ -60,7 +60,9 @@ def _fake_worker(monkeypatch, s3, state="completed", metrics=None, cost=0.04, wr
         if write_record:
             s3.put_object(rec_bucket, f"{rec_prefix}/{tid}/completion.json",
                           json.dumps({"task_id": tid, "state": state, "exit_code": 0 if state == "completed" else 1,
-                                      "cost_estimate": cost, "logs": f"s3://x/{tid}/command.log"}).encode())
+                                      "cost_estimate": cost, "logs": f"s3://x/{tid}/command.log",
+                                      "started_at": "2026-11-03T01:50:27Z", "ended_at": "2026-11-03T01:50:54Z",
+                                      "instance_type": "c8g.8xlarge"}).encode())
         if metrics is not None:
             out_bucket, out_prefix = pool_mod._split_s3(spec["outputs"][0]["destination"])
             s3.put_object(out_bucket, f"{out_prefix}/metrics.json", json.dumps(metrics).encode())
@@ -117,6 +119,9 @@ def test_evaluate_round_trip_and_ledger(env, tmp_path, monkeypatch):
     rec = list(led.read(env / "ledger.jsonl"))[0]
     assert rec["kind"] == "eval" and rec["state"] == "completed" and rec["cost_usd"] == 0.04
     assert rec["task_id"] == spec["task_id"]
+    assert rec["run_s"] == 27.0 and rec["instance_type"] == "c8g.8xlarge"
+    assert rec["started_at"] == 1793670627.0 and rec["ended_at"] == 1793670654.0
+    assert rec["wait_s"] == pytest.approx(rec["started_at"] - rec["submitted_at"], abs=1e-3)
 
 
 def test_failed_task_scores_zero_with_reason(env, tmp_path, monkeypatch):
@@ -137,7 +142,8 @@ def test_no_record_times_out(env, tmp_path, monkeypatch):
     monkeypatch.setattr(pool_mod.time, "monotonic", lambda: next(clock))
     m = _pool(s3, timeout_s=100).evaluate("s3://bkt/oe/b.tgz", str(prog), ["true"])
     assert m["combined_score"] == 0.0 and "no completion record" in m["error"]
-    assert list(led.read(env / "ledger.jsonl"))[0]["state"] == "timeout"
+    rec = list(led.read(env / "ledger.jsonl"))[0]
+    assert rec["state"] == "timeout" and rec["run_s"] is None and rec["wait_s"] is None
 
 
 def test_submit_failure_raises(env, tmp_path, monkeypatch):

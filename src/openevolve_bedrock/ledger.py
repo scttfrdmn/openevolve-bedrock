@@ -21,8 +21,12 @@ Record fields:
 
 Evaluations run remotely (``pool.py``) add lines with ``kind: "eval"``:
     ts, kind, backend ("spawn-pool"), run_id, task_id, state, exit_code,
-    eval_s (wall seconds from submit to result), cost_usd (spawn's
-    ``cost_estimate`` for the task, if it had one), retry_class.
+    eval_s (wall seconds from submit to result, so including queue time),
+    cost_usd (spawn's ``cost_estimate`` for the task, if it had one), retry_class,
+    instance_type, submitted_at (epoch, local clock), started_at / ended_at (epoch,
+    from the task's completion record: when it ran on a worker), run_s
+    (ended - started: worker time) and wait_s (started - submitted: time queued,
+    subject to clock skew between this machine and the worker).
 LLM-call lines have no ``kind``.
 """
 
@@ -175,6 +179,7 @@ class CostSummary:
     eval_usd: float = 0.0
     eval_s: float = 0.0
     evals_unpriced: int = 0
+    eval_run_s: float = 0.0
 
 
 def summarize(
@@ -188,13 +193,14 @@ def summarize(
     calls = 0
     in_t = out_t = cr_t = cw_t = thr = 0
     evals = evals_unpriced = 0
-    eval_usd = eval_s = 0.0
+    eval_usd = eval_s = eval_run_s = 0.0
     for rec in records:
         if until_ts is not None and float(rec.get("ts", 0)) > until_ts:
             continue
         if rec.get("kind") == "eval":
             evals += 1
             eval_s += float(rec.get("eval_s") or 0.0)
+            eval_run_s += float(rec.get("run_s") or 0.0)
             if rec.get("cost_usd") is None:
                 evals_unpriced += 1
             else:
@@ -238,6 +244,7 @@ def summarize(
         eval_usd=eval_usd,
         eval_s=eval_s,
         evals_unpriced=evals_unpriced,
+        eval_run_s=eval_run_s,
     )
 
 

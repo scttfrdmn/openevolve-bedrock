@@ -270,7 +270,7 @@ def test_eval_records_are_summed_apart_from_llm_calls(tmp_path, capsys):
     model = "anthropic.claude-haiku-4-5-20251001-v1:0"
     recs = [_rec(model, 1000, 100, ts=10.0),
             {"ts": 11.0, "kind": "eval", "backend": "spawn-pool", "task_id": "a",
-             "state": "completed", "eval_s": 120.0, "cost_usd": 0.05},
+             "state": "completed", "eval_s": 120.0, "cost_usd": 0.05, "run_s": 100.0},
             {"ts": 12.0, "kind": "eval", "backend": "spawn-pool", "task_id": "b",
              "state": "failed", "eval_s": 30.0, "cost_usd": None},
             {"ts": 13.0, "kind": "something-new"}]
@@ -282,7 +282,8 @@ def test_eval_records_are_summed_apart_from_llm_calls(tmp_path, capsys):
     _write(tmp_path / "bedrock_ledger.jsonl", recs)
     assert cli_main(["cost", str(tmp_path), "--pricing", str(_pricing(tmp_path)), "--json"]) == 0
     out = json.loads(capsys.readouterr().out)
-    assert out["evals"] == {"count": 2, "usd": 0.05, "seconds": 150.0, "unpriced": 1}
+    assert out["evals"] == {"count": 2, "usd": 0.05, "seconds": 150.0, "worker_seconds": 100.0,
+                            "unpriced": 1}
     assert out["usd_with_evals"] == pytest.approx(out["usd"] + 0.05)
 
 
