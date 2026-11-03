@@ -244,7 +244,7 @@ def cmd_cost(args: argparse.Namespace) -> int:
             "throttled": s.throttled,
             "by_model": {k: {**v, "usd": round(v["usd"], 6)} for k, v in s.by_model.items()},
             "evals": {"count": s.evals, "usd": round(s.eval_usd, 6), "seconds": round(s.eval_s, 1),
-                      "unpriced": s.evals_unpriced},
+                      "worker_seconds": round(s.eval_run_s, 1), "unpriced": s.evals_unpriced},
             "usd_with_evals": round(s.total_usd + s.eval_usd, 6),
             "unpriced_models": s.unpriced_models,
             "threshold": None if hit is None else {
@@ -273,7 +273,8 @@ def cmd_cost(args: argparse.Namespace) -> int:
         _p("unpriced models (add to pricing.yaml): " + ", ".join(s.unpriced_models))
     if s.evals:
         unpriced = f", {s.evals_unpriced} without a cost estimate" if s.evals_unpriced else ""
-        _p(f"remote evaluations: {s.evals}, {s.eval_s / 3600:.2f} h, ${s.eval_usd:.4f}{unpriced}")
+        _p(f"remote evaluations: {s.evals}, {s.eval_run_s / 3600:.2f} worker-h "
+           f"({s.eval_s / 3600:.2f} h submit-to-result), ${s.eval_usd:.4f}{unpriced}")
         _p(f"LLM + evaluations: ${s.total_usd + s.eval_usd:.4f}")
     return 0
 

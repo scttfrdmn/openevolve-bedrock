@@ -92,6 +92,18 @@ def _bundle_bytes(directory: Path, exclude: Iterable[str] = EXCLUDE) -> bytes:
     return buf.getvalue()
 
 
+def _epoch(stamp: Optional[str]) -> Optional[float]:
+    """Epoch seconds from spawn's ``2026-11-03T01:50:27Z`` timestamps, or None."""
+    if not stamp:
+        return None
+    from datetime import datetime, timezone
+
+    try:
+        return datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).timestamp()
+    except ValueError:
+        return None
+
+
 class SpawnPool:
     def __init__(self, run_id: Optional[str] = None, staging: Optional[str] = None,
                  region: Optional[str] = None, profile: Optional[str] = None,
@@ -211,6 +223,7 @@ class SpawnPool:
         self.s3.upload_file(str(program_path), self.bucket, self._key("candidates", task_id, name))
         spec = self.task_spec(task_id, bundle_uri, name, argv, env, gpus, container)
         t0 = time.monotonic()
+        submitted = time.time()
         self._submit(spec)
         record_key = self._key("records", task_id, "completion.json")
         record = None
@@ -221,11 +234,19 @@ class SpawnPool:
             time.sleep(self.poll_s)
         eval_s = time.monotonic() - t0
         state = (record or {}).get("state", "timeout")
+        started = _epoch((record or {}).get("started_at"))
+        ended = _epoch((record or {}).get("ended_at"))
         _ledger.append({
             "ts": time.time(), "kind": "eval", "backend": "spawn-pool", "run_id": self.run_id,
             "task_id": task_id, "state": state, "exit_code": (record or {}).get("exit_code"),
             "eval_s": round(eval_s, 3), "cost_usd": (record or {}).get("cost_estimate"),
             "retry_class": (record or {}).get("retry_class"),
+            "instance_type": (record or {}).get("instance_type"),
+            "submitted_at": round(submitted, 3), "started_at": started, "ended_at": ended,
+            # run_s: on the worker (spawn's timestamps, whole seconds); wait_s: queued
+            # before a worker took it (local clock vs spawn's, so +/- clock skew)
+            "run_s": ended - started if started is not None and ended is not None else None,
+            "wait_s": round(started - submitted, 3) if started is not None else None,
         })
         if record is None:
             return {"combined_score": 0.0,
