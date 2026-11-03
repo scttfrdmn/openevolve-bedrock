@@ -39,7 +39,7 @@ is by environment, as for the rest of this package:
     OE_BEDROCK_POOL_STAGING  s3://bucket/prefix the workers can read and write (required)
     OE_BEDROCK_POOL_REGION   region of the pool (default: OE_BEDROCK_REGION / AWS_REGION)
     OE_BEDROCK_POOL_TIMEOUT  seconds to wait for one evaluation (default 3600)
-    OE_BEDROCK_POOL_POLL     seconds between completion checks (default 10)
+    OE_BEDROCK_POOL_POLL     seconds between completion checks (default 3; one S3 GET each)
     OE_BEDROCK_PROFILE       boto3 / spawn profile (else AWS_PROFILE)
 """
 
@@ -119,7 +119,7 @@ class SpawnPool:
                        or os.environ.get("OE_BEDROCK_REGION") or os.environ.get("AWS_REGION"))
         self.profile = profile or os.environ.get("OE_BEDROCK_PROFILE") or os.environ.get("AWS_PROFILE")
         self.timeout_s = float(timeout_s or os.environ.get("OE_BEDROCK_POOL_TIMEOUT", 3600))
-        self.poll_s = float(poll_s or os.environ.get("OE_BEDROCK_POOL_POLL", 10))
+        self.poll_s = float(poll_s or os.environ.get("OE_BEDROCK_POOL_POLL", 3))
         self._s3 = s3
         self._bundles: Dict[str, str] = {}
 

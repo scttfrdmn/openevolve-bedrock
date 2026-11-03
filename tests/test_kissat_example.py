@@ -98,7 +98,8 @@ def test_split_is_stratified_and_disjoint():
 
 
 @pytest.mark.skipif(not (ev.home() / "baseline.json").is_file(), reason="run examples/kissat/prepare.py")
-def test_stage1_scores_stock_and_rejects_a_wrong_policy(tmp_path):
+def test_stage1_scores_stock_and_rejects_a_wrong_policy(tmp_path, monkeypatch):
+    monkeypatch.setenv("KISSAT_EVAL_CACHE", "off")      # really build and run
     stock = ev.evaluate_stage1(str(EXAMPLE / "initial_program.c"))
     assert stock["wrong_answers"] == 0 and stock["solved"] == ev.STAGE1_INSTANCES
     assert stock["tick_score"] == 1.0              # deterministic: stock equals its baseline
@@ -106,3 +107,48 @@ def test_stage1_scores_stock_and_rejects_a_wrong_policy(tmp_path):
     broken = tmp_path / "broken.c"
     broken.write_text(_with_block("\nbool kissat_restarting (kissat *solver) { return }\n"))
     assert ev.evaluate_stage1(str(broken))["error"].startswith("build failed")
+
+
+def test_tokens_ignore_comments_and_spacing_but_not_code():
+    a = 'if (x>1){ return a+=2; } /* c */ // d\nchar*s="// kept";'
+    b = 'if ( x > 1 ) {\n  return a += 2;  }\nchar *s = "// kept";'
+    assert ev.c_tokens(a) == ev.c_tokens(b)
+    assert ev.c_tokens(a) != ev.c_tokens(a.replace("a+=2", "a+=3"))
+    assert ev.c_tokens(a) != ev.c_tokens(a.replace("a+=2", "a=+2"))       # '+=' vs '=' '+'
+    assert '"// kept"' in ev.c_tokens(a)                                   # not a comment
+
+
+def _cache_env(monkeypatch, tmp_path):
+    monkeypatch.setenv("KISSAT_EVAL_CACHE", str(tmp_path / "cache"))
+    monkeypatch.setattr(ev, "baseline", lambda: {"sets": {"train": {"h": {"ticks": 1}}}})
+
+
+def test_cache_returns_stored_metrics_for_a_repeat(monkeypatch, tmp_path):
+    _cache_env(monkeypatch, tmp_path)
+    p1, p2 = tmp_path / "a.c", tmp_path / "b.c"
+    p1.write_text(INITIAL)
+    p2.write_text(INITIAL.replace("bool kissat_restarting (kissat *solver) {",
+                                  "/* same code */ bool kissat_restarting(kissat*solver){"))
+    calls = []
+    compute = lambda: calls.append(1) or {"combined_score": 1.25}
+    assert ev.cached(str(p1), "train", 300, compute) == {"combined_score": 1.25, "cache_hit": 0.0}
+    assert ev.cached(str(p2), "train", 300, compute) == {"combined_score": 1.25, "cache_hit": 1.0}
+    assert calls == [1]
+    ev.cached(str(p1), "stage1", 300, compute)                   # another set: another key
+    ev.cached(str(p1), "train", 600, compute)                    # another cap: another key
+    assert len(calls) == 3
+
+
+def test_cache_skips_pool_failures_and_can_be_disabled(monkeypatch, tmp_path):
+    _cache_env(monkeypatch, tmp_path)
+    p = tmp_path / "a.c"
+    p.write_text(INITIAL)
+    calls = []
+    fail = lambda: calls.append(1) or {"combined_score": 0.0, "error": "pool task x failed (spot)"}
+    ev.cached(str(p), "train", 300, fail)
+    ev.cached(str(p), "train", 300, fail)
+    assert len(calls) == 2                                        # not a property of the program
+    monkeypatch.setenv("KISSAT_EVAL_CACHE", "off")
+    ok = lambda: calls.append(1) or {"combined_score": 1.0}
+    assert ev.cached(str(p), "train", 300, ok) == {"combined_score": 1.0}
+    assert len(calls) == 3

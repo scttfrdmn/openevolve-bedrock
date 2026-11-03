@@ -123,7 +123,12 @@ spawn pool drain --run-id kissat-1
 oe-bedrock cost openevolve_output/ --pricing pricing.yaml   # LLM $ and evaluation $ separately
 ```
 
-- Set `parallel_evaluations` to the number of workers.
+- Set `parallel_evaluations` to about 2× the number of workers. The extra
+  iterations make their model calls while others are being evaluated, and the
+  pool's queue holds them until a worker is free.
+- Results are cached by the candidate's C token sequence (`KISSAT_EVAL_CACHE`;
+  comments and spacing ignored). Evolution repeats programs often and tick
+  fitness is deterministic, so a repeat is answered locally without a pool task.
 - `--visibility-timeout` must exceed one evaluation, or SQS hands it to a second
   worker.
 - One stage-2 evaluation runs 24 instances in parallel, so use a worker type with
@@ -131,6 +136,19 @@ oe-bedrock cost openevolve_output/ --pricing pricing.yaml   # LLM $ and evaluati
 - Each evaluation's cost is spawn's `cost_estimate` for the task, recorded in the
   ledger as a `kind: "eval"` line. Worker idle and boot time isn't attributed to
   any task.
+
+Measured 2026-11-02, 4× c8g.8xlarge, Kissat restart policy, seed 42 (issue #1):
+
+| run | wall per iteration | pool $ per iteration | pool tasks / iteration |
+|---|---|---|---|
+| this Mac, one evaluation at a time (20 iterations) | 117 s | – | – |
+| pool, 4 in flight (20 iterations) | 45.5 s | 0.070 | 1.45 |
+| pool, 8 in flight (20 iterations) | 39.2 s | 0.062 | 1.40 |
+| pool, 8 in flight, cache, 3 s poll (60 iterations) | **14.8 s** | **0.022** | **0.62** |
+
+In the last run, 30 of 59 evaluations came from the cache. The run still ends
+on a ~4 min tail, about one stage-2 evaluation running alone after the last
+model call, so short runs pay it in full.
 
 Measured 2026-10-29 on c8g.8xlarge ($1.276/h):
 - Stock Kissat scored `tick_score` exactly 1.0 on both stages against the Mac-measured
