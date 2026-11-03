@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Changed
+- `OE_BEDROCK_POOL_POLL` defaults to 3 s (was 10): the median time from a
+  task ending to its result being seen fell from 6.8 s to 3.1 s.
 - The per-iteration reseed of the model sampler is skipped on OpenEvolve
   0.4.1 and later, which reseeds per iteration itself (`LLMEnsemble.reseed`,
   upstream #559). On 0.4.1 ours was overridden anyway, and the spawn test,
@@ -14,6 +16,10 @@ All notable changes to this project are documented here. The format follows
   from whichever derivation is active (#5).
 
 ### Added
+- `examples/kissat`: results are cached by the candidate's C token sequence,
+  ignoring comments and spacing (`KISSAT_EVAL_CACHE`). In a 60-iteration
+  pool run, 30 of 59 evaluations were repeats answered from the cache, and
+  wall time per iteration fell from 39.2 s to 14.8 s.
 - Pool evaluation ledger lines record when each task ran: `started_at` /
   `ended_at` from spawn's completion record, `run_s` (time on the worker),
   `wait_s` (time queued), `submitted_at` and `instance_type`. `eval_s`
