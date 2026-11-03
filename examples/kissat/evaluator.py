@@ -4,7 +4,8 @@
 Evaluator for evolving Kissat's restart policy (issue #13).
 
 A candidate is a complete ``src/restart.c``. The evaluator builds Kissat with
-it and runs the training instances of ``hamiltonian_split.jsonl``, each with a
+it and runs the training instances of the split file (``KISSAT_EVAL_SPLIT_FILE``,
+default ``hamiltonian_split.jsonl``), each with a
 conflict budget (``KISSAT_EVAL_BUDGET`` x stock's conflicts there, default 3x)
 and a wall-time safety cap. The score is relative to stock Kissat:
 
@@ -38,7 +39,11 @@ machine. Environment (all optional):
 
     KISSAT_EVAL_HOME   cache dir from prepare.py (default: examples/kissat/.cache)
     KISSAT_EVAL_JOBS   instances run in parallel (default: CPU count)
-    KISSAT_EVAL_CAP    per-instance time cap, seconds (default: 300)
+    KISSAT_EVAL_CAP    per-instance time cap, seconds (default: the committed stock
+                       file's cap, else 300)
+    KISSAT_EVAL_SPLIT_FILE  instance list (default: hamiltonian_split.jsonl; also
+                       mixed_split.jsonl). Its committed stock numbers are
+                       stock_ticks.json for the default, else <stem>.stock_ticks.json
     KISSAT_EVAL_SPLIT  split to score (default: train)
     KISSAT_EVAL_METRIC ticks (default) or time
     KISSAT_EVAL_BUDGET conflict budget as a multiple of stock's conflicts (default: 3)
@@ -91,8 +96,29 @@ def home() -> Path:
     return Path(os.environ.get("KISSAT_EVAL_HOME", HERE / ".cache"))
 
 
+DEFAULT_SPLIT_FILE = "hamiltonian_split.jsonl"
+
+
+def split_file() -> Path:
+    return HERE / os.environ.get("KISSAT_EVAL_SPLIT_FILE", DEFAULT_SPLIT_FILE)
+
+
+def stock_ticks_file() -> Path:
+    f = split_file()
+    return HERE / "stock_ticks.json" if f == HERE / DEFAULT_SPLIT_FILE else f.with_suffix(".stock_ticks.json")
+
+
+def baseline_file() -> Path:
+    f = split_file()
+    return home() / ("baseline.json" if f == HERE / DEFAULT_SPLIT_FILE else f"baseline-{f.stem}.json")
+
+
 def cap() -> int:
-    return int(os.environ.get("KISSAT_EVAL_CAP", "300"))
+    if "KISSAT_EVAL_CAP" in os.environ:
+        return int(os.environ["KISSAT_EVAL_CAP"])
+    if stock_ticks_file().is_file():
+        return int(json.loads(stock_ticks_file().read_text())["cap"])
+    return 300
 
 
 def metric() -> str:
@@ -112,7 +138,7 @@ def conflict_budget(row: dict) -> int:
 
 
 def load_split(name: str) -> list:
-    rows = [json.loads(l) for l in open(HERE / "hamiltonian_split.jsonl") if l.strip()]
+    rows = [json.loads(l) for l in open(split_file()) if l.strip()]
     return [r for r in rows if r["split"] == name]
 
 
@@ -127,7 +153,7 @@ def instance_sets() -> dict:
         "stage1": sorted(train, key=lambda r: r["wall_s"])[:STAGE1_INSTANCES],
         "train": train,
         "heldout": load_split("heldout"),
-        "frontier": load_split("frontier"),
+        **({"frontier": frontier} if (frontier := load_split("frontier")) else {}),
     }
 
 
@@ -230,22 +256,20 @@ def tick_par2(results: list, stock: list) -> float | None:
     return total / len(results)
 
 
-STOCK_TICKS = HERE / "stock_ticks.json"
-
-
 def baseline() -> dict:
     """Stock Kissat's numbers per instance set.
 
-    ``baseline.json`` from prepare.py, measured on this machine, if present.
-    Otherwise, in ticks mode, the committed ``stock_ticks.json``: ticks and
+    ``baseline.json`` (``baseline-<split stem>.json`` for another split file)
+    from prepare.py, measured on this machine, if present. Otherwise, in ticks
+    mode, the committed ``stock_ticks.json`` (``<stem>.stock_ticks.json``): ticks and
     conflicts are deterministic and machine-independent, so stock's are shipped
     with the example. It has no wall times, so ``time_score`` is then None.
     """
-    path = home() / "baseline.json"
+    path = baseline_file()
     if path.is_file():
         return json.loads(path.read_text())
-    if metric() == "ticks" and STOCK_TICKS.is_file():
-        return json.loads(STOCK_TICKS.read_text())
+    if metric() == "ticks" and stock_ticks_file().is_file():
+        return json.loads(stock_ticks_file().read_text())
     raise RuntimeError(f"no stock baseline at {path}; run examples/kissat/prepare.py")
 
 
@@ -262,7 +286,7 @@ def score(program_path: str, set_name: str, time_cap: int) -> dict:
         return {"combined_score": 0.0, "error": reason}
     base = baseline()
     if base["cap"] != time_cap or set_name not in base["sets"]:
-        raise RuntimeError(f"baseline.json has no {set_name!r} set at cap {time_cap} s; "
+        raise RuntimeError(f"stock baseline for {split_file().name} has no {set_name!r} set at cap {time_cap} s; "
                            "re-run examples/kissat/prepare.py")
     if base.get("budget_factor") != budget_factor():
         raise RuntimeError(f"baseline.json was measured with conflict budget "
@@ -333,7 +357,7 @@ def cache_key(code: str, set_name: str, time_cap: int) -> str:
     material = {
         "tokens": c_tokens(code), "set": set_name, "cap": time_cap, "metric": metric(),
         "budget": budget_factor(),
-        "split": hashlib.sha256((HERE / "hamiltonian_split.jsonl").read_bytes()).hexdigest(),
+        "split": hashlib.sha256(split_file().read_bytes()).hexdigest(),
         "stock": hashlib.sha256(json.dumps(base["sets"].get(set_name), sort_keys=True).encode()).hexdigest(),
     }
     return hashlib.sha256(json.dumps(material, sort_keys=True).encode()).hexdigest()[:32]

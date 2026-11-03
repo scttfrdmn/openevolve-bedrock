@@ -16,6 +16,14 @@ All notable changes to this project are documented here. The format follows
   from whichever derivation is active (#5).
 
 ### Added
+- `examples/kissat`: `KISSAT_EVAL_SPLIT_FILE` selects the instance list, and
+  `mixed_split.jsonl` is a second one: 148 main-track instances from 32
+  families (83 SAT / 65 UNSAT) that stock solves in 10–200 s, halved into
+  train and heldout by family and answer. Its stock numbers are in
+  `mixed_split.stock_ticks.json` (cap 1200 s). `prepare.py --stock-ticks`
+  writes that file, and `remote.py baseline:SET` measures it on a pool worker.
+  On it, none of six restart policies that did well on Hamiltonian is
+  distinguishable from stock (#13).
 - `examples/kissat`: the system message tells the model that the programs shown
   are already evaluated and asks for a different modification. Copies of the
   best program in a 60-iteration run's final population fell from 19 to 2.

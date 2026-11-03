@@ -18,6 +18,7 @@ wrote the candidate.
 | `evaluator_pool.py` | the same evaluation, run on a spore.host `spawn pool` worker (issue #1) |
 | `remote.py` | worker entry point for `evaluator_pool.py` |
 | `stock_ticks.json` | stock Kissat's conflicts and ticks per instance set (machine-independent), used when no local `baseline.json` exists |
+| `mixed_split.jsonl`, `mixed_split.stock_ticks.json` | a second instance list, 148 instances from 32 families, and its stock numbers (`KISSAT_EVAL_SPLIT_FILE=mixed_split.jsonl`) |
 | `LICENSE.kissat` | Kissat's MIT licence, which covers `initial_program.c` |
 
 ## Instances and split
@@ -39,6 +40,39 @@ Within each answer class the solved instances are sorted by stock runtime and
 evenly spaced ones are held out, so `train` and `heldout` have the same SAT share
 and runtime range. The unsolved instances are all SAT, so they form their own set.
 
+### Mixed split
+
+`mixed_split.jsonl` is every main-track instance stock Kissat solved in 10–200 s
+in the same calibration: 148 instances from 32 families, 83 SAT and 65 UNSAT
+(3.3 CPU-hours for stock). Within each family and answer class, instances sorted
+by stock runtime alternate between `train` (74) and `heldout` (74). The 200 s
+limit and the 1200 s cap keep a candidate at the 3x conflict budget clear of the
+wall cap. 12 `miter` instances are 170–350 MB compressed and need up to 15 GB
+of memory, so on a pool use a memory-optimised type (r8g.8xlarge, 256 GB). Stock
+measured on one worker in 13–16 min per half; its conflicts matched the
+calibration on all 148.
+
+Six policies that did well on the Hamiltonian split, on both halves (issue #13).
+"geomean" is the geometric mean of stock ticks / candidate ticks per instance,
+with an unsolved instance at the fixed penalty; the interval is a 95% bootstrap
+over instances.
+
+| policy | tick-PAR-2 score train / heldout | geomean train | geomean heldout | solved train / heldout |
+|---|---|---|---|---|
+| `restartmargin` 15 | 0.84 / 0.82 | 1.04 (0.90–1.20) | 1.04 (0.86–1.23) | 71 / 68 |
+| `restartmargin` 20 | 0.78 / 0.76 | 0.99 (0.83–1.18) | 1.08 (0.92–1.25) | 67 / 72 |
+| `restartmargin` 30 | 0.71 / 0.63 | 1.00 (0.80–1.27) | 0.99 (0.79–1.29) | 66 / 67 |
+| focused restart interval log term × 1.5 | 0.67 / 0.96 | 0.87 (0.73–1.03) | 1.16 (0.97–1.39) | 66 / 71 |
+| evolved, 1.2425 on Hamiltonian | 0.74 / 0.66 | 0.97 (0.82–1.14) | 0.91 (0.76–1.08) | 70 / 66 |
+| evolved, 0.917 on Hamiltonian | 0.68 / 0.73 | 0.90 (0.74–1.08) | 1.02 (0.86–1.20) | 66 / 69 |
+
+None is distinguishable from stock: every interval contains 1. The tick-PAR-2
+score is below 1 for all six because the set is defined by stock solving it, so a
+change can only lose instances. Each one lost (2–8 of 74 here) costs 6× stock's
+ticks on it, which outweighs gains elsewhere. Effects differ by family. On its 29
+Hamiltonian instances `restartmargin` 30 has geomean 1.56 (1.01–2.75), but on
+`software-verification` it has 0.71, and on `heule-nol` 0.50.
+
 ## Fitness
 
 Each instance runs with a conflict budget of 3× stock's conflicts on it (from the
@@ -49,7 +83,8 @@ Graviton calibration), plus a 300 s wall-time safety cap.
 
 A score above 1 is better than stock. Tick-PAR-2 is the mean of Kissat's
 `search_ticks` (its deterministic effort counter) per instance; an instance not
-solved within its budget counts twice the ticks it used. For a given binary it is
+solved within its budget counts a fixed 2 × budget × stock's ticks on it (6× at
+the default budget). For a given binary it is
 the same on every run and every machine. Three runs of one instance gave
 163,375 conflicts and 388,314,498 ticks each time, and Graviton4 recorded the same
 conflict count.
@@ -96,7 +131,8 @@ KISSAT_EVAL_SPLIT=heldout python -c "import sys; sys.path.insert(0, 'examples/ki
 |---|---|---|
 | `KISSAT_EVAL_HOME` | `examples/kissat/.cache` | where `prepare.py` puts Kissat, instances and `baseline.json` |
 | `KISSAT_EVAL_JOBS` | CPU count | instances run in parallel; must match between `prepare.py` and the run |
-| `KISSAT_EVAL_CAP` | 300 | per-instance cap in seconds; must match `prepare.py --cap` |
+| `KISSAT_EVAL_SPLIT_FILE` | `hamiltonian_split.jsonl` | instance list; its stock numbers are `stock_ticks.json` for the default, else `<stem>.stock_ticks.json`, and `prepare.py` writes `baseline-<stem>.json` |
+| `KISSAT_EVAL_CAP` | the stock file's cap (300; 1200 for `mixed_split`) | per-instance cap in seconds; must match `prepare.py --cap` |
 | `KISSAT_EVAL_SPLIT` | `train` | set scored by `evaluate` / stage 2 |
 | `KISSAT_EVAL_METRIC` | `ticks` | `ticks` (deterministic) or `time` (wall-clock PAR-2) |
 | `KISSAT_EVAL_BUDGET` | 3 | conflict budget as a multiple of stock's conflicts; must match `prepare.py` |
