@@ -5,6 +5,7 @@
 Pool-worker entry point for ``evaluator_pool.py``: score one candidate here.
 
     python3 remote.py STAGE PROGRAM METRICS_JSON      # STAGE: stage1 | stage2 | <set name>
+    python3 remote.py baseline:SET[,SET] - OUT_JSON   # measure stock Kissat; write stock ticks
 
 The first task on a worker installs gcc/make if missing, builds the pinned
 Kissat and fetches the instances into ``KISSAT_EVAL_HOME`` (default
@@ -54,6 +55,15 @@ def main(stage: str, program: str, out: str) -> int:
     t0 = time.time()
     prepared_home()
     setup_s = time.time() - t0
+    if stage.startswith("baseline:"):  # stock numbers for a new split file
+        sets = {n: evaluator.instance_sets()[n] for n in stage.split(":", 1)[1].split(",")}
+        jobs = int(os.environ.get("KISSAT_EVAL_JOBS", os.cpu_count() or 1))
+        result = prepare.stock_ticks(prepare.measure(sets, evaluator.cap(), jobs))
+        result.update({"worker_setup_s": round(setup_s, 1),
+                       "worker_eval_s": round(time.time() - t0 - setup_s, 1)})
+        Path(out).parent.mkdir(parents=True, exist_ok=True)
+        Path(out).write_text(json.dumps(result))
+        return 0
     set_name = {"stage1": "stage1",
                 "stage2": os.environ.get("KISSAT_EVAL_SPLIT", "train")}.get(stage, stage)
     metrics = evaluator.score(program, set_name, evaluator.cap())

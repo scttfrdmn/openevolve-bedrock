@@ -188,3 +188,30 @@ def test_detail_lists_per_instance_results(monkeypatch, tmp_path):
     m = ev.score(str(EXAMPLE / "initial_program.c"), "stage1", 300)
     assert [d["hash"] for d in m["detail"]] == [r["hash"] for r in ev.instance_sets()["stage1"]]
     assert set(m["detail"][0]) == {"hash", "status", "ticks", "conflicts", "wall_s"}
+
+
+def test_mixed_split_is_stratified_by_family_and_result():
+    rows = [json.loads(l) for l in (EXAMPLE / "mixed_split.jsonl").read_text().splitlines()]
+    assert len(rows) == len({r["hash"] for r in rows}) == 148
+    assert {r["split"] for r in rows} == {"train", "heldout"}
+    groups = {}
+    for r in rows:
+        groups.setdefault((r["family"], r["expected"]), []).append(r["split"])
+    for splits in groups.values():                     # each family x result is halved
+        assert abs(splits.count("train") - splits.count("heldout")) <= 1
+    assert all(10 <= r["wall_s"] <= 200 and r["status"] == r["expected"] for r in rows)
+
+
+def test_split_file_selects_its_own_stock_numbers(monkeypatch, tmp_path):
+    monkeypatch.delenv("KISSAT_EVAL_SPLIT_FILE", raising=False)
+    monkeypatch.delenv("KISSAT_EVAL_CAP", raising=False)
+    monkeypatch.setenv("KISSAT_EVAL_HOME", str(tmp_path))
+    assert ev.stock_ticks_file().name == "stock_ticks.json" and ev.baseline_file().name == "baseline.json"
+    assert ev.cap() == 300 and "frontier" in ev.instance_sets()
+    monkeypatch.setenv("KISSAT_EVAL_SPLIT_FILE", "mixed_split.jsonl")
+    assert ev.stock_ticks_file().name == "mixed_split.stock_ticks.json"
+    assert ev.baseline_file() == tmp_path / "baseline-mixed_split.json"
+    assert set(ev.instance_sets()) == {"stage1", "train", "heldout"}
+    assert len(ev.instance_sets()["train"]) == 74
+    monkeypatch.setenv("KISSAT_EVAL_CAP", "77")
+    assert ev.cap() == 77
