@@ -43,6 +43,9 @@ machine. Environment (all optional):
     KISSAT_EVAL_METRIC ticks (default) or time
     KISSAT_EVAL_BUDGET conflict budget as a multiple of stock's conflicts (default: 3)
     KISSAT_EVAL_CACHE  result cache dir (default: <home>/eval-cache); "off" disables
+    KISSAT_EVAL_REPEATS  "reuse" (default): a repeat gets the stored score;
+                       "penalize": a repeat scores 0, so copies of a good program
+                       don't fill the population (issue #13)
 
 Results are cached by the candidate's C token sequence (comments and spacing
 removed) plus everything that affects the score. Fitness is deterministic, so a
@@ -341,7 +344,13 @@ def cached(program_path: str, set_name: str, time_cap: int, compute) -> dict:
     with open(root / f"{key}.lock", "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         if stored.is_file():
-            return {**json.loads(stored.read_text()), "cache_hit": 1.0}
+            metrics = {**json.loads(stored.read_text()), "cache_hit": 1.0}
+            if os.environ.get("KISSAT_EVAL_REPEATS", "reuse") == "penalize":
+                return {"combined_score": 0.0, "cache_hit": 1.0, "repeat": 1.0,
+                        "repeat_of_score": metrics.get("combined_score"),
+                        "error": "repeat of an already evaluated program (same C tokens); "
+                                 "it scored %s" % metrics.get("combined_score")}
+            return metrics
         metrics = compute()
         # Pool infrastructure failures are not properties of the program.
         if not str(metrics.get("error", "")).startswith("pool task"):

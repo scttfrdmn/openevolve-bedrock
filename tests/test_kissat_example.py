@@ -152,3 +152,15 @@ def test_cache_skips_pool_failures_and_can_be_disabled(monkeypatch, tmp_path):
     ok = lambda: calls.append(1) or {"combined_score": 1.0}
     assert ev.cached(str(p), "train", 300, ok) == {"combined_score": 1.0}
     assert len(calls) == 3
+
+
+def test_repeat_penalty_scores_copies_zero(monkeypatch, tmp_path):
+    _cache_env(monkeypatch, tmp_path)
+    monkeypatch.setenv("KISSAT_EVAL_REPEATS", "penalize")
+    p = tmp_path / "a.c"
+    p.write_text(INITIAL)
+    first = ev.cached(str(p), "train", 300, lambda: {"combined_score": 1.25})
+    again = ev.cached(str(p), "train", 300, lambda: pytest.fail("re-evaluated"))
+    assert first["combined_score"] == 1.25
+    assert again["combined_score"] == 0.0 and again["repeat_of_score"] == 1.25
+    assert "repeat" in again["error"]

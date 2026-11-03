@@ -100,9 +100,28 @@ KISSAT_EVAL_SPLIT=heldout python -c "import sys; sys.path.insert(0, 'examples/ki
 | `KISSAT_EVAL_SPLIT` | `train` | set scored by `evaluate` / stage 2 |
 | `KISSAT_EVAL_METRIC` | `ticks` | `ticks` (deterministic) or `time` (wall-clock PAR-2) |
 | `KISSAT_EVAL_BUDGET` | 3 | conflict budget as a multiple of stock's conflicts; must match `prepare.py` |
+| `KISSAT_EVAL_CACHE` | `<home>/eval-cache` | result cache by C token sequence; `off` disables |
+| `KISSAT_EVAL_REPEATS` | `reuse` | `penalize`: an exact repeat of an evaluated program scores 0, so copies don't fill the population |
 
 With the tick metric, a laptop gives the same scores as Graviton, only slower. Wall
 time (`time` mode) belongs on a fixed, dedicated Graviton instance type.
+
+## Search diversity
+
+Without guidance the model copies the winning change from the top programs in
+its prompt, whatever parent it was given. In a 60-iteration run, 19 of 42
+programs in the final population were copies of the best, none of them bred from
+it. The config's system message says the programs shown are already evaluated
+and asks for a different modification. With the same settings and seed (issue #13):
+
+| run | distinct programs in final population | copies of the best |
+|---|---|---|
+| no instruction | 18 of 42 | 19 |
+| instruction | 27 of 44 | 2 |
+| instruction + `KISSAT_EVAL_REPEATS=penalize` | 34 of 46 | 2 |
+
+None of the three found a better policy than the
+`2 * (kissat_logn (restarts) - 1)` change within 60 iterations.
 
 ## Run on a spawn pool (Graviton)
 
