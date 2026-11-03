@@ -183,11 +183,11 @@ def test_detail_lists_per_instance_results(monkeypatch, tmp_path):
                                                                      for r in ev.instance_sets()["stage1"]}}})
     monkeypatch.setattr(ev, "build", lambda prog, tmp: Path("/bin/true"))
     monkeypatch.setattr(ev, "run_batch", lambda k, rows, cap: [
-        {"hash": r["hash"], "status": "sat", "ticks": 1, "conflicts": 1, "wall_s": 1.0, "wrong": False}
-        for r in rows])
+        {"hash": r["hash"], "seed": 0, "status": "sat", "ticks": 1, "conflicts": 1, "wall_s": 1.0,
+         "wrong": False} for r in rows])
     m = ev.score(str(EXAMPLE / "initial_program.c"), "stage1", 300)
     assert [d["hash"] for d in m["detail"]] == [r["hash"] for r in ev.instance_sets()["stage1"]]
-    assert set(m["detail"][0]) == {"hash", "status", "ticks", "conflicts", "wall_s"}
+    assert set(m["detail"][0]) == {"hash", "seed", "status", "ticks", "conflicts", "wall_s"}
 
 
 def test_mixed_split_is_stratified_by_family_and_result():
@@ -240,3 +240,29 @@ def test_mixed_frontier_split_adds_reachable_stock_failures():
     assert all(r["status"] == "unknown" and r["budget"] == r["conflicts"] and r["sc2024_best_s"] <= 300
                for r in extra)
     assert sorted(sum(r["split"] == s for r in extra) for s in ("train", "heldout")) == [22, 23]
+
+
+def test_seeds_pool_runs_against_stock_at_the_same_seed(monkeypatch):
+    monkeypatch.setenv("KISSAT_EVAL_SEEDS", "0,1")
+    monkeypatch.delenv("KISSAT_EVAL_SPLIT_FILE", raising=False)
+    rows = ev.instance_sets()["stage1"]
+    assert ev.runs(rows[:1]) == [(rows[0], 0), (rows[0], 1)]
+    assert ev.run_key("abc", 0) == "abc" and ev.run_key("abc", 2) == "abc@2"
+    stock = {ev.run_key(r["hash"], s): {"status": "sat", "conflicts": 1, "ticks": 100 * (s + 1)}
+             for r in rows for s in (0, 1)}
+    monkeypatch.setattr(ev, "baseline", lambda: {"cap": 300, "budget_factor": 3.0, "sets": {"stage1": stock}})
+    monkeypatch.setattr(ev, "build", lambda prog, tmp: Path("/bin/true"))
+    # candidate: as stock at seed 0, unsolved at seed 1 (penalty 2 x 3 x 200)
+    monkeypatch.setattr(ev, "run_batch", lambda k, rows_, cap: [
+        {"hash": r["hash"], "seed": s, "status": "sat" if s == 0 else "unknown", "ticks": 100,
+         "conflicts": 1, "wall_s": 1.0, "wrong": False} for r, s in ev.runs(rows_)])
+    m = ev.score(str(EXAMPLE / "initial_program.c"), "stage1", 300)
+    assert m["runs"] == 2 * len(rows) and m["solved"] == len(rows)
+    assert m["combined_score"] == pytest.approx((100 + 200) / (100 + 1200))
+    monkeypatch.setenv("KISSAT_EVAL_SEEDS", "0,1,2")
+    with pytest.raises(RuntimeError, match="seeds"):
+        ev.score(str(EXAMPLE / "initial_program.c"), "stage1", 300)
+    a = ev.cache_key(INITIAL, "stage1", 300)
+    monkeypatch.setenv("KISSAT_EVAL_SEEDS", "0")
+    monkeypatch.setattr(ev, "baseline", lambda: {"cap": 300, "budget_factor": 3.0, "sets": {"stage1": stock}})
+    assert ev.cache_key(INITIAL, "stage1", 300) != a

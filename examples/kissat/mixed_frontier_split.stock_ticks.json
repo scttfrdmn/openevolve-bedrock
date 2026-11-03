@@ -4,7 +4,7 @@
  "kissat_commit": "8af8e56f174b778aef3aa45af9f739b2a5f492c2",
  "split_sha256": "b36dbda267c2cd07d67f3aca8b03d34145ba344c4b845e80129718e152858156",
  "measured_on": "aarch64 (oeb-mixedf-1-worker-1, 2026-11-03T15:55:13Z); ticks and conflicts are machine-independent",
- "note": "cap 1200 s, as for mixed_split; the 45 rows with a budget are stock failures at that budget (budget_reached)",
+ "note": "cap 1200 s, as for mixed_split; the 45 rows with a budget are stock failures at that budget (budget_reached); runs at seeds 1-3 are keyed hash@seed (KISSAT_EVAL_SEEDS)",
  "sets": {
   "stage1": {
    "f50eaf02a8041510b64104998cc81d2f": {
@@ -21,6 +21,53 @@
     "status": "unsat",
     "conflicts": 329021,
     "ticks": 733806040
+   },
+   "f50eaf02a8041510b64104998cc81d2f@2": {
+    "status": "sat",
+    "conflicts": 44138,
+    "ticks": 114687825
+   },
+   "c8e64404361f2426490d39459832c66a@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 1271921
+   },
+   "ad4e151d80c7012d88dd79bcfceaade5@2": {
+    "status": "unsat",
+    "conflicts": 353299,
+    "ticks": 799767456
+   },
+   "f50eaf02a8041510b64104998cc81d2f@3": {
+    "status": "unknown",
+    "conflicts": 509037,
+    "ticks": 1406196309,
+    "budget_reached": true
+   },
+   "c8e64404361f2426490d39459832c66a@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 1271921
+   },
+   "ad4e151d80c7012d88dd79bcfceaade5@3": {
+    "status": "unsat",
+    "conflicts": 330449,
+    "ticks": 753157048
+   },
+   "f50eaf02a8041510b64104998cc81d2f@1": {
+    "status": "unknown",
+    "conflicts": 509038,
+    "ticks": 1401694817,
+    "budget_reached": true
+   },
+   "c8e64404361f2426490d39459832c66a@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 1271921
+   },
+   "ad4e151d80c7012d88dd79bcfceaade5@1": {
+    "status": "unsat",
+    "conflicts": 330263,
+    "ticks": 746822401
    }
   },
   "train": {
@@ -524,6 +571,1515 @@
     "status": "unknown",
     "conflicts": 31681739,
     "ticks": 13984000513,
+    "budget_reached": true
+   },
+   "8b31606e10656ff7eb2936262b647443@2": {
+    "status": "sat",
+    "conflicts": 695983,
+    "ticks": 886522735
+   },
+   "a58b8a5eb61d3110d9fa36a03de588d2@2": {
+    "status": "unsat",
+    "conflicts": 4586347,
+    "ticks": 8848817403
+   },
+   "7b9d8b9b31b530effd634f5a8f1f4411@2": {
+    "status": "unsat",
+    "conflicts": 4664637,
+    "ticks": 11258283725
+   },
+   "5cb1ca8fe8a9d9125ea9accd498445f1@2": {
+    "status": "unsat",
+    "conflicts": 4812188,
+    "ticks": 11182950866
+   },
+   "79b9e24dd9af185dbec18c9b0a32b1e2@2": {
+    "status": "sat",
+    "conflicts": 226265,
+    "ticks": 762231231
+   },
+   "ecca77b5350eca6a4323edd5b38208c6@2": {
+    "status": "sat",
+    "conflicts": 694642,
+    "ticks": 1255322866
+   },
+   "7f2b4b2bde9b866b93fbfe01341213da@2": {
+    "status": "unsat",
+    "conflicts": 97284,
+    "ticks": 6027756503
+   },
+   "9cd3acdb765c15163bc239ae3a57f880@2": {
+    "status": "unsat",
+    "conflicts": 827522,
+    "ticks": 969673842
+   },
+   "ad4e151d80c7012d88dd79bcfceaade5@2": {
+    "status": "unsat",
+    "conflicts": 353299,
+    "ticks": 799767456
+   },
+   "19e2c3a0865c8c1b4543d11213bebe5f@2": {
+    "status": "unsat",
+    "conflicts": 561279,
+    "ticks": 1282338484
+   },
+   "bbfed8974655bca520259deb10d2347b@2": {
+    "status": "sat",
+    "conflicts": 18201,
+    "ticks": 32033649
+   },
+   "c3e53c353f30d9e2eb54ed93d6ce4f02@2": {
+    "status": "unsat",
+    "conflicts": 769223,
+    "ticks": 1857717029
+   },
+   "57f4ea7ab160d996e38e69fac59869c4@2": {
+    "status": "unsat",
+    "conflicts": 589559,
+    "ticks": 1348272819
+   },
+   "7fb202a51c0223f3119887a57086ca4d@2": {
+    "status": "unsat",
+    "conflicts": 825698,
+    "ticks": 1944628458
+   },
+   "8b18bb75459a4161633ba2a3c8ee183e@2": {
+    "status": "sat",
+    "conflicts": 1919056,
+    "ticks": 5876897538
+   },
+   "d195412a62cdcbb851136f60af76f463@2": {
+    "status": "unsat",
+    "conflicts": 1165220,
+    "ticks": 3060705287
+   },
+   "3a75ad246dbc750a7391ad887c5b0835@2": {
+    "status": "sat",
+    "conflicts": 45328,
+    "ticks": 97547952
+   },
+   "54c2da6d387a6f5ad6e014ae4d4decfc@2": {
+    "status": "sat",
+    "conflicts": 1425188,
+    "ticks": 4158777801
+   },
+   "f45e5faf1bcccbdd3065dd6367c3bd16@2": {
+    "status": "unsat",
+    "conflicts": 1769823,
+    "ticks": 5062103812
+   },
+   "c6568fc8805127e876c4c23551bf49fa@2": {
+    "status": "unsat",
+    "conflicts": 1928527,
+    "ticks": 5490516657
+   },
+   "0265448c232e3a25aa5bcd29b1b14567@2": {
+    "status": "unsat",
+    "conflicts": 2705457,
+    "ticks": 7913607708
+   },
+   "c5a98231dd54cbca06135293bb7e1985@2": {
+    "status": "sat",
+    "conflicts": 4449296,
+    "ticks": 15281318989
+   },
+   "3c6e1d1c4b8d3d08aa4c1df3805f4f7d@2": {
+    "status": "unsat",
+    "conflicts": 3272312,
+    "ticks": 10131681462
+   },
+   "12b4a08e412a3bffb513ca65639c7c69@2": {
+    "status": "sat",
+    "conflicts": 2605721,
+    "ticks": 5223607369
+   },
+   "72c0d81e16d91bcaed808efcde2e5069@2": {
+    "status": "sat",
+    "conflicts": 1161703,
+    "ticks": 1992013577
+   },
+   "b3167d999edd81291f33636464f2f8e6@2": {
+    "status": "sat",
+    "conflicts": 4564544,
+    "ticks": 9505842175
+   },
+   "30f0db845937bbda3ffde60e5ed4cb3f@2": {
+    "status": "sat",
+    "conflicts": 6440143,
+    "ticks": 13849121998
+   },
+   "50019e4419d48196bb4b95933a8b5030@2": {
+    "status": "unknown",
+    "conflicts": 3403753,
+    "ticks": 6324641353,
+    "budget_reached": true
+   },
+   "b8c7c777e76995e5bf7b517f2db234ba@2": {
+    "status": "sat",
+    "conflicts": 557341,
+    "ticks": 746023843
+   },
+   "05c8e94aaee86390eaf6e68dd3ec3570@2": {
+    "status": "unknown",
+    "conflicts": 14332207,
+    "ticks": 24286205098,
+    "budget_reached": true
+   },
+   "dd5fc8da5454a990a0e7999884158c64@2": {
+    "status": "unsat",
+    "conflicts": 1130112,
+    "ticks": 3113385475
+   },
+   "7429e380834066c206394139c9e1e17d@2": {
+    "status": "sat",
+    "conflicts": 1033228,
+    "ticks": 5194589049
+   },
+   "71a3dd6156463c0c55c4b38394faa753@2": {
+    "status": "sat",
+    "conflicts": 3649684,
+    "ticks": 18672900846
+   },
+   "8ffd718f763ed7a3f691cf46e57f8d98@2": {
+    "status": "unknown",
+    "conflicts": 6817990,
+    "ticks": 18391909133,
+    "budget_reached": true
+   },
+   "c8e64404361f2426490d39459832c66a@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 1271921
+   },
+   "282a02a1743eb47c6b340e52ecce40a2@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 5853463
+   },
+   "aceab5a3452e2901e645065bda3e8847@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 7823731
+   },
+   "0cace8a29a1d6b225a8da561d35e8f5a@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9793999
+   },
+   "26b648475cfd06695a17ac95f4469744@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 7144143
+   },
+   "210fe1c0ffefde5bcd03d59b1efa6984@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 8491479
+   },
+   "a14d9ee17051ec08a4334ba43089502c@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9369346
+   },
+   "c6e03256680b96b52e3345a497333c2b@2": {
+    "status": "unsat",
+    "conflicts": 3406667,
+    "ticks": 5549105880
+   },
+   "093fa3ff9f7bc9979c43f9d2310ac21d@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 11753893
+   },
+   "ec84eecb124c63d4757e083dd0e5a9ff@2": {
+    "status": "unsat",
+    "conflicts": 2749089,
+    "ticks": 4072340225
+   },
+   "2a53e9c6a25a50d753a94ead66065826@2": {
+    "status": "unsat",
+    "conflicts": 720991,
+    "ticks": 1697540321
+   },
+   "8e720686372c5037f30b4fc7b1c71d48@2": {
+    "status": "sat",
+    "conflicts": 13728,
+    "ticks": 98762234
+   },
+   "fb0e505b8bd19a34f1f80b8e020e7856@2": {
+    "status": "unsat",
+    "conflicts": 305566,
+    "ticks": 1470421526
+   },
+   "6add7e416c1126607afeb2666af330ac@2": {
+    "status": "unsat",
+    "conflicts": 825547,
+    "ticks": 2691866766
+   },
+   "fb51311320bb42bdb893249998a77f40@2": {
+    "status": "unsat",
+    "conflicts": 1943657,
+    "ticks": 4008437461
+   },
+   "543e67dd5abc272c37775b1b742a1d9a@2": {
+    "status": "sat",
+    "conflicts": 305944,
+    "ticks": 1974858857
+   },
+   "170b13af977e962321c493544b2bd0a9@2": {
+    "status": "sat",
+    "conflicts": 278943,
+    "ticks": 496772089
+   },
+   "6f7a0e1cf94b6b26eafc08a827a692ce@2": {
+    "status": "sat",
+    "conflicts": 343922,
+    "ticks": 722572348
+   },
+   "7ac7fabd8c078aea420087a0c80e5563@2": {
+    "status": "sat",
+    "conflicts": 1729539,
+    "ticks": 1674814166
+   },
+   "e2deb375e56da2360ecd08fc1179fb7d@2": {
+    "status": "sat",
+    "conflicts": 2117297,
+    "ticks": 2794995459
+   },
+   "396fd56f3fd7b85afbba4254ea6e746c@2": {
+    "status": "sat",
+    "conflicts": 1914766,
+    "ticks": 4104029160
+   },
+   "511a2d81661a185c2115daec42270dec@2": {
+    "status": "sat",
+    "conflicts": 2746843,
+    "ticks": 4733607524
+   },
+   "0fa9521ff633b27be11525a7b0f7d8b6@2": {
+    "status": "sat",
+    "conflicts": 401504,
+    "ticks": 915360499
+   },
+   "e99e266b422513a2898c13898a1de501@2": {
+    "status": "sat",
+    "conflicts": 3068945,
+    "ticks": 7118999987
+   },
+   "2a15a30186afdad41a49c5c5366d01be@2": {
+    "status": "sat",
+    "conflicts": 33094,
+    "ticks": 198969956
+   },
+   "22b4cf412c811872d6ba5078106aeb6c@2": {
+    "status": "sat",
+    "conflicts": 184788,
+    "ticks": 905018049
+   },
+   "bd8bc25be2b36c64b38459c17e815814@2": {
+    "status": "unsat",
+    "conflicts": 1303374,
+    "ticks": 1438714835
+   },
+   "eda4aa84aeeb306468396fa82a6bba5a@2": {
+    "status": "unknown",
+    "conflicts": 217263,
+    "ticks": 1492690793,
+    "budget_reached": true
+   },
+   "7f1c7da531539f3be4a1e0e916913086@2": {
+    "status": "unsat",
+    "conflicts": 3006876,
+    "ticks": 4103753582
+   },
+   "e481a97a93fd6b4303f39024d19c2867@2": {
+    "status": "sat",
+    "conflicts": 1989467,
+    "ticks": 6713559663
+   },
+   "0d3fcbb89bfb8e821058ba3ea4284de1@2": {
+    "status": "unknown",
+    "conflicts": 3490533,
+    "ticks": 11085095443,
+    "budget_reached": true
+   },
+   "32585e66749f42e161e94fc49fd64750@2": {
+    "status": "unsat",
+    "conflicts": 4331875,
+    "ticks": 4390311799
+   },
+   "e8abb9c83efdd96a99990f3b914ea873@2": {
+    "status": "unsat",
+    "conflicts": 12961,
+    "ticks": 1241459777
+   },
+   "c21cea390a50204944aa00babd56b53c@2": {
+    "status": "unsat",
+    "conflicts": 28968,
+    "ticks": 3420958686
+   },
+   "02f6ca52f1ada872d82035088701b66a@2": {
+    "status": "unsat",
+    "conflicts": 17803,
+    "ticks": 2200082454
+   },
+   "573cc82ec61e01fd6e6308493ee56289@2": {
+    "status": "unsat",
+    "conflicts": 12698,
+    "ticks": 2084527161
+   },
+   "c03f7f84f6ac9e523c17e391c3895183@2": {
+    "status": "unsat",
+    "conflicts": 20253,
+    "ticks": 3754605234
+   },
+   "aaa3654cc92d80da84ecf5d18040c634@2": {
+    "status": "unsat",
+    "conflicts": 9738,
+    "ticks": 1198701704
+   },
+   "f50eaf02a8041510b64104998cc81d2f@2": {
+    "status": "sat",
+    "conflicts": 44138,
+    "ticks": 114687825
+   },
+   "aa39c6d885d283a085d033ab7b89f8c8@2": {
+    "status": "unsat",
+    "conflicts": 8611050,
+    "ticks": 5671899976
+   },
+   "b5028686db9bd1073fa09cbd8c805f47@2": {
+    "status": "unknown",
+    "conflicts": 1553591,
+    "ticks": 5547341999,
+    "budget_reached": true
+   },
+   "18c0eb461bda29214bd43b84199a3b61@2": {
+    "status": "unknown",
+    "conflicts": 10771025,
+    "ticks": 12616914120,
+    "budget_reached": true
+   },
+   "cdd131110acc861a5a01fae6c4936c91@2": {
+    "status": "unknown",
+    "conflicts": 306774,
+    "ticks": 7061584493,
+    "budget_reached": true
+   },
+   "768956cc8d1f2d18ae1929f6bb26557a@2": {
+    "status": "unknown",
+    "conflicts": 9605446,
+    "ticks": 13727753622,
+    "budget_reached": true
+   },
+   "1e3c3e8d349759b8b482a6f2721762c4@2": {
+    "status": "unknown",
+    "conflicts": 5919155,
+    "ticks": 12232920071,
+    "budget_reached": true
+   },
+   "c82eee3badbc8432dad72d1d575a0ea6@2": {
+    "status": "unknown",
+    "conflicts": 862722,
+    "ticks": 4179040289,
+    "budget_reached": true
+   },
+   "f18c7c7b8666458fd04ea7a253ae1e20@2": {
+    "status": "unknown",
+    "conflicts": 25813691,
+    "ticks": 13888714220,
+    "budget_reached": true
+   },
+   "09b61bbf19748094a7d896aac314ab36@2": {
+    "status": "sat",
+    "conflicts": 4291920,
+    "ticks": 14395750394
+   },
+   "5e1c11b77cdf3717b81b957120f0f477@2": {
+    "status": "unknown",
+    "conflicts": 4994227,
+    "ticks": 17418848152,
+    "budget_reached": true
+   },
+   "47e1ada0070708c2953d322c06aea00d@2": {
+    "status": "unknown",
+    "conflicts": 7320960,
+    "ticks": 13745550668,
+    "budget_reached": true
+   },
+   "c73edc350cfa8e07af58db50054aea45@2": {
+    "status": "unknown",
+    "conflicts": 7547497,
+    "ticks": 14307452751,
+    "budget_reached": true
+   },
+   "ff9e9b01d50d01ecb6740472d7dd36cd@2": {
+    "status": "unknown",
+    "conflicts": 2181549,
+    "ticks": 8757171889,
+    "budget_reached": true
+   },
+   "f32bb347996c351bc3e9a91c58e8601d@2": {
+    "status": "sat",
+    "conflicts": 1798972,
+    "ticks": 10693707728
+   },
+   "0bad2ce307bf5b68db26fa34e252c9d4@2": {
+    "status": "sat",
+    "conflicts": 744609,
+    "ticks": 4139837703
+   },
+   "d11944fbca2dd6540f18bd05b6ccda0c@2": {
+    "status": "unknown",
+    "conflicts": 6499142,
+    "ticks": 16499303003,
+    "budget_reached": true
+   },
+   "16c27d738cb45b766b8823ca4f428cf0@2": {
+    "status": "unknown",
+    "conflicts": 7425659,
+    "ticks": 15333280724,
+    "budget_reached": true
+   },
+   "1156429862d3c03160406d6d1a786f11@2": {
+    "status": "unknown",
+    "conflicts": 7060339,
+    "ticks": 8208441260,
+    "budget_reached": true
+   },
+   "f7e855b18105170b0718086d3f5b5923@2": {
+    "status": "sat",
+    "conflicts": 1258859,
+    "ticks": 5220299727
+   },
+   "a08e66296d00f480e9ccadd79fa8b904@2": {
+    "status": "sat",
+    "conflicts": 250316,
+    "ticks": 736989471
+   },
+   "b3f53d4c67b234d27e21f5e56bfd39e8@2": {
+    "status": "unknown",
+    "conflicts": 11748603,
+    "ticks": 14952846329,
+    "budget_reached": true
+   },
+   "556cf803f9de4b2ec688825b5ff7e325@2": {
+    "status": "unknown",
+    "conflicts": 39526768,
+    "ticks": 14718516055,
+    "budget_reached": true
+   },
+   "24bdfb34654b1aa703fae31ea91e7c7f@2": {
+    "status": "unknown",
+    "conflicts": 31681740,
+    "ticks": 14747395947,
+    "budget_reached": true
+   },
+   "8b31606e10656ff7eb2936262b647443@3": {
+    "status": "unknown",
+    "conflicts": 2284200,
+    "ticks": 2828840241,
+    "budget_reached": true
+   },
+   "a58b8a5eb61d3110d9fa36a03de588d2@3": {
+    "status": "unsat",
+    "conflicts": 4185218,
+    "ticks": 7926592501
+   },
+   "7b9d8b9b31b530effd634f5a8f1f4411@3": {
+    "status": "unsat",
+    "conflicts": 3943206,
+    "ticks": 9380480640
+   },
+   "5cb1ca8fe8a9d9125ea9accd498445f1@3": {
+    "status": "unsat",
+    "conflicts": 4555992,
+    "ticks": 10929619462
+   },
+   "79b9e24dd9af185dbec18c9b0a32b1e2@3": {
+    "status": "sat",
+    "conflicts": 86150,
+    "ticks": 366462082
+   },
+   "ecca77b5350eca6a4323edd5b38208c6@3": {
+    "status": "sat",
+    "conflicts": 1794665,
+    "ticks": 3670202785
+   },
+   "7f2b4b2bde9b866b93fbfe01341213da@3": {
+    "status": "unsat",
+    "conflicts": 128008,
+    "ticks": 6031896702
+   },
+   "9cd3acdb765c15163bc239ae3a57f880@3": {
+    "status": "unsat",
+    "conflicts": 883060,
+    "ticks": 1050071323
+   },
+   "ad4e151d80c7012d88dd79bcfceaade5@3": {
+    "status": "unsat",
+    "conflicts": 330449,
+    "ticks": 753157048
+   },
+   "19e2c3a0865c8c1b4543d11213bebe5f@3": {
+    "status": "unsat",
+    "conflicts": 593229,
+    "ticks": 1328966418
+   },
+   "bbfed8974655bca520259deb10d2347b@3": {
+    "status": "sat",
+    "conflicts": 388112,
+    "ticks": 859469815
+   },
+   "c3e53c353f30d9e2eb54ed93d6ce4f02@3": {
+    "status": "unsat",
+    "conflicts": 664638,
+    "ticks": 1566431995
+   },
+   "57f4ea7ab160d996e38e69fac59869c4@3": {
+    "status": "unsat",
+    "conflicts": 676005,
+    "ticks": 1593951539
+   },
+   "7fb202a51c0223f3119887a57086ca4d@3": {
+    "status": "unsat",
+    "conflicts": 867912,
+    "ticks": 2134801670
+   },
+   "8b18bb75459a4161633ba2a3c8ee183e@3": {
+    "status": "sat",
+    "conflicts": 850097,
+    "ticks": 2197221145
+   },
+   "d195412a62cdcbb851136f60af76f463@3": {
+    "status": "unsat",
+    "conflicts": 1110922,
+    "ticks": 2922774738
+   },
+   "3a75ad246dbc750a7391ad887c5b0835@3": {
+    "status": "sat",
+    "conflicts": 620070,
+    "ticks": 1449773561
+   },
+   "54c2da6d387a6f5ad6e014ae4d4decfc@3": {
+    "status": "sat",
+    "conflicts": 1350733,
+    "ticks": 3882808927
+   },
+   "f45e5faf1bcccbdd3065dd6367c3bd16@3": {
+    "status": "unsat",
+    "conflicts": 1685145,
+    "ticks": 4628823393
+   },
+   "c6568fc8805127e876c4c23551bf49fa@3": {
+    "status": "unsat",
+    "conflicts": 1811714,
+    "ticks": 4980230287
+   },
+   "0265448c232e3a25aa5bcd29b1b14567@3": {
+    "status": "unsat",
+    "conflicts": 2493626,
+    "ticks": 6905764171
+   },
+   "c5a98231dd54cbca06135293bb7e1985@3": {
+    "status": "unknown",
+    "conflicts": 8327483,
+    "ticks": 33303773507,
+    "budget_reached": true
+   },
+   "3c6e1d1c4b8d3d08aa4c1df3805f4f7d@3": {
+    "status": "unsat",
+    "conflicts": 3564949,
+    "ticks": 11570983447
+   },
+   "12b4a08e412a3bffb513ca65639c7c69@3": {
+    "status": "sat",
+    "conflicts": 1954620,
+    "ticks": 3807189991
+   },
+   "72c0d81e16d91bcaed808efcde2e5069@3": {
+    "status": "sat",
+    "conflicts": 597433,
+    "ticks": 948924553
+   },
+   "b3167d999edd81291f33636464f2f8e6@3": {
+    "status": "sat",
+    "conflicts": 4547176,
+    "ticks": 9528101959
+   },
+   "30f0db845937bbda3ffde60e5ed4cb3f@3": {
+    "status": "sat",
+    "conflicts": 6279463,
+    "ticks": 13557248699
+   },
+   "50019e4419d48196bb4b95933a8b5030@3": {
+    "status": "sat",
+    "conflicts": 1187943,
+    "ticks": 1774871286
+   },
+   "b8c7c777e76995e5bf7b517f2db234ba@3": {
+    "status": "sat",
+    "conflicts": 1439730,
+    "ticks": 2498010635
+   },
+   "05c8e94aaee86390eaf6e68dd3ec3570@3": {
+    "status": "unknown",
+    "conflicts": 14332206,
+    "ticks": 24471580347,
+    "budget_reached": true
+   },
+   "dd5fc8da5454a990a0e7999884158c64@3": {
+    "status": "unsat",
+    "conflicts": 963707,
+    "ticks": 2859244920
+   },
+   "7429e380834066c206394139c9e1e17d@3": {
+    "status": "sat",
+    "conflicts": 1569583,
+    "ticks": 8060525693
+   },
+   "71a3dd6156463c0c55c4b38394faa753@3": {
+    "status": "sat",
+    "conflicts": 678173,
+    "ticks": 3587390164
+   },
+   "8ffd718f763ed7a3f691cf46e57f8d98@3": {
+    "status": "unknown",
+    "conflicts": 6817990,
+    "ticks": 18507723905,
+    "budget_reached": true
+   },
+   "c8e64404361f2426490d39459832c66a@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 1271921
+   },
+   "282a02a1743eb47c6b340e52ecce40a2@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 5853463
+   },
+   "aceab5a3452e2901e645065bda3e8847@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 7823731
+   },
+   "0cace8a29a1d6b225a8da561d35e8f5a@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9793999
+   },
+   "26b648475cfd06695a17ac95f4469744@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 7144143
+   },
+   "210fe1c0ffefde5bcd03d59b1efa6984@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 8491479
+   },
+   "a14d9ee17051ec08a4334ba43089502c@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9369346
+   },
+   "c6e03256680b96b52e3345a497333c2b@3": {
+    "status": "unsat",
+    "conflicts": 3494617,
+    "ticks": 5573353615
+   },
+   "093fa3ff9f7bc9979c43f9d2310ac21d@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 11753893
+   },
+   "ec84eecb124c63d4757e083dd0e5a9ff@3": {
+    "status": "unsat",
+    "conflicts": 1431176,
+    "ticks": 1863650737
+   },
+   "2a53e9c6a25a50d753a94ead66065826@3": {
+    "status": "unsat",
+    "conflicts": 721756,
+    "ticks": 1695458024
+   },
+   "8e720686372c5037f30b4fc7b1c71d48@3": {
+    "status": "sat",
+    "conflicts": 12579,
+    "ticks": 87412793
+   },
+   "fb0e505b8bd19a34f1f80b8e020e7856@3": {
+    "status": "unsat",
+    "conflicts": 298141,
+    "ticks": 1345284155
+   },
+   "6add7e416c1126607afeb2666af330ac@3": {
+    "status": "unsat",
+    "conflicts": 858070,
+    "ticks": 2688749608
+   },
+   "fb51311320bb42bdb893249998a77f40@3": {
+    "status": "unsat",
+    "conflicts": 1927160,
+    "ticks": 3834444812
+   },
+   "543e67dd5abc272c37775b1b742a1d9a@3": {
+    "status": "sat",
+    "conflicts": 278363,
+    "ticks": 1898360005
+   },
+   "170b13af977e962321c493544b2bd0a9@3": {
+    "status": "sat",
+    "conflicts": 290978,
+    "ticks": 560557128
+   },
+   "6f7a0e1cf94b6b26eafc08a827a692ce@3": {
+    "status": "sat",
+    "conflicts": 454904,
+    "ticks": 1088175350
+   },
+   "7ac7fabd8c078aea420087a0c80e5563@3": {
+    "status": "sat",
+    "conflicts": 1843536,
+    "ticks": 1842091026
+   },
+   "e2deb375e56da2360ecd08fc1179fb7d@3": {
+    "status": "sat",
+    "conflicts": 2071733,
+    "ticks": 2573959322
+   },
+   "396fd56f3fd7b85afbba4254ea6e746c@3": {
+    "status": "sat",
+    "conflicts": 2023141,
+    "ticks": 5505537546
+   },
+   "511a2d81661a185c2115daec42270dec@3": {
+    "status": "sat",
+    "conflicts": 2481359,
+    "ticks": 3223290546
+   },
+   "0fa9521ff633b27be11525a7b0f7d8b6@3": {
+    "status": "sat",
+    "conflicts": 222183,
+    "ticks": 472548976
+   },
+   "e99e266b422513a2898c13898a1de501@3": {
+    "status": "sat",
+    "conflicts": 1883561,
+    "ticks": 3866340976
+   },
+   "2a15a30186afdad41a49c5c5366d01be@3": {
+    "status": "sat",
+    "conflicts": 30757,
+    "ticks": 159903793
+   },
+   "22b4cf412c811872d6ba5078106aeb6c@3": {
+    "status": "sat",
+    "conflicts": 345601,
+    "ticks": 1600939111
+   },
+   "bd8bc25be2b36c64b38459c17e815814@3": {
+    "status": "unsat",
+    "conflicts": 1021999,
+    "ticks": 1091200033
+   },
+   "eda4aa84aeeb306468396fa82a6bba5a@3": {
+    "status": "sat",
+    "conflicts": 98675,
+    "ticks": 883827159
+   },
+   "7f1c7da531539f3be4a1e0e916913086@3": {
+    "status": "unsat",
+    "conflicts": 1559552,
+    "ticks": 1621108236
+   },
+   "e481a97a93fd6b4303f39024d19c2867@3": {
+    "status": "sat",
+    "conflicts": 1084895,
+    "ticks": 3605937202
+   },
+   "0d3fcbb89bfb8e821058ba3ea4284de1@3": {
+    "status": "sat",
+    "conflicts": 2464262,
+    "ticks": 7176443592
+   },
+   "32585e66749f42e161e94fc49fd64750@3": {
+    "status": "unsat",
+    "conflicts": 6502495,
+    "ticks": 6579754562
+   },
+   "e8abb9c83efdd96a99990f3b914ea873@3": {
+    "status": "unsat",
+    "conflicts": 9562,
+    "ticks": 1211360292
+   },
+   "c21cea390a50204944aa00babd56b53c@3": {
+    "status": "unsat",
+    "conflicts": 14405,
+    "ticks": 2102468717
+   },
+   "02f6ca52f1ada872d82035088701b66a@3": {
+    "status": "unknown",
+    "conflicts": 33664,
+    "ticks": 2484605245,
+    "budget_reached": true
+   },
+   "573cc82ec61e01fd6e6308493ee56289@3": {
+    "status": "unsat",
+    "conflicts": 12775,
+    "ticks": 1623753262
+   },
+   "c03f7f84f6ac9e523c17e391c3895183@3": {
+    "status": "unsat",
+    "conflicts": 44253,
+    "ticks": 5634965522
+   },
+   "aaa3654cc92d80da84ecf5d18040c634@3": {
+    "status": "unsat",
+    "conflicts": 13672,
+    "ticks": 2278818487
+   },
+   "f50eaf02a8041510b64104998cc81d2f@3": {
+    "status": "unknown",
+    "conflicts": 509037,
+    "ticks": 1406196309,
+    "budget_reached": true
+   },
+   "aa39c6d885d283a085d033ab7b89f8c8@3": {
+    "status": "unsat",
+    "conflicts": 28941883,
+    "ticks": 31001011145
+   },
+   "b5028686db9bd1073fa09cbd8c805f47@3": {
+    "status": "unknown",
+    "conflicts": 1553589,
+    "ticks": 4976675590,
+    "budget_reached": true
+   },
+   "18c0eb461bda29214bd43b84199a3b61@3": {
+    "status": "unknown",
+    "conflicts": 10771025,
+    "ticks": 12721484466,
+    "budget_reached": true
+   },
+   "cdd131110acc861a5a01fae6c4936c91@3": {
+    "status": "unknown",
+    "conflicts": 306774,
+    "ticks": 6969999316,
+    "budget_reached": true
+   },
+   "768956cc8d1f2d18ae1929f6bb26557a@3": {
+    "status": "unknown",
+    "conflicts": 9605446,
+    "ticks": 11753153529,
+    "budget_reached": true
+   },
+   "1e3c3e8d349759b8b482a6f2721762c4@3": {
+    "status": "unknown",
+    "conflicts": 5919156,
+    "ticks": 12388522496,
+    "budget_reached": true
+   },
+   "c82eee3badbc8432dad72d1d575a0ea6@3": {
+    "status": "unknown",
+    "conflicts": 862722,
+    "ticks": 8902316579,
+    "budget_reached": true
+   },
+   "f18c7c7b8666458fd04ea7a253ae1e20@3": {
+    "status": "unknown",
+    "conflicts": 25813689,
+    "ticks": 14465874186,
+    "budget_reached": true
+   },
+   "09b61bbf19748094a7d896aac314ab36@3": {
+    "status": "sat",
+    "conflicts": 1903021,
+    "ticks": 5563010700
+   },
+   "5e1c11b77cdf3717b81b957120f0f477@3": {
+    "status": "sat",
+    "conflicts": 705484,
+    "ticks": 1694462012
+   },
+   "47e1ada0070708c2953d322c06aea00d@3": {
+    "status": "unknown",
+    "conflicts": 7320959,
+    "ticks": 13930917304,
+    "budget_reached": true
+   },
+   "c73edc350cfa8e07af58db50054aea45@3": {
+    "status": "unknown",
+    "conflicts": 7547492,
+    "ticks": 14056914305,
+    "budget_reached": true
+   },
+   "ff9e9b01d50d01ecb6740472d7dd36cd@3": {
+    "status": "unknown",
+    "conflicts": 2181549,
+    "ticks": 9965906010,
+    "budget_reached": true
+   },
+   "f32bb347996c351bc3e9a91c58e8601d@3": {
+    "status": "unknown",
+    "conflicts": 2070164,
+    "ticks": 12176910320,
+    "budget_reached": true
+   },
+   "0bad2ce307bf5b68db26fa34e252c9d4@3": {
+    "status": "unknown",
+    "conflicts": 2175269,
+    "ticks": 11821101265,
+    "budget_reached": true
+   },
+   "d11944fbca2dd6540f18bd05b6ccda0c@3": {
+    "status": "unknown",
+    "conflicts": 6499142,
+    "ticks": 15611138285,
+    "budget_reached": true
+   },
+   "16c27d738cb45b766b8823ca4f428cf0@3": {
+    "status": "sat",
+    "conflicts": 2644637,
+    "ticks": 4438107248
+   },
+   "1156429862d3c03160406d6d1a786f11@3": {
+    "status": "unknown",
+    "conflicts": 7060338,
+    "ticks": 7143049498,
+    "budget_reached": true
+   },
+   "f7e855b18105170b0718086d3f5b5923@3": {
+    "status": "sat",
+    "conflicts": 1957993,
+    "ticks": 8365612513
+   },
+   "a08e66296d00f480e9ccadd79fa8b904@3": {
+    "status": "unknown",
+    "conflicts": 3914279,
+    "ticks": 12600547993,
+    "budget_reached": true
+   },
+   "b3f53d4c67b234d27e21f5e56bfd39e8@3": {
+    "status": "unknown",
+    "conflicts": 11748604,
+    "ticks": 14567833756,
+    "budget_reached": true
+   },
+   "556cf803f9de4b2ec688825b5ff7e325@3": {
+    "status": "unknown",
+    "conflicts": 39526768,
+    "ticks": 13681295549,
+    "budget_reached": true
+   },
+   "24bdfb34654b1aa703fae31ea91e7c7f@3": {
+    "status": "unknown",
+    "conflicts": 31681739,
+    "ticks": 12125914823,
+    "budget_reached": true
+   },
+   "8b31606e10656ff7eb2936262b647443@1": {
+    "status": "sat",
+    "conflicts": 688835,
+    "ticks": 869455403
+   },
+   "a58b8a5eb61d3110d9fa36a03de588d2@1": {
+    "status": "unsat",
+    "conflicts": 4579689,
+    "ticks": 8769678393
+   },
+   "7b9d8b9b31b530effd634f5a8f1f4411@1": {
+    "status": "unsat",
+    "conflicts": 4140838,
+    "ticks": 9852737091
+   },
+   "5cb1ca8fe8a9d9125ea9accd498445f1@1": {
+    "status": "unsat",
+    "conflicts": 4873069,
+    "ticks": 11607789947
+   },
+   "79b9e24dd9af185dbec18c9b0a32b1e2@1": {
+    "status": "sat",
+    "conflicts": 614075,
+    "ticks": 2228189380
+   },
+   "ecca77b5350eca6a4323edd5b38208c6@1": {
+    "status": "sat",
+    "conflicts": 1515796,
+    "ticks": 3063635158
+   },
+   "7f2b4b2bde9b866b93fbfe01341213da@1": {
+    "status": "unsat",
+    "conflicts": 87986,
+    "ticks": 5856793181
+   },
+   "9cd3acdb765c15163bc239ae3a57f880@1": {
+    "status": "unsat",
+    "conflicts": 440988,
+    "ticks": 536616343
+   },
+   "ad4e151d80c7012d88dd79bcfceaade5@1": {
+    "status": "unsat",
+    "conflicts": 330263,
+    "ticks": 746822401
+   },
+   "19e2c3a0865c8c1b4543d11213bebe5f@1": {
+    "status": "unsat",
+    "conflicts": 515245,
+    "ticks": 1122407382
+   },
+   "bbfed8974655bca520259deb10d2347b@1": {
+    "status": "sat",
+    "conflicts": 320504,
+    "ticks": 741388136
+   },
+   "c3e53c353f30d9e2eb54ed93d6ce4f02@1": {
+    "status": "unsat",
+    "conflicts": 688339,
+    "ticks": 1582460001
+   },
+   "57f4ea7ab160d996e38e69fac59869c4@1": {
+    "status": "unsat",
+    "conflicts": 596282,
+    "ticks": 1326050627
+   },
+   "7fb202a51c0223f3119887a57086ca4d@1": {
+    "status": "unsat",
+    "conflicts": 886552,
+    "ticks": 2159403907
+   },
+   "8b18bb75459a4161633ba2a3c8ee183e@1": {
+    "status": "sat",
+    "conflicts": 427866,
+    "ticks": 956265787
+   },
+   "d195412a62cdcbb851136f60af76f463@1": {
+    "status": "unsat",
+    "conflicts": 1116071,
+    "ticks": 3005102650
+   },
+   "3a75ad246dbc750a7391ad887c5b0835@1": {
+    "status": "sat",
+    "conflicts": 1192488,
+    "ticks": 3196450724
+   },
+   "54c2da6d387a6f5ad6e014ae4d4decfc@1": {
+    "status": "sat",
+    "conflicts": 2113780,
+    "ticks": 6323480738
+   },
+   "f45e5faf1bcccbdd3065dd6367c3bd16@1": {
+    "status": "unsat",
+    "conflicts": 1787156,
+    "ticks": 5124130223
+   },
+   "c6568fc8805127e876c4c23551bf49fa@1": {
+    "status": "unsat",
+    "conflicts": 2008032,
+    "ticks": 5743238998
+   },
+   "0265448c232e3a25aa5bcd29b1b14567@1": {
+    "status": "unsat",
+    "conflicts": 2518385,
+    "ticks": 7016584936
+   },
+   "c5a98231dd54cbca06135293bb7e1985@1": {
+    "status": "sat",
+    "conflicts": 5893183,
+    "ticks": 22047462078
+   },
+   "3c6e1d1c4b8d3d08aa4c1df3805f4f7d@1": {
+    "status": "unsat",
+    "conflicts": 4084969,
+    "ticks": 13659808782
+   },
+   "12b4a08e412a3bffb513ca65639c7c69@1": {
+    "status": "sat",
+    "conflicts": 1944105,
+    "ticks": 3769813932
+   },
+   "72c0d81e16d91bcaed808efcde2e5069@1": {
+    "status": "sat",
+    "conflicts": 1225498,
+    "ticks": 2136177729
+   },
+   "b3167d999edd81291f33636464f2f8e6@1": {
+    "status": "unknown",
+    "conflicts": 6193114,
+    "ticks": 13568846444,
+    "budget_reached": true
+   },
+   "30f0db845937bbda3ffde60e5ed4cb3f@1": {
+    "status": "sat",
+    "conflicts": 4393146,
+    "ticks": 9049182398
+   },
+   "50019e4419d48196bb4b95933a8b5030@1": {
+    "status": "sat",
+    "conflicts": 2162426,
+    "ticks": 3617927296
+   },
+   "b8c7c777e76995e5bf7b517f2db234ba@1": {
+    "status": "sat",
+    "conflicts": 1259530,
+    "ticks": 1930186891
+   },
+   "05c8e94aaee86390eaf6e68dd3ec3570@1": {
+    "status": "sat",
+    "conflicts": 11247315,
+    "ticks": 18702617677
+   },
+   "dd5fc8da5454a990a0e7999884158c64@1": {
+    "status": "unsat",
+    "conflicts": 1002674,
+    "ticks": 2870996143
+   },
+   "7429e380834066c206394139c9e1e17d@1": {
+    "status": "sat",
+    "conflicts": 184687,
+    "ticks": 1051247879
+   },
+   "71a3dd6156463c0c55c4b38394faa753@1": {
+    "status": "sat",
+    "conflicts": 405661,
+    "ticks": 2213824896
+   },
+   "8ffd718f763ed7a3f691cf46e57f8d98@1": {
+    "status": "unknown",
+    "conflicts": 6817991,
+    "ticks": 18422195819,
+    "budget_reached": true
+   },
+   "c8e64404361f2426490d39459832c66a@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 1271921
+   },
+   "282a02a1743eb47c6b340e52ecce40a2@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 5853463
+   },
+   "aceab5a3452e2901e645065bda3e8847@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 7823731
+   },
+   "0cace8a29a1d6b225a8da561d35e8f5a@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9793999
+   },
+   "26b648475cfd06695a17ac95f4469744@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 7144143
+   },
+   "210fe1c0ffefde5bcd03d59b1efa6984@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 8491479
+   },
+   "a14d9ee17051ec08a4334ba43089502c@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9369346
+   },
+   "c6e03256680b96b52e3345a497333c2b@1": {
+    "status": "unsat",
+    "conflicts": 3546621,
+    "ticks": 5965020278
+   },
+   "093fa3ff9f7bc9979c43f9d2310ac21d@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 11753893
+   },
+   "ec84eecb124c63d4757e083dd0e5a9ff@1": {
+    "status": "unknown",
+    "conflicts": 5155142,
+    "ticks": 8006971974,
+    "budget_reached": true
+   },
+   "2a53e9c6a25a50d753a94ead66065826@1": {
+    "status": "unsat",
+    "conflicts": 758717,
+    "ticks": 1797813055
+   },
+   "8e720686372c5037f30b4fc7b1c71d48@1": {
+    "status": "sat",
+    "conflicts": 89930,
+    "ticks": 488311291
+   },
+   "fb0e505b8bd19a34f1f80b8e020e7856@1": {
+    "status": "unsat",
+    "conflicts": 299486,
+    "ticks": 1466386977
+   },
+   "6add7e416c1126607afeb2666af330ac@1": {
+    "status": "unsat",
+    "conflicts": 882698,
+    "ticks": 2681225406
+   },
+   "fb51311320bb42bdb893249998a77f40@1": {
+    "status": "unsat",
+    "conflicts": 1876810,
+    "ticks": 3673955615
+   },
+   "543e67dd5abc272c37775b1b742a1d9a@1": {
+    "status": "sat",
+    "conflicts": 208051,
+    "ticks": 1551502955
+   },
+   "170b13af977e962321c493544b2bd0a9@1": {
+    "status": "sat",
+    "conflicts": 149781,
+    "ticks": 200005630
+   },
+   "6f7a0e1cf94b6b26eafc08a827a692ce@1": {
+    "status": "sat",
+    "conflicts": 502768,
+    "ticks": 1268518246
+   },
+   "7ac7fabd8c078aea420087a0c80e5563@1": {
+    "status": "sat",
+    "conflicts": 1933846,
+    "ticks": 2326857641
+   },
+   "e2deb375e56da2360ecd08fc1179fb7d@1": {
+    "status": "sat",
+    "conflicts": 2080061,
+    "ticks": 2725044289
+   },
+   "396fd56f3fd7b85afbba4254ea6e746c@1": {
+    "status": "sat",
+    "conflicts": 1854663,
+    "ticks": 3570302214
+   },
+   "511a2d81661a185c2115daec42270dec@1": {
+    "status": "sat",
+    "conflicts": 2253850,
+    "ticks": 3647678662
+   },
+   "0fa9521ff633b27be11525a7b0f7d8b6@1": {
+    "status": "sat",
+    "conflicts": 1963654,
+    "ticks": 5857965055
+   },
+   "e99e266b422513a2898c13898a1de501@1": {
+    "status": "sat",
+    "conflicts": 1193760,
+    "ticks": 2417390939
+   },
+   "2a15a30186afdad41a49c5c5366d01be@1": {
+    "status": "sat",
+    "conflicts": 36466,
+    "ticks": 190325005
+   },
+   "22b4cf412c811872d6ba5078106aeb6c@1": {
+    "status": "sat",
+    "conflicts": 566580,
+    "ticks": 2538449106
+   },
+   "bd8bc25be2b36c64b38459c17e815814@1": {
+    "status": "unsat",
+    "conflicts": 982404,
+    "ticks": 1061498575
+   },
+   "eda4aa84aeeb306468396fa82a6bba5a@1": {
+    "status": "sat",
+    "conflicts": 94083,
+    "ticks": 934126406
+   },
+   "7f1c7da531539f3be4a1e0e916913086@1": {
+    "status": "unsat",
+    "conflicts": 1657945,
+    "ticks": 1885625213
+   },
+   "e481a97a93fd6b4303f39024d19c2867@1": {
+    "status": "sat",
+    "conflicts": 489328,
+    "ticks": 1548390532
+   },
+   "0d3fcbb89bfb8e821058ba3ea4284de1@1": {
+    "status": "unknown",
+    "conflicts": 3490534,
+    "ticks": 11030824231,
+    "budget_reached": true
+   },
+   "32585e66749f42e161e94fc49fd64750@1": {
+    "status": "unsat",
+    "conflicts": 3381307,
+    "ticks": 3143306330
+   },
+   "e8abb9c83efdd96a99990f3b914ea873@1": {
+    "status": "unknown",
+    "conflicts": 26994,
+    "ticks": 3518851386,
+    "budget_reached": true
+   },
+   "c21cea390a50204944aa00babd56b53c@1": {
+    "status": "unsat",
+    "conflicts": 21236,
+    "ticks": 2483072093
+   },
+   "02f6ca52f1ada872d82035088701b66a@1": {
+    "status": "unsat",
+    "conflicts": 19242,
+    "ticks": 1942297179
+   },
+   "573cc82ec61e01fd6e6308493ee56289@1": {
+    "status": "unsat",
+    "conflicts": 15254,
+    "ticks": 1894980574
+   },
+   "c03f7f84f6ac9e523c17e391c3895183@1": {
+    "status": "unsat",
+    "conflicts": 9953,
+    "ticks": 2290028907
+   },
+   "aaa3654cc92d80da84ecf5d18040c634@1": {
+    "status": "unsat",
+    "conflicts": 17433,
+    "ticks": 4105118481
+   },
+   "f50eaf02a8041510b64104998cc81d2f@1": {
+    "status": "unknown",
+    "conflicts": 509038,
+    "ticks": 1401694817,
+    "budget_reached": true
+   },
+   "aa39c6d885d283a085d033ab7b89f8c8@1": {
+    "status": "unsat",
+    "conflicts": 7938300,
+    "ticks": 5122773614
+   },
+   "b5028686db9bd1073fa09cbd8c805f47@1": {
+    "status": "unknown",
+    "conflicts": 1553590,
+    "ticks": 5392832599,
+    "budget_reached": true
+   },
+   "18c0eb461bda29214bd43b84199a3b61@1": {
+    "status": "unknown",
+    "conflicts": 10771025,
+    "ticks": 13635995964,
+    "budget_reached": true
+   },
+   "cdd131110acc861a5a01fae6c4936c91@1": {
+    "status": "unknown",
+    "conflicts": 306773,
+    "ticks": 6876415496,
+    "budget_reached": true
+   },
+   "768956cc8d1f2d18ae1929f6bb26557a@1": {
+    "status": "unknown",
+    "conflicts": 9605447,
+    "ticks": 11649383315,
+    "budget_reached": true
+   },
+   "1e3c3e8d349759b8b482a6f2721762c4@1": {
+    "status": "unknown",
+    "conflicts": 5919155,
+    "ticks": 12871519823,
+    "budget_reached": true
+   },
+   "c82eee3badbc8432dad72d1d575a0ea6@1": {
+    "status": "unknown",
+    "conflicts": 862722,
+    "ticks": 4462285557,
+    "budget_reached": true
+   },
+   "f18c7c7b8666458fd04ea7a253ae1e20@1": {
+    "status": "unknown",
+    "conflicts": 25813689,
+    "ticks": 13887527735,
+    "budget_reached": true
+   },
+   "09b61bbf19748094a7d896aac314ab36@1": {
+    "status": "unknown",
+    "conflicts": 5162346,
+    "ticks": 18524338821,
+    "budget_reached": true
+   },
+   "5e1c11b77cdf3717b81b957120f0f477@1": {
+    "status": "unknown",
+    "conflicts": 4994225,
+    "ticks": 17614842518,
+    "budget_reached": true
+   },
+   "47e1ada0070708c2953d322c06aea00d@1": {
+    "status": "unknown",
+    "conflicts": 7320959,
+    "ticks": 13643446888,
+    "budget_reached": true
+   },
+   "c73edc350cfa8e07af58db50054aea45@1": {
+    "status": "sat",
+    "conflicts": 1219440,
+    "ticks": 1662569913
+   },
+   "ff9e9b01d50d01ecb6740472d7dd36cd@1": {
+    "status": "unknown",
+    "conflicts": 2181551,
+    "ticks": 9741510827,
+    "budget_reached": true
+   },
+   "f32bb347996c351bc3e9a91c58e8601d@1": {
+    "status": "sat",
+    "conflicts": 2019072,
+    "ticks": 12081033018
+   },
+   "0bad2ce307bf5b68db26fa34e252c9d4@1": {
+    "status": "unknown",
+    "conflicts": 2175270,
+    "ticks": 11674720542,
+    "budget_reached": true
+   },
+   "d11944fbca2dd6540f18bd05b6ccda0c@1": {
+    "status": "unknown",
+    "conflicts": 6499141,
+    "ticks": 16000852579,
+    "budget_reached": true
+   },
+   "16c27d738cb45b766b8823ca4f428cf0@1": {
+    "status": "unknown",
+    "conflicts": 7425659,
+    "ticks": 15634813255,
+    "budget_reached": true
+   },
+   "1156429862d3c03160406d6d1a786f11@1": {
+    "status": "unknown",
+    "conflicts": 7060340,
+    "ticks": 6733570889,
+    "budget_reached": true
+   },
+   "f7e855b18105170b0718086d3f5b5923@1": {
+    "status": "sat",
+    "conflicts": 441929,
+    "ticks": 1849614649
+   },
+   "a08e66296d00f480e9ccadd79fa8b904@1": {
+    "status": "sat",
+    "conflicts": 1623937,
+    "ticks": 4839390573
+   },
+   "b3f53d4c67b234d27e21f5e56bfd39e8@1": {
+    "status": "unsat",
+    "conflicts": 8321322,
+    "ticks": 9734382012
+   },
+   "556cf803f9de4b2ec688825b5ff7e325@1": {
+    "status": "unknown",
+    "conflicts": 39526768,
+    "ticks": 14146941132,
+    "budget_reached": true
+   },
+   "24bdfb34654b1aa703fae31ea91e7c7f@1": {
+    "status": "unknown",
+    "conflicts": 31681740,
+    "ticks": 11344816842,
     "budget_reached": true
    }
   },
@@ -1034,6 +2590,1532 @@
     "status": "unknown",
     "conflicts": 30156498,
     "ticks": 13538842267,
+    "budget_reached": true
+   },
+   "bd19da88800086971e554e9d66bc641d@2": {
+    "status": "unsat",
+    "conflicts": 3390456,
+    "ticks": 10226201962
+   },
+   "05ed64e4e6229f446082752936768489@2": {
+    "status": "unsat",
+    "conflicts": 4071469,
+    "ticks": 7762504469
+   },
+   "e84b00b1f134e0e071a2baf54cfc90e8@2": {
+    "status": "unsat",
+    "conflicts": 5634126,
+    "ticks": 8171509610
+   },
+   "0876c518e5653369e20fb1ee0bb8db40@2": {
+    "status": "sat",
+    "conflicts": 107581,
+    "ticks": 890652829
+   },
+   "9276ce38c625b2d00de247f8588f1542@2": {
+    "status": "sat",
+    "conflicts": 2219050,
+    "ticks": 5448965320
+   },
+   "6969c86fbc5814332ab8615031334fa8@2": {
+    "status": "sat",
+    "conflicts": 31705,
+    "ticks": 4004347958
+   },
+   "b8f5fc2425facb3aec52a665f32a500c@2": {
+    "status": "unsat",
+    "conflicts": 131546,
+    "ticks": 6499102755
+   },
+   "9dcbf221b8d2bb01f30bcca283f3608d@2": {
+    "status": "sat",
+    "conflicts": 116516,
+    "ticks": 968143294
+   },
+   "f296fe701a562022c0de0cf565fbca7d@2": {
+    "status": "unsat",
+    "conflicts": 340832,
+    "ticks": 758258948
+   },
+   "475803537529d9d14a034957f48a6d38@2": {
+    "status": "unsat",
+    "conflicts": 595386,
+    "ticks": 1330410905
+   },
+   "edceb8782e72e290fa54757dbfdd0173@2": {
+    "status": "unsat",
+    "conflicts": 672356,
+    "ticks": 1527884514
+   },
+   "ded23680dfeab2879c05bc0e4de21126@2": {
+    "status": "unsat",
+    "conflicts": 818123,
+    "ticks": 1955376232
+   },
+   "13ae2628d8e113db1786dba41a65fe38@2": {
+    "status": "unknown",
+    "conflicts": 2256627,
+    "ticks": 6799759405,
+    "budget_reached": true
+   },
+   "915a25bd189357e4c6d7771b69a6849f@2": {
+    "status": "unsat",
+    "conflicts": 973363,
+    "ticks": 2466206178
+   },
+   "a45a0358685867bd4f1c7f7c0b0e379c@2": {
+    "status": "sat",
+    "conflicts": 1892316,
+    "ticks": 5349310148
+   },
+   "1507d9812624b3e0eaf15e40100be020@2": {
+    "status": "sat",
+    "conflicts": 62544,
+    "ticks": 145723737
+   },
+   "f376d4c191518ed704326960b6b19a4b@2": {
+    "status": "unsat",
+    "conflicts": 1964128,
+    "ticks": 5506283200
+   },
+   "e08f11f0a3bd266ee5c78ce332de107f@2": {
+    "status": "unsat",
+    "conflicts": 1836612,
+    "ticks": 4988035594
+   },
+   "c0e6e6eeebd48ca600cfc7d662fa804c@2": {
+    "status": "unsat",
+    "conflicts": 2205430,
+    "ticks": 6457078501
+   },
+   "df1bd67978b9b0ec1d326ba174bc273c@2": {
+    "status": "sat",
+    "conflicts": 4874976,
+    "ticks": 17140550433
+   },
+   "b7273af3d468ea2595f11a6dbd6ef6ce@2": {
+    "status": "unsat",
+    "conflicts": 2318976,
+    "ticks": 6821052818
+   },
+   "195852083a05edee1902233698eec14a@2": {
+    "status": "sat",
+    "conflicts": 1031501,
+    "ticks": 2569314157
+   },
+   "907e7dc703e16ad2c7e56a33fe3b3e5f@2": {
+    "status": "unsat",
+    "conflicts": 2576477,
+    "ticks": 4862851804
+   },
+   "773f3bd29e202ff700d8b5b459857a2c@2": {
+    "status": "sat",
+    "conflicts": 1941862,
+    "ticks": 3797870810
+   },
+   "eed5189b73738270ae3fdb8b33bf31c8@2": {
+    "status": "sat",
+    "conflicts": 1257817,
+    "ticks": 2196741381
+   },
+   "77b7f7bbf75faaee28f473b9941de103@2": {
+    "status": "sat",
+    "conflicts": 2019774,
+    "ticks": 3700655100
+   },
+   "d40a68825bdbcdd7642b249325a7b6a2@2": {
+    "status": "sat",
+    "conflicts": 2083638,
+    "ticks": 3814518490
+   },
+   "0d81711a3d73c828e8c6e12607eda82d@2": {
+    "status": "sat",
+    "conflicts": 1162167,
+    "ticks": 1676535991
+   },
+   "de7a6b03999e2bc5bd750831c2662a4d@2": {
+    "status": "sat",
+    "conflicts": 2040207,
+    "ticks": 3523115282
+   },
+   "6c52aca5b5fd284bf1940b84df90a367@2": {
+    "status": "unsat",
+    "conflicts": 965184,
+    "ticks": 2706448358
+   },
+   "4a8285a53f30b35016b0c85ea17ba155@2": {
+    "status": "unsat",
+    "conflicts": 2190806,
+    "ticks": 5847730818
+   },
+   "e067414e153ee98a7842bd6d6dafeee5@2": {
+    "status": "sat",
+    "conflicts": 207958,
+    "ticks": 1512011699
+   },
+   "04ded94454830d4ea960327e8b91f5a3@2": {
+    "status": "unknown",
+    "conflicts": 5154364,
+    "ticks": 11274978296,
+    "budget_reached": true
+   },
+   "d1940d3d830eb16a7d2270ca4af4acba@2": {
+    "status": "sat",
+    "conflicts": 3782562,
+    "ticks": 7411196715
+   },
+   "65c5a5d228ec5e52d1a72f918086f584@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 2658129
+   },
+   "e85fb114c33f450dc2622c78bc6fa019@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 6838597
+   },
+   "812926407774771b3bd9885f7bfa4841@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 8808865
+   },
+   "d7dbb2cba940af33b2bce37ea99b8110@2": {
+    "status": "unsat",
+    "conflicts": 1219592,
+    "ticks": 1396502432
+   },
+   "88e89266e58f1f125ebc4e0f66e2c060@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 5250729
+   },
+   "c214f1eb2576af00e3fb09f7d0305764@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 7055796
+   },
+   "84c6d7e4a18aacf166105aaa3cd6e3de@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9449018
+   },
+   "e371cd7cdde3e7ccb9834290fd4a92d0@2": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9139629
+   },
+   "dd57f6ebf07a7f932a82bed1877788e6@2": {
+    "status": "unsat",
+    "conflicts": 2294542,
+    "ticks": 8753186858
+   },
+   "04e219c640ed59dc68ea2d50493de5b5@2": {
+    "status": "sat",
+    "conflicts": 2264880,
+    "ticks": 4510994618
+   },
+   "c76f3c6c2e2eae85fc5f3d499f3db88d@2": {
+    "status": "unsat",
+    "conflicts": 285477,
+    "ticks": 375613325
+   },
+   "b4b41b2ff14427e5715cb9bee06d4602@2": {
+    "status": "unsat",
+    "conflicts": 370077,
+    "ticks": 1356704825
+   },
+   "8530c911b75ab1b276042043d118a875@2": {
+    "status": "unsat",
+    "conflicts": 888602,
+    "ticks": 2603904930
+   },
+   "f8443057c188f6c9cfb711ff3d4aa6ff@2": {
+    "status": "unsat",
+    "conflicts": 327222,
+    "ticks": 2269758668
+   },
+   "70ef2b6bdc4101a0e35cf3d165571fe3@2": {
+    "status": "sat",
+    "conflicts": 62774,
+    "ticks": 408411968
+   },
+   "dc7817dfa2817916b266c1cfacd2ee66@2": {
+    "status": "unsat",
+    "conflicts": 4143703,
+    "ticks": 9864394417
+   },
+   "adf6dacdd64c93f9de1aa0eadf427faa@2": {
+    "status": "sat",
+    "conflicts": 415800,
+    "ticks": 737240837
+   },
+   "37ca184832fc6fa43a22ae900f1756a2@2": {
+    "status": "sat",
+    "conflicts": 1659106,
+    "ticks": 1883589016
+   },
+   "70bfbd054dc9ffd394fab32845b492d3@2": {
+    "status": "sat",
+    "conflicts": 1765363,
+    "ticks": 1864415290
+   },
+   "b68ae7866df5e852c3acb97a46da2faf@2": {
+    "status": "sat",
+    "conflicts": 1387397,
+    "ticks": 4263011253
+   },
+   "9e6c2e7b0d6f58e449716deb9305525a@2": {
+    "status": "sat",
+    "conflicts": 4528955,
+    "ticks": 36839983326
+   },
+   "c2bfe541b7cff948fa3193e9ca0eddee@2": {
+    "status": "unknown",
+    "conflicts": 6492624,
+    "ticks": 18787494308,
+    "budget_reached": true
+   },
+   "3ed56242f55e3653dbceeb4a70221787@2": {
+    "status": "sat",
+    "conflicts": 2125367,
+    "ticks": 4096999901
+   },
+   "5411047bc24f4321f0e490e01e4a0910@2": {
+    "status": "unsat",
+    "conflicts": 351216,
+    "ticks": 2665116440
+   },
+   "1afa2d7a3d817c3149da432eece66da8@2": {
+    "status": "sat",
+    "conflicts": 1428,
+    "ticks": 99907473
+   },
+   "be6411f4784a3c879886dda807cdc607@2": {
+    "status": "unknown",
+    "conflicts": 678969,
+    "ticks": 2832157618,
+    "budget_reached": true
+   },
+   "07e6413459f92b613498a719125b6239@2": {
+    "status": "unsat",
+    "conflicts": 290263,
+    "ticks": 1225534131
+   },
+   "43e492bccfd57029b758897b17d7f04f@2": {
+    "status": "sat",
+    "conflicts": 47339,
+    "ticks": 673231318
+   },
+   "83b330c934d6dd35d56e1b1ca3638b3c@2": {
+    "status": "unknown",
+    "conflicts": 1716714,
+    "ticks": 7941093309,
+    "budget_reached": true
+   },
+   "0ac6aaf6db6a0e4ec3a06e865d01086f@2": {
+    "status": "unsat",
+    "conflicts": 4111834,
+    "ticks": 5096023291
+   },
+   "5ea72bcdccc86bd1a924029f7b81aec5@2": {
+    "status": "sat",
+    "conflicts": 1540977,
+    "ticks": 5121193904
+   },
+   "878bcc11e1e243680f7946bcf428f465@2": {
+    "status": "unsat",
+    "conflicts": 4775,
+    "ticks": 557352337
+   },
+   "1e0da402100982e53001a64281149dd9@2": {
+    "status": "unsat",
+    "conflicts": 13091,
+    "ticks": 1554257975
+   },
+   "0d3160b80aa406bfc718c007265b9e73@2": {
+    "status": "unsat",
+    "conflicts": 13084,
+    "ticks": 2820400325
+   },
+   "f54b352934be08821aa75b3424112956@2": {
+    "status": "unsat",
+    "conflicts": 10508,
+    "ticks": 1571165672
+   },
+   "6008b958ff6877f32c26b72728df4523@2": {
+    "status": "unsat",
+    "conflicts": 27860,
+    "ticks": 5398135528
+   },
+   "c8b129b9e4835b8a40d5ef0d27a45bef@2": {
+    "status": "unsat",
+    "conflicts": 8255,
+    "ticks": 1256139279
+   },
+   "0f262afd5b117000f8b4734d175aadab@2": {
+    "status": "unsat",
+    "conflicts": 43462,
+    "ticks": 4170282773
+   },
+   "f054205a7cef98e5021016f864c69816@2": {
+    "status": "sat",
+    "conflicts": 95368,
+    "ticks": 472095727
+   },
+   "e6cdc2687fa53506021f05b60ad0c6a2@2": {
+    "status": "sat",
+    "conflicts": 144869,
+    "ticks": 287371699
+   },
+   "fa5c6d6736a42650656c5bc018413254@2": {
+    "status": "unknown",
+    "conflicts": 20077853,
+    "ticks": 17458976451,
+    "budget_reached": true
+   },
+   "c5ae0ec49de0959cd14431ce851c14f8@2": {
+    "status": "sat",
+    "conflicts": 3116942,
+    "ticks": 15032216304
+   },
+   "973d699ec01b88da869233a79aaa1912@2": {
+    "status": "unknown",
+    "conflicts": 12603916,
+    "ticks": 13547996120,
+    "budget_reached": true
+   },
+   "67c533489a498495525efee429340958@2": {
+    "status": "unknown",
+    "conflicts": 12759453,
+    "ticks": 15533750139,
+    "budget_reached": true
+   },
+   "bbfe2b27182d2ee7fefdb557f458ac9c@2": {
+    "status": "unknown",
+    "conflicts": 11698081,
+    "ticks": 15008638788,
+    "budget_reached": true
+   },
+   "cd33a862b81ba7b887845d3510c41c62@2": {
+    "status": "unknown",
+    "conflicts": 2605543,
+    "ticks": 21711524676,
+    "budget_reached": true
+   },
+   "26254890fa7107f85242ec9190da2a7a@2": {
+    "status": "unknown",
+    "conflicts": 4814696,
+    "ticks": 10804990691,
+    "budget_reached": true
+   },
+   "09c1b79b1cfe3522364fe60aef780703@2": {
+    "status": "sat",
+    "conflicts": 3135198,
+    "ticks": 9750884349
+   },
+   "af05a6b68a1cff165b684d9ff0ae3b3b@2": {
+    "status": "sat",
+    "conflicts": 690156,
+    "ticks": 1695540725
+   },
+   "5865fb9a6575d2ae6542c36ab96646a9@2": {
+    "status": "sat",
+    "conflicts": 2469172,
+    "ticks": 7674793970
+   },
+   "0a27eb7c16c1e69ff4d087d217ac89cb@2": {
+    "status": "unknown",
+    "conflicts": 8204005,
+    "ticks": 13283379593,
+    "budget_reached": true
+   },
+   "5690b9b0380aa9508699e56cae5918b5@2": {
+    "status": "unknown",
+    "conflicts": 4797674,
+    "ticks": 17215416372,
+    "budget_reached": true
+   },
+   "2b032f8a8976a302ad125eb50a3e8445@2": {
+    "status": "sat",
+    "conflicts": 1841088,
+    "ticks": 9314460854
+   },
+   "be18894105e006399cc018abc14b204f@2": {
+    "status": "unknown",
+    "conflicts": 3167170,
+    "ticks": 14725184554,
+    "budget_reached": true
+   },
+   "a9cb77454c6cfdf4092fb304d3aae8b7@2": {
+    "status": "unknown",
+    "conflicts": 6747714,
+    "ticks": 16670409694,
+    "budget_reached": true
+   },
+   "c0293283432a9b15cd743702163f5184@2": {
+    "status": "unknown",
+    "conflicts": 3065147,
+    "ticks": 8568616124,
+    "budget_reached": true
+   },
+   "5e5fe73a2e0ffc8e19873298566919fb@2": {
+    "status": "sat",
+    "conflicts": 2269671,
+    "ticks": 3829075547
+   },
+   "2dd4b14a8a820e7baa073554ae2c6cb0@2": {
+    "status": "unknown",
+    "conflicts": 6081657,
+    "ticks": 5560494535,
+    "budget_reached": true
+   },
+   "9e85aad5707405fb349c6c5548040cf4@2": {
+    "status": "unknown",
+    "conflicts": 3879456,
+    "ticks": 7765471789,
+    "budget_reached": true
+   },
+   "41f4cb4992a481c9d43e2e1a4e2349ac@2": {
+    "status": "unknown",
+    "conflicts": 6590312,
+    "ticks": 17095220088,
+    "budget_reached": true
+   },
+   "f746dae2050dd4aa48bcd53e8bd897b4@2": {
+    "status": "unknown",
+    "conflicts": 3750339,
+    "ticks": 13198436910,
+    "budget_reached": true
+   },
+   "07b476c83150d3cb7e08f5d045e255ab@2": {
+    "status": "unknown",
+    "conflicts": 40622487,
+    "ticks": 16287054027,
+    "budget_reached": true
+   },
+   "c69c5163c9087ffe770743bd4cdafcc9@2": {
+    "status": "unknown",
+    "conflicts": 30156499,
+    "ticks": 10991892681,
+    "budget_reached": true
+   },
+   "bd19da88800086971e554e9d66bc641d@3": {
+    "status": "unsat",
+    "conflicts": 3181144,
+    "ticks": 8662520214
+   },
+   "05ed64e4e6229f446082752936768489@3": {
+    "status": "unsat",
+    "conflicts": 4016103,
+    "ticks": 7672798061
+   },
+   "e84b00b1f134e0e071a2baf54cfc90e8@3": {
+    "status": "unsat",
+    "conflicts": 6108750,
+    "ticks": 10123994792
+   },
+   "0876c518e5653369e20fb1ee0bb8db40@3": {
+    "status": "unknown",
+    "conflicts": 192447,
+    "ticks": 1400942288,
+    "budget_reached": true
+   },
+   "9276ce38c625b2d00de247f8588f1542@3": {
+    "status": "sat",
+    "conflicts": 4714118,
+    "ticks": 13920281833
+   },
+   "6969c86fbc5814332ab8615031334fa8@3": {
+    "status": "unknown",
+    "conflicts": 50626,
+    "ticks": 7201321156,
+    "budget_reached": true
+   },
+   "b8f5fc2425facb3aec52a665f32a500c@3": {
+    "status": "unsat",
+    "conflicts": 100038,
+    "ticks": 6102428080
+   },
+   "9dcbf221b8d2bb01f30bcca283f3608d@3": {
+    "status": "sat",
+    "conflicts": 153127,
+    "ticks": 1210976390
+   },
+   "f296fe701a562022c0de0cf565fbca7d@3": {
+    "status": "unsat",
+    "conflicts": 357177,
+    "ticks": 797043791
+   },
+   "475803537529d9d14a034957f48a6d38@3": {
+    "status": "unsat",
+    "conflicts": 648704,
+    "ticks": 1503855683
+   },
+   "edceb8782e72e290fa54757dbfdd0173@3": {
+    "status": "unsat",
+    "conflicts": 615975,
+    "ticks": 1378391792
+   },
+   "ded23680dfeab2879c05bc0e4de21126@3": {
+    "status": "unsat",
+    "conflicts": 712416,
+    "ticks": 1601434532
+   },
+   "13ae2628d8e113db1786dba41a65fe38@3": {
+    "status": "sat",
+    "conflicts": 45561,
+    "ticks": 96023738
+   },
+   "915a25bd189357e4c6d7771b69a6849f@3": {
+    "status": "unsat",
+    "conflicts": 918707,
+    "ticks": 2258456928
+   },
+   "a45a0358685867bd4f1c7f7c0b0e379c@3": {
+    "status": "sat",
+    "conflicts": 870106,
+    "ticks": 2146467002
+   },
+   "1507d9812624b3e0eaf15e40100be020@3": {
+    "status": "sat",
+    "conflicts": 1159679,
+    "ticks": 3073737120
+   },
+   "f376d4c191518ed704326960b6b19a4b@3": {
+    "status": "unsat",
+    "conflicts": 2011619,
+    "ticks": 5703650199
+   },
+   "e08f11f0a3bd266ee5c78ce332de107f@3": {
+    "status": "unsat",
+    "conflicts": 1825337,
+    "ticks": 5010888895
+   },
+   "c0e6e6eeebd48ca600cfc7d662fa804c@3": {
+    "status": "unsat",
+    "conflicts": 2094612,
+    "ticks": 5859109849
+   },
+   "df1bd67978b9b0ec1d326ba174bc273c@3": {
+    "status": "sat",
+    "conflicts": 1472250,
+    "ticks": 4098288540
+   },
+   "b7273af3d468ea2595f11a6dbd6ef6ce@3": {
+    "status": "unsat",
+    "conflicts": 2482946,
+    "ticks": 7494674309
+   },
+   "195852083a05edee1902233698eec14a@3": {
+    "status": "sat",
+    "conflicts": 3349,
+    "ticks": 2928217
+   },
+   "907e7dc703e16ad2c7e56a33fe3b3e5f@3": {
+    "status": "unsat",
+    "conflicts": 1684602,
+    "ticks": 2613100976
+   },
+   "773f3bd29e202ff700d8b5b459857a2c@3": {
+    "status": "sat",
+    "conflicts": 2409589,
+    "ticks": 4745132005
+   },
+   "eed5189b73738270ae3fdb8b33bf31c8@3": {
+    "status": "sat",
+    "conflicts": 2038283,
+    "ticks": 3776988420
+   },
+   "77b7f7bbf75faaee28f473b9941de103@3": {
+    "status": "sat",
+    "conflicts": 2099249,
+    "ticks": 3887393222
+   },
+   "d40a68825bdbcdd7642b249325a7b6a2@3": {
+    "status": "sat",
+    "conflicts": 1219732,
+    "ticks": 2161029202
+   },
+   "0d81711a3d73c828e8c6e12607eda82d@3": {
+    "status": "sat",
+    "conflicts": 1322549,
+    "ticks": 2199841587
+   },
+   "de7a6b03999e2bc5bd750831c2662a4d@3": {
+    "status": "sat",
+    "conflicts": 2202807,
+    "ticks": 3886192318
+   },
+   "6c52aca5b5fd284bf1940b84df90a367@3": {
+    "status": "unsat",
+    "conflicts": 930505,
+    "ticks": 2477402237
+   },
+   "4a8285a53f30b35016b0c85ea17ba155@3": {
+    "status": "unsat",
+    "conflicts": 1533474,
+    "ticks": 4048210301
+   },
+   "e067414e153ee98a7842bd6d6dafeee5@3": {
+    "status": "sat",
+    "conflicts": 182772,
+    "ticks": 1309606717
+   },
+   "04ded94454830d4ea960327e8b91f5a3@3": {
+    "status": "sat",
+    "conflicts": 1212941,
+    "ticks": 2092385372
+   },
+   "d1940d3d830eb16a7d2270ca4af4acba@3": {
+    "status": "sat",
+    "conflicts": 2640610,
+    "ticks": 5187911218
+   },
+   "65c5a5d228ec5e52d1a72f918086f584@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 2658129
+   },
+   "e85fb114c33f450dc2622c78bc6fa019@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 6838597
+   },
+   "812926407774771b3bd9885f7bfa4841@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 8808865
+   },
+   "d7dbb2cba940af33b2bce37ea99b8110@3": {
+    "status": "unsat",
+    "conflicts": 1568492,
+    "ticks": 1882899974
+   },
+   "88e89266e58f1f125ebc4e0f66e2c060@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 5250729
+   },
+   "c214f1eb2576af00e3fb09f7d0305764@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 7055796
+   },
+   "84c6d7e4a18aacf166105aaa3cd6e3de@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9449018
+   },
+   "e371cd7cdde3e7ccb9834290fd4a92d0@3": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9139629
+   },
+   "dd57f6ebf07a7f932a82bed1877788e6@3": {
+    "status": "unsat",
+    "conflicts": 2055916,
+    "ticks": 7824337700
+   },
+   "04e219c640ed59dc68ea2d50493de5b5@3": {
+    "status": "unknown",
+    "conflicts": 6115095,
+    "ticks": 13727969929,
+    "budget_reached": true
+   },
+   "c76f3c6c2e2eae85fc5f3d499f3db88d@3": {
+    "status": "unsat",
+    "conflicts": 242327,
+    "ticks": 320308974
+   },
+   "b4b41b2ff14427e5715cb9bee06d4602@3": {
+    "status": "unsat",
+    "conflicts": 409374,
+    "ticks": 1546997320
+   },
+   "8530c911b75ab1b276042043d118a875@3": {
+    "status": "unsat",
+    "conflicts": 829818,
+    "ticks": 2262474515
+   },
+   "f8443057c188f6c9cfb711ff3d4aa6ff@3": {
+    "status": "unsat",
+    "conflicts": 355082,
+    "ticks": 2569517979
+   },
+   "70ef2b6bdc4101a0e35cf3d165571fe3@3": {
+    "status": "sat",
+    "conflicts": 35560,
+    "ticks": 257468674
+   },
+   "dc7817dfa2817916b266c1cfacd2ee66@3": {
+    "status": "unsat",
+    "conflicts": 3439089,
+    "ticks": 8362013450
+   },
+   "adf6dacdd64c93f9de1aa0eadf427faa@3": {
+    "status": "sat",
+    "conflicts": 426476,
+    "ticks": 896649657
+   },
+   "37ca184832fc6fa43a22ae900f1756a2@3": {
+    "status": "sat",
+    "conflicts": 1704882,
+    "ticks": 1606673800
+   },
+   "70bfbd054dc9ffd394fab32845b492d3@3": {
+    "status": "sat",
+    "conflicts": 1653035,
+    "ticks": 1687275845
+   },
+   "b68ae7866df5e852c3acb97a46da2faf@3": {
+    "status": "sat",
+    "conflicts": 719363,
+    "ticks": 1791037252
+   },
+   "9e6c2e7b0d6f58e449716deb9305525a@3": {
+    "status": "unknown",
+    "conflicts": 6804450,
+    "ticks": 67714998803,
+    "budget_reached": true
+   },
+   "c2bfe541b7cff948fa3193e9ca0eddee@3": {
+    "status": "sat",
+    "conflicts": 4394478,
+    "ticks": 11506178953
+   },
+   "3ed56242f55e3653dbceeb4a70221787@3": {
+    "status": "sat",
+    "conflicts": 303808,
+    "ticks": 491577196
+   },
+   "5411047bc24f4321f0e490e01e4a0910@3": {
+    "status": "unsat",
+    "conflicts": 316964,
+    "ticks": 2550822286
+   },
+   "1afa2d7a3d817c3149da432eece66da8@3": {
+    "status": "sat",
+    "conflicts": 3413,
+    "ticks": 121671164
+   },
+   "be6411f4784a3c879886dda807cdc607@3": {
+    "status": "sat",
+    "conflicts": 660861,
+    "ticks": 2790944199
+   },
+   "07e6413459f92b613498a719125b6239@3": {
+    "status": "unsat",
+    "conflicts": 298012,
+    "ticks": 1251943712
+   },
+   "43e492bccfd57029b758897b17d7f04f@3": {
+    "status": "sat",
+    "conflicts": 63113,
+    "ticks": 701866641
+   },
+   "83b330c934d6dd35d56e1b1ca3638b3c@3": {
+    "status": "sat",
+    "conflicts": 548071,
+    "ticks": 2685201462
+   },
+   "0ac6aaf6db6a0e4ec3a06e865d01086f@3": {
+    "status": "unsat",
+    "conflicts": 4358732,
+    "ticks": 5428432884
+   },
+   "5ea72bcdccc86bd1a924029f7b81aec5@3": {
+    "status": "sat",
+    "conflicts": 1024259,
+    "ticks": 3038604070
+   },
+   "878bcc11e1e243680f7946bcf428f465@3": {
+    "status": "unsat",
+    "conflicts": 12787,
+    "ticks": 1127984620
+   },
+   "1e0da402100982e53001a64281149dd9@3": {
+    "status": "unsat",
+    "conflicts": 15850,
+    "ticks": 881947935
+   },
+   "0d3160b80aa406bfc718c007265b9e73@3": {
+    "status": "unsat",
+    "conflicts": 14775,
+    "ticks": 3047359277
+   },
+   "f54b352934be08821aa75b3424112956@3": {
+    "status": "unsat",
+    "conflicts": 8326,
+    "ticks": 620730073
+   },
+   "6008b958ff6877f32c26b72728df4523@3": {
+    "status": "unsat",
+    "conflicts": 14730,
+    "ticks": 2523754840
+   },
+   "c8b129b9e4835b8a40d5ef0d27a45bef@3": {
+    "status": "unsat",
+    "conflicts": 52699,
+    "ticks": 6614920612
+   },
+   "0f262afd5b117000f8b4734d175aadab@3": {
+    "status": "unsat",
+    "conflicts": 10216,
+    "ticks": 2236326274
+   },
+   "f054205a7cef98e5021016f864c69816@3": {
+    "status": "sat",
+    "conflicts": 465437,
+    "ticks": 1759603343
+   },
+   "e6cdc2687fa53506021f05b60ad0c6a2@3": {
+    "status": "sat",
+    "conflicts": 278510,
+    "ticks": 694461197
+   },
+   "fa5c6d6736a42650656c5bc018413254@3": {
+    "status": "unknown",
+    "conflicts": 20077852,
+    "ticks": 17419297682,
+    "budget_reached": true
+   },
+   "c5ae0ec49de0959cd14431ce851c14f8@3": {
+    "status": "sat",
+    "conflicts": 1385683,
+    "ticks": 5266351107
+   },
+   "973d699ec01b88da869233a79aaa1912@3": {
+    "status": "unknown",
+    "conflicts": 12603916,
+    "ticks": 14559359644,
+    "budget_reached": true
+   },
+   "67c533489a498495525efee429340958@3": {
+    "status": "unknown",
+    "conflicts": 12759453,
+    "ticks": 14357849887,
+    "budget_reached": true
+   },
+   "bbfe2b27182d2ee7fefdb557f458ac9c@3": {
+    "status": "unknown",
+    "conflicts": 11698081,
+    "ticks": 14838342248,
+    "budget_reached": true
+   },
+   "cd33a862b81ba7b887845d3510c41c62@3": {
+    "status": "unknown",
+    "conflicts": 2605543,
+    "ticks": 20937281156,
+    "budget_reached": true
+   },
+   "26254890fa7107f85242ec9190da2a7a@3": {
+    "status": "unknown",
+    "conflicts": 4814696,
+    "ticks": 10600706198,
+    "budget_reached": true
+   },
+   "09c1b79b1cfe3522364fe60aef780703@3": {
+    "status": "sat",
+    "conflicts": 2433087,
+    "ticks": 7314122810
+   },
+   "af05a6b68a1cff165b684d9ff0ae3b3b@3": {
+    "status": "sat",
+    "conflicts": 3539004,
+    "ticks": 11663105489
+   },
+   "5865fb9a6575d2ae6542c36ab96646a9@3": {
+    "status": "sat",
+    "conflicts": 1443661,
+    "ticks": 3997858416
+   },
+   "0a27eb7c16c1e69ff4d087d217ac89cb@3": {
+    "status": "unknown",
+    "conflicts": 8204005,
+    "ticks": 13068373893,
+    "budget_reached": true
+   },
+   "5690b9b0380aa9508699e56cae5918b5@3": {
+    "status": "sat",
+    "conflicts": 2221193,
+    "ticks": 6810224275
+   },
+   "2b032f8a8976a302ad125eb50a3e8445@3": {
+    "status": "unknown",
+    "conflicts": 2165721,
+    "ticks": 9698578072,
+    "budget_reached": true
+   },
+   "be18894105e006399cc018abc14b204f@3": {
+    "status": "unknown",
+    "conflicts": 3167170,
+    "ticks": 14737179663,
+    "budget_reached": true
+   },
+   "a9cb77454c6cfdf4092fb304d3aae8b7@3": {
+    "status": "sat",
+    "conflicts": 6526734,
+    "ticks": 16463841004
+   },
+   "c0293283432a9b15cd743702163f5184@3": {
+    "status": "unknown",
+    "conflicts": 3065147,
+    "ticks": 8728387257,
+    "budget_reached": true
+   },
+   "5e5fe73a2e0ffc8e19873298566919fb@3": {
+    "status": "unknown",
+    "conflicts": 6601360,
+    "ticks": 13821560397,
+    "budget_reached": true
+   },
+   "2dd4b14a8a820e7baa073554ae2c6cb0@3": {
+    "status": "unknown",
+    "conflicts": 6081657,
+    "ticks": 5732654921,
+    "budget_reached": true
+   },
+   "9e85aad5707405fb349c6c5548040cf4@3": {
+    "status": "unknown",
+    "conflicts": 3879458,
+    "ticks": 7904226491,
+    "budget_reached": true
+   },
+   "41f4cb4992a481c9d43e2e1a4e2349ac@3": {
+    "status": "unknown",
+    "conflicts": 6590313,
+    "ticks": 17324604657,
+    "budget_reached": true
+   },
+   "f746dae2050dd4aa48bcd53e8bd897b4@3": {
+    "status": "unknown",
+    "conflicts": 3750339,
+    "ticks": 13248995586,
+    "budget_reached": true
+   },
+   "07b476c83150d3cb7e08f5d045e255ab@3": {
+    "status": "unknown",
+    "conflicts": 40622486,
+    "ticks": 16814076843,
+    "budget_reached": true
+   },
+   "c69c5163c9087ffe770743bd4cdafcc9@3": {
+    "status": "unknown",
+    "conflicts": 30156498,
+    "ticks": 11178798910,
+    "budget_reached": true
+   },
+   "bd19da88800086971e554e9d66bc641d@1": {
+    "status": "unsat",
+    "conflicts": 3293968,
+    "ticks": 9341431834
+   },
+   "05ed64e4e6229f446082752936768489@1": {
+    "status": "unsat",
+    "conflicts": 4290036,
+    "ticks": 8170424912
+   },
+   "e84b00b1f134e0e071a2baf54cfc90e8@1": {
+    "status": "unsat",
+    "conflicts": 6192116,
+    "ticks": 9885443974
+   },
+   "0876c518e5653369e20fb1ee0bb8db40@1": {
+    "status": "unknown",
+    "conflicts": 192448,
+    "ticks": 1410408798,
+    "budget_reached": true
+   },
+   "9276ce38c625b2d00de247f8588f1542@1": {
+    "status": "sat",
+    "conflicts": 4764895,
+    "ticks": 14082142354
+   },
+   "6969c86fbc5814332ab8615031334fa8@1": {
+    "status": "unknown",
+    "conflicts": 50626,
+    "ticks": 6486768617,
+    "budget_reached": true
+   },
+   "b8f5fc2425facb3aec52a665f32a500c@1": {
+    "status": "unsat",
+    "conflicts": 89388,
+    "ticks": 5726964575
+   },
+   "9dcbf221b8d2bb01f30bcca283f3608d@1": {
+    "status": "sat",
+    "conflicts": 236758,
+    "ticks": 1940431038
+   },
+   "f296fe701a562022c0de0cf565fbca7d@1": {
+    "status": "unsat",
+    "conflicts": 365100,
+    "ticks": 819344335
+   },
+   "475803537529d9d14a034957f48a6d38@1": {
+    "status": "unsat",
+    "conflicts": 599534,
+    "ticks": 1320762543
+   },
+   "edceb8782e72e290fa54757dbfdd0173@1": {
+    "status": "unsat",
+    "conflicts": 630839,
+    "ticks": 1395621343
+   },
+   "ded23680dfeab2879c05bc0e4de21126@1": {
+    "status": "unsat",
+    "conflicts": 892890,
+    "ticks": 2133480936
+   },
+   "13ae2628d8e113db1786dba41a65fe38@1": {
+    "status": "sat",
+    "conflicts": 1417892,
+    "ticks": 3995771432
+   },
+   "915a25bd189357e4c6d7771b69a6849f@1": {
+    "status": "unsat",
+    "conflicts": 859162,
+    "ticks": 2079449790
+   },
+   "a45a0358685867bd4f1c7f7c0b0e379c@1": {
+    "status": "sat",
+    "conflicts": 248184,
+    "ticks": 571898966
+   },
+   "1507d9812624b3e0eaf15e40100be020@1": {
+    "status": "sat",
+    "conflicts": 3891961,
+    "ticks": 12741249535
+   },
+   "f376d4c191518ed704326960b6b19a4b@1": {
+    "status": "unsat",
+    "conflicts": 1822226,
+    "ticks": 4935814064
+   },
+   "e08f11f0a3bd266ee5c78ce332de107f@1": {
+    "status": "unsat",
+    "conflicts": 2120867,
+    "ticks": 6156228639
+   },
+   "c0e6e6eeebd48ca600cfc7d662fa804c@1": {
+    "status": "unsat",
+    "conflicts": 2145161,
+    "ticks": 6028133827
+   },
+   "df1bd67978b9b0ec1d326ba174bc273c@1": {
+    "status": "sat",
+    "conflicts": 5233229,
+    "ticks": 19079583504
+   },
+   "b7273af3d468ea2595f11a6dbd6ef6ce@1": {
+    "status": "unsat",
+    "conflicts": 2617865,
+    "ticks": 8000116513
+   },
+   "195852083a05edee1902233698eec14a@1": {
+    "status": "sat",
+    "conflicts": 1225038,
+    "ticks": 3241133128
+   },
+   "907e7dc703e16ad2c7e56a33fe3b3e5f@1": {
+    "status": "unsat",
+    "conflicts": 2201554,
+    "ticks": 3869645431
+   },
+   "773f3bd29e202ff700d8b5b459857a2c@1": {
+    "status": "sat",
+    "conflicts": 1943933,
+    "ticks": 3826314519
+   },
+   "eed5189b73738270ae3fdb8b33bf31c8@1": {
+    "status": "sat",
+    "conflicts": 2133004,
+    "ticks": 4025730413
+   },
+   "77b7f7bbf75faaee28f473b9941de103@1": {
+    "status": "sat",
+    "conflicts": 3016184,
+    "ticks": 5890644940
+   },
+   "d40a68825bdbcdd7642b249325a7b6a2@1": {
+    "status": "sat",
+    "conflicts": 1924410,
+    "ticks": 3553198412
+   },
+   "0d81711a3d73c828e8c6e12607eda82d@1": {
+    "status": "sat",
+    "conflicts": 1227635,
+    "ticks": 1831843145
+   },
+   "de7a6b03999e2bc5bd750831c2662a4d@1": {
+    "status": "sat",
+    "conflicts": 3268527,
+    "ticks": 6139083445
+   },
+   "6c52aca5b5fd284bf1940b84df90a367@1": {
+    "status": "unsat",
+    "conflicts": 1002257,
+    "ticks": 2756428493
+   },
+   "4a8285a53f30b35016b0c85ea17ba155@1": {
+    "status": "unsat",
+    "conflicts": 1461458,
+    "ticks": 3869682578
+   },
+   "e067414e153ee98a7842bd6d6dafeee5@1": {
+    "status": "unknown",
+    "conflicts": 2314480,
+    "ticks": 13857551952,
+    "budget_reached": true
+   },
+   "04ded94454830d4ea960327e8b91f5a3@1": {
+    "status": "sat",
+    "conflicts": 3236089,
+    "ticks": 6490108407
+   },
+   "d1940d3d830eb16a7d2270ca4af4acba@1": {
+    "status": "sat",
+    "conflicts": 5690035,
+    "ticks": 12771345983
+   },
+   "65c5a5d228ec5e52d1a72f918086f584@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 2658129
+   },
+   "e85fb114c33f450dc2622c78bc6fa019@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 6838597
+   },
+   "812926407774771b3bd9885f7bfa4841@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 8808865
+   },
+   "d7dbb2cba940af33b2bce37ea99b8110@1": {
+    "status": "unsat",
+    "conflicts": 1058742,
+    "ticks": 1179960517
+   },
+   "88e89266e58f1f125ebc4e0f66e2c060@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 5250729
+   },
+   "c214f1eb2576af00e3fb09f7d0305764@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 7055796
+   },
+   "84c6d7e4a18aacf166105aaa3cd6e3de@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9449018
+   },
+   "e371cd7cdde3e7ccb9834290fd4a92d0@1": {
+    "status": "sat",
+    "conflicts": 0,
+    "ticks": 9139629
+   },
+   "dd57f6ebf07a7f932a82bed1877788e6@1": {
+    "status": "unsat",
+    "conflicts": 2214589,
+    "ticks": 8182602625
+   },
+   "04e219c640ed59dc68ea2d50493de5b5@1": {
+    "status": "sat",
+    "conflicts": 1310198,
+    "ticks": 2437381824
+   },
+   "c76f3c6c2e2eae85fc5f3d499f3db88d@1": {
+    "status": "unsat",
+    "conflicts": 309590,
+    "ticks": 449791278
+   },
+   "b4b41b2ff14427e5715cb9bee06d4602@1": {
+    "status": "unsat",
+    "conflicts": 345871,
+    "ticks": 1318149510
+   },
+   "8530c911b75ab1b276042043d118a875@1": {
+    "status": "unsat",
+    "conflicts": 856080,
+    "ticks": 2616666067
+   },
+   "f8443057c188f6c9cfb711ff3d4aa6ff@1": {
+    "status": "unsat",
+    "conflicts": 293714,
+    "ticks": 1829329681
+   },
+   "70ef2b6bdc4101a0e35cf3d165571fe3@1": {
+    "status": "sat",
+    "conflicts": 56365,
+    "ticks": 390691222
+   },
+   "dc7817dfa2817916b266c1cfacd2ee66@1": {
+    "status": "unsat",
+    "conflicts": 4312144,
+    "ticks": 10702871267
+   },
+   "adf6dacdd64c93f9de1aa0eadf427faa@1": {
+    "status": "sat",
+    "conflicts": 436865,
+    "ticks": 889952761
+   },
+   "37ca184832fc6fa43a22ae900f1756a2@1": {
+    "status": "sat",
+    "conflicts": 1686275,
+    "ticks": 1893142991
+   },
+   "70bfbd054dc9ffd394fab32845b492d3@1": {
+    "status": "sat",
+    "conflicts": 1755748,
+    "ticks": 1908452041
+   },
+   "b68ae7866df5e852c3acb97a46da2faf@1": {
+    "status": "sat",
+    "conflicts": 779439,
+    "ticks": 1935990998
+   },
+   "9e6c2e7b0d6f58e449716deb9305525a@1": {
+    "status": "unknown",
+    "conflicts": 6804450,
+    "ticks": 65293839539,
+    "budget_reached": true
+   },
+   "c2bfe541b7cff948fa3193e9ca0eddee@1": {
+    "status": "unknown",
+    "conflicts": 6492624,
+    "ticks": 18713793287,
+    "budget_reached": true
+   },
+   "3ed56242f55e3653dbceeb4a70221787@1": {
+    "status": "sat",
+    "conflicts": 4689138,
+    "ticks": 9914685050
+   },
+   "5411047bc24f4321f0e490e01e4a0910@1": {
+    "status": "unsat",
+    "conflicts": 351928,
+    "ticks": 2538325104
+   },
+   "1afa2d7a3d817c3149da432eece66da8@1": {
+    "status": "sat",
+    "conflicts": 2003,
+    "ticks": 109930108
+   },
+   "be6411f4784a3c879886dda807cdc607@1": {
+    "status": "unknown",
+    "conflicts": 678969,
+    "ticks": 2814301049,
+    "budget_reached": true
+   },
+   "07e6413459f92b613498a719125b6239@1": {
+    "status": "unsat",
+    "conflicts": 298791,
+    "ticks": 1274899903
+   },
+   "43e492bccfd57029b758897b17d7f04f@1": {
+    "status": "sat",
+    "conflicts": 4136,
+    "ticks": 60312310
+   },
+   "83b330c934d6dd35d56e1b1ca3638b3c@1": {
+    "status": "sat",
+    "conflicts": 928944,
+    "ticks": 4368825159
+   },
+   "0ac6aaf6db6a0e4ec3a06e865d01086f@1": {
+    "status": "unsat",
+    "conflicts": 4129115,
+    "ticks": 5112905099
+   },
+   "5ea72bcdccc86bd1a924029f7b81aec5@1": {
+    "status": "sat",
+    "conflicts": 1125887,
+    "ticks": 3463355870
+   },
+   "878bcc11e1e243680f7946bcf428f465@1": {
+    "status": "unsat",
+    "conflicts": 5753,
+    "ticks": 617048663
+   },
+   "1e0da402100982e53001a64281149dd9@1": {
+    "status": "unsat",
+    "conflicts": 10523,
+    "ticks": 1505659017
+   },
+   "0d3160b80aa406bfc718c007265b9e73@1": {
+    "status": "unknown",
+    "conflicts": 31768,
+    "ticks": 4250614649,
+    "budget_reached": true
+   },
+   "f54b352934be08821aa75b3424112956@1": {
+    "status": "unsat",
+    "conflicts": 10676,
+    "ticks": 747197187
+   },
+   "6008b958ff6877f32c26b72728df4523@1": {
+    "status": "unsat",
+    "conflicts": 38449,
+    "ticks": 4249373041
+   },
+   "c8b129b9e4835b8a40d5ef0d27a45bef@1": {
+    "status": "unsat",
+    "conflicts": 8438,
+    "ticks": 1511313088
+   },
+   "0f262afd5b117000f8b4734d175aadab@1": {
+    "status": "unsat",
+    "conflicts": 12821,
+    "ticks": 1693018747
+   },
+   "f054205a7cef98e5021016f864c69816@1": {
+    "status": "sat",
+    "conflicts": 47795,
+    "ticks": 272514052
+   },
+   "e6cdc2687fa53506021f05b60ad0c6a2@1": {
+    "status": "sat",
+    "conflicts": 217126,
+    "ticks": 453419668
+   },
+   "fa5c6d6736a42650656c5bc018413254@1": {
+    "status": "unknown",
+    "conflicts": 20077851,
+    "ticks": 17046012208,
+    "budget_reached": true
+   },
+   "c5ae0ec49de0959cd14431ce851c14f8@1": {
+    "status": "unknown",
+    "conflicts": 3479503,
+    "ticks": 17382775081,
+    "budget_reached": true
+   },
+   "973d699ec01b88da869233a79aaa1912@1": {
+    "status": "unknown",
+    "conflicts": 12603919,
+    "ticks": 14587957294,
+    "budget_reached": true
+   },
+   "67c533489a498495525efee429340958@1": {
+    "status": "unknown",
+    "conflicts": 12759455,
+    "ticks": 15788601350,
+    "budget_reached": true
+   },
+   "bbfe2b27182d2ee7fefdb557f458ac9c@1": {
+    "status": "unknown",
+    "conflicts": 11698082,
+    "ticks": 13000774061,
+    "budget_reached": true
+   },
+   "cd33a862b81ba7b887845d3510c41c62@1": {
+    "status": "unknown",
+    "conflicts": 2605543,
+    "ticks": 21119798209,
+    "budget_reached": true
+   },
+   "26254890fa7107f85242ec9190da2a7a@1": {
+    "status": "unknown",
+    "conflicts": 4814696,
+    "ticks": 10778571859,
+    "budget_reached": true
+   },
+   "09c1b79b1cfe3522364fe60aef780703@1": {
+    "status": "sat",
+    "conflicts": 1594179,
+    "ticks": 4355080737
+   },
+   "af05a6b68a1cff165b684d9ff0ae3b3b@1": {
+    "status": "unknown",
+    "conflicts": 5087249,
+    "ticks": 17860881176,
+    "budget_reached": true
+   },
+   "5865fb9a6575d2ae6542c36ab96646a9@1": {
+    "status": "sat",
+    "conflicts": 3134733,
+    "ticks": 9962387785
+   },
+   "0a27eb7c16c1e69ff4d087d217ac89cb@1": {
+    "status": "unknown",
+    "conflicts": 8204005,
+    "ticks": 13336839501,
+    "budget_reached": true
+   },
+   "5690b9b0380aa9508699e56cae5918b5@1": {
+    "status": "unknown",
+    "conflicts": 4797674,
+    "ticks": 17106083387,
+    "budget_reached": true
+   },
+   "2b032f8a8976a302ad125eb50a3e8445@1": {
+    "status": "unknown",
+    "conflicts": 2165722,
+    "ticks": 9282908814,
+    "budget_reached": true
+   },
+   "be18894105e006399cc018abc14b204f@1": {
+    "status": "unknown",
+    "conflicts": 3167170,
+    "ticks": 14878870605,
+    "budget_reached": true
+   },
+   "a9cb77454c6cfdf4092fb304d3aae8b7@1": {
+    "status": "unknown",
+    "conflicts": 6747712,
+    "ticks": 17048478109,
+    "budget_reached": true
+   },
+   "c0293283432a9b15cd743702163f5184@1": {
+    "status": "unknown",
+    "conflicts": 3065147,
+    "ticks": 8474423890,
+    "budget_reached": true
+   },
+   "5e5fe73a2e0ffc8e19873298566919fb@1": {
+    "status": "unknown",
+    "conflicts": 6601362,
+    "ticks": 14115273591,
+    "budget_reached": true
+   },
+   "2dd4b14a8a820e7baa073554ae2c6cb0@1": {
+    "status": "unknown",
+    "conflicts": 6081656,
+    "ticks": 5611300242,
+    "budget_reached": true
+   },
+   "9e85aad5707405fb349c6c5548040cf4@1": {
+    "status": "unknown",
+    "conflicts": 3879457,
+    "ticks": 8164696998,
+    "budget_reached": true
+   },
+   "41f4cb4992a481c9d43e2e1a4e2349ac@1": {
+    "status": "unknown",
+    "conflicts": 6590313,
+    "ticks": 16893427749,
+    "budget_reached": true
+   },
+   "f746dae2050dd4aa48bcd53e8bd897b4@1": {
+    "status": "unknown",
+    "conflicts": 3750339,
+    "ticks": 12813415298,
+    "budget_reached": true
+   },
+   "07b476c83150d3cb7e08f5d045e255ab@1": {
+    "status": "unknown",
+    "conflicts": 40622486,
+    "ticks": 16795824495,
+    "budget_reached": true
+   },
+   "c69c5163c9087ffe770743bd4cdafcc9@1": {
+    "status": "unknown",
+    "conflicts": 30156500,
+    "ticks": 10830145816,
     "budget_reached": true
    }
   }

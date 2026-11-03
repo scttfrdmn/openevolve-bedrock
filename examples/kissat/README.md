@@ -114,6 +114,36 @@ separate a restart-policy effect of about 10% from the change of trajectory it
 causes. A credible improvement has to clear the seed spread on both halves, or be
 measured over several seeds.
 
+### Several seeds
+
+`KISSAT_EVAL_SEEDS=0,1,2,3` runs every instance at each Kissat seed
+(`--seed=s`) and pools all runs into one tick-PAR-2, each run against stock at
+the same seed. The stock file keys a run at seed s > 0 as `hash@s`. The mixed
+split with stock failures has stock at seeds 0–3. Stock solves 72–74 of the 74
+train instances depending on the seed, and every run that it doesn't solve ends
+on its budget. The same ten programs, pooled over seeds 0–3 (the null programs
+use seed N + 4s):
+
+| program | train, 4 seeds | heldout, 4 seeds |
+|---|---|---|
+| `restartmargin` 15 | 0.98 | 1.00 |
+| `restartmargin` 20 | 1.01 | 1.03 |
+| `restartmargin` 30 | 1.01 | 0.99 |
+| focused restart interval log term × 1.5 | 1.07 | 1.09 |
+| evolved, 1.2425 on Hamiltonian | 1.03 | 0.86 |
+| evolved, 0.917 on Hamiltonian | 1.02 | 1.03 |
+| stock, seed offsets 1–4 | 1.01–1.11 | 0.92–1.00 |
+
+Pooling four seeds cuts the null spread from sd 0.07 (train) and 0.17 (heldout)
+for one seed to 0.05 and 0.03. With it, the policies average 1.01 and the nulls
+1.00 (Welch t = 0.4). No policy is above every null on both halves, and train
+doesn't predict heldout (Spearman −0.22). The Hamiltonian effects don't survive
+either. On the 34 Hamiltonian instances, `restartmargin` 30 has a 4-seed geomean
+of 1.11 (0.84–1.50), and one null has 1.15. Changes to the restart constants of
+Kissat 4.0.4 have no effect measurable at about ±5% on these 193 instances. An
+evaluation at 4 seeds costs 4×: about 65 min per half on one r8g.8xlarge, or 16
+min spread over 4 workers.
+
 ## Fitness
 
 Each instance runs with a conflict budget of 3× stock's conflicts on it (from the
@@ -176,6 +206,7 @@ KISSAT_EVAL_SPLIT=heldout python -c "import sys; sys.path.insert(0, 'examples/ki
 | `KISSAT_EVAL_CAP` | the stock file's cap (300; 1200 for `mixed_split`) | per-instance cap in seconds; must match `prepare.py --cap` |
 | `KISSAT_EVAL_SPLIT` | `train` | set scored by `evaluate` / stage 2 |
 | `KISSAT_EVAL_METRIC` | `ticks` | `ticks` (deterministic) or `time` (wall-clock PAR-2) |
+| `KISSAT_EVAL_SEEDS` | `0` | Kissat seeds each instance runs with; the score pools all runs, each against stock at the same seed |
 | `KISSAT_EVAL_BUDGET` | 3 | conflict budget as a multiple of stock's conflicts; must match `prepare.py` |
 | `KISSAT_EVAL_CACHE` | `<home>/eval-cache` | result cache by C token sequence; `off` disables |
 | `KISSAT_EVAL_REPEATS` | `reuse` | `penalize`: an exact repeat of an evaluated program scores 0, so copies don't fill the population. Needs `KISSAT_EVAL_CACHE` set to a directory for that run only |

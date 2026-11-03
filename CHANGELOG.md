@@ -31,6 +31,11 @@ All notable changes to this project are documented here. The format follows
   `budget_reached`, and an unsolved instance then costs twice stock's ticks
   there. Six policies score 1.01–1.26 on it, and stock with only its seed
   changed scores 0.93–1.17, so none of them is distinguishable from chance (#13).
+- `examples/kissat`: `KISSAT_EVAL_SEEDS` runs each instance at several Kissat
+  seeds and pools the runs, each against stock at the same seed. Stock at seeds
+  0–3 is in `mixed_frontier_split.stock_ticks.json` (`hash@seed`). Four seeds
+  cut the null spread from 0.07–0.17 to 0.03–0.05, and with that no restart
+  policy tested differs from stock (#13).
 - `examples/kissat`: the system message tells the model that the programs shown
   are already evaluated and asks for a different modification. Copies of the
   best program in a 60-iteration run's final population fell from 19 to 2.

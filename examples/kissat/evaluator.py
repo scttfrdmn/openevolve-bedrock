@@ -46,6 +46,10 @@ machine. Environment (all optional):
                        stock_ticks.json for the default, else <stem>.stock_ticks.json
     KISSAT_EVAL_SPLIT  split to score (default: train)
     KISSAT_EVAL_METRIC ticks (default) or time
+    KISSAT_EVAL_SEEDS  Kissat seeds each instance is run with, e.g. "0,1,2,3"
+                       (default: 0). The score pools all (instance, seed) runs,
+                       each against stock at the same seed, which averages out
+                       the change of search trajectory any change causes
     KISSAT_EVAL_BUDGET conflict budget as a multiple of stock's conflicts (default: 3)
     KISSAT_EVAL_CACHE  result cache dir (default: <home>/eval-cache); "off" disables
     KISSAT_EVAL_DETAIL set to add per-instance results ("detail") to the metrics;
@@ -211,12 +215,28 @@ def satisfies(cnf_xz: Path, witness: list) -> bool:
     return not clause or any(l in true for l in clause)
 
 
-def run_instance(kissat: Path, row: dict, time_cap: int) -> dict:
+def seeds() -> list:
+    return [int(x) for x in os.environ.get("KISSAT_EVAL_SEEDS", "0").split(",") if x.strip()]
+
+
+def run_key(hash_: str, seed: int) -> str:
+    """Key of a run in a stock file: the hash for seed 0 (so seed-0 files stay
+    valid), ``hash@seed`` otherwise."""
+    return hash_ if seed == 0 else f"{hash_}@{seed}"
+
+
+def runs(rows: list) -> list:
+    """(row, seed) for every run of a set, in the order run_batch returns them."""
+    return [(row, seed) for row in rows for seed in seeds()]
+
+
+def run_instance(kissat: Path, row: dict, time_cap: int, seed: int = 0) -> dict:
     cnf = home() / "instances" / f"{row['hash']}.cnf.xz"
     t0 = time.monotonic()
     try:
         p = subprocess.run([str(kissat), "--statistics", f"--time={time_cap}",
-                            f"--conflicts={conflict_budget(row)}", str(cnf)],
+                            f"--conflicts={conflict_budget(row)}", *([f"--seed={seed}"] if seed else []),
+                            str(cnf)],
                            capture_output=True, text=True, timeout=time_cap + 60)
         rc, out = p.returncode, p.stdout
     except subprocess.TimeoutExpired:
@@ -227,7 +247,7 @@ def run_instance(kissat: Path, row: dict, time_cap: int) -> dict:
         m = re.search(rf"^c {name}:\s+(\d+)", out, re.M)
         return int(m.group(1)) if m else None
 
-    res = {"hash": row["hash"], "status": status, "wall_s": wall,
+    res = {"hash": row["hash"], "seed": seed, "status": status, "wall_s": wall,
            "conflicts": counter("conflicts"), "ticks": counter("search_ticks"), "wrong": False}
     if status in ("sat", "unsat") and row["expected"] in ("sat", "unsat") and status != row["expected"]:
         res["wrong"] = True
@@ -285,9 +305,11 @@ def baseline() -> dict:
 
 
 def run_batch(kissat: Path, rows: list, time_cap: int) -> list:
+    """Every run of ``runs(rows)``, in that order."""
+    todo = runs(rows)
     jobs = int(os.environ.get("KISSAT_EVAL_JOBS", os.cpu_count() or 1))
-    with ThreadPoolExecutor(max(1, min(jobs, len(rows)))) as ex:
-        return list(ex.map(lambda r: run_instance(kissat, r, time_cap), rows))
+    with ThreadPoolExecutor(max(1, min(jobs, len(todo)))) as ex:
+        return list(ex.map(lambda rs: run_instance(kissat, rs[0], time_cap, rs[1]), todo))
 
 
 def score(program_path: str, set_name: str, time_cap: int) -> dict:
@@ -311,7 +333,12 @@ def score(program_path: str, set_name: str, time_cap: int) -> dict:
         results = run_batch(kissat, rows, time_cap)
 
     wrong = [r["hash"] for r in results if r["wrong"]]
-    stock = [base["sets"][set_name][r["hash"]] for r in rows]
+    missing = [run_key(r["hash"], seed) for r, seed in runs(rows)
+               if run_key(r["hash"], seed) not in base["sets"][set_name]]
+    if missing:
+        raise RuntimeError(f"stock baseline has no {set_name!r} runs for seeds {seeds()} "
+                           f"({len(missing)} missing, e.g. {missing[0]}); measure them with prepare.py")
+    stock = [base["sets"][set_name][run_key(r["hash"], seed)] for r, seed in runs(rows)]
     stock_par2 = par2(stock, time_cap) if all("wall_s" in s for s in stock) else None
     cand_par2 = par2(results, time_cap)
     stock_ticks, cand_ticks = tick_par2(stock, stock), tick_par2(results, stock)
@@ -323,11 +350,11 @@ def score(program_path: str, set_name: str, time_cap: int) -> dict:
     if wrong:
         combined = 0.0
     elif tick_score is None:  # frontier: stock solves none, so score instances solved
-        combined = solved / len(rows)
+        combined = solved / len(results)
     else:
         combined = tick_score if metric() == "ticks" else time_score
     wall_capped = sum(r["status"] == "unknown" and (r["conflicts"] or 0) < conflict_budget(row)
-                      for r, row in zip(results, rows))
+                      for r, (row, _) in zip(results, runs(rows)))
     metrics = {
         "combined_score": combined,
         "tick_score": tick_score,
@@ -336,6 +363,7 @@ def score(program_path: str, set_name: str, time_cap: int) -> dict:
         "stock_par2_s": stock_par2,
         "solved": solved,
         "instances": len(rows),
+        "runs": len(results),
         "wrong_answers": len(wrong),
         "wall_capped": wall_capped,
         "conflicts_ratio": conflicts / stock_conflicts if stock_conflicts else None,
@@ -343,7 +371,7 @@ def score(program_path: str, set_name: str, time_cap: int) -> dict:
     if wrong:
         metrics["error"] = f"wrong answer on {', '.join(h[:8] for h in wrong)}"
     if os.environ.get("KISSAT_EVAL_DETAIL"):  # per-instance results, for analysis runs
-        metrics["detail"] = [{k: r[k] for k in ("hash", "status", "ticks", "conflicts", "wall_s")}
+        metrics["detail"] = [{k: r[k] for k in ("hash", "seed", "status", "ticks", "conflicts", "wall_s")}
                              for r in results]
     return metrics
 
@@ -368,6 +396,7 @@ def cache_key(code: str, set_name: str, time_cap: int) -> str:
     material = {
         "tokens": c_tokens(code), "set": set_name, "cap": time_cap, "metric": metric(),
         "budget": budget_factor(),
+        **({"seeds": seeds()} if seeds() != [0] else {}),
         "split": hashlib.sha256(split_file().read_bytes()).hexdigest(),
         "stock": hashlib.sha256(json.dumps(base["sets"].get(set_name), sort_keys=True).encode()).hexdigest(),
     }
