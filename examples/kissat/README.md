@@ -101,7 +101,7 @@ KISSAT_EVAL_SPLIT=heldout python -c "import sys; sys.path.insert(0, 'examples/ki
 | `KISSAT_EVAL_METRIC` | `ticks` | `ticks` (deterministic) or `time` (wall-clock PAR-2) |
 | `KISSAT_EVAL_BUDGET` | 3 | conflict budget as a multiple of stock's conflicts; must match `prepare.py` |
 | `KISSAT_EVAL_CACHE` | `<home>/eval-cache` | result cache by C token sequence; `off` disables |
-| `KISSAT_EVAL_REPEATS` | `reuse` | `penalize`: an exact repeat of an evaluated program scores 0, so copies don't fill the population |
+| `KISSAT_EVAL_REPEATS` | `reuse` | `penalize`: an exact repeat of an evaluated program scores 0, so copies don't fill the population. Needs `KISSAT_EVAL_CACHE` set to a directory for that run only |
 
 With the tick metric, a laptop gives the same scores as Graviton, only slower. Wall
 time (`time` mode) belongs on a fixed, dedicated Graviton instance type.

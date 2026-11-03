@@ -164,3 +164,13 @@ def test_repeat_penalty_scores_copies_zero(monkeypatch, tmp_path):
     assert first["combined_score"] == 1.25
     assert again["combined_score"] == 0.0 and again["repeat_of_score"] == 1.25
     assert "repeat" in again["error"]
+
+
+def test_repeat_penalty_requires_a_run_scoped_cache(monkeypatch, tmp_path):
+    monkeypatch.setattr(ev, "baseline", lambda: {"sets": {"train": {}}})
+    monkeypatch.setenv("KISSAT_EVAL_REPEATS", "penalize")
+    monkeypatch.delenv("KISSAT_EVAL_CACHE", raising=False)
+    p = tmp_path / "a.c"
+    p.write_text(INITIAL)
+    with pytest.raises(RuntimeError, match="KISSAT_EVAL_CACHE"):
+        ev.cached(str(p), "train", 300, lambda: {"combined_score": 1.0})
