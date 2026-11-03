@@ -19,6 +19,7 @@ wrote the candidate.
 | `remote.py` | worker entry point for `evaluator_pool.py` |
 | `stock_ticks.json` | stock Kissat's conflicts and ticks per instance set (machine-independent), used when no local `baseline.json` exists |
 | `mixed_split.jsonl`, `mixed_split.stock_ticks.json` | a second instance list, 148 instances from 32 families, and its stock numbers (`KISSAT_EVAL_SPLIT_FILE=mixed_split.jsonl`) |
+| `mixed_frontier_split.jsonl`, `mixed_frontier_split.stock_ticks.json` | the mixed split plus 45 instances stock fails that a 2024 competitor solves in 300 s |
 | `LICENSE.kissat` | Kissat's MIT licence, which covers `initial_program.c` |
 
 ## Instances and split
@@ -72,6 +73,46 @@ change can only lose instances. Each one lost (2–8 of 74 here) costs 6× stock
 ticks on it, which outweighs gains elsewhere. Effects differ by family. On its 29
 Hamiltonian instances `restartmargin` 30 has geomean 1.56 (1.01–2.75), but on
 `software-verification` it has 0.71, and on `heule-nol` 0.50.
+
+### Mixed split with stock failures
+
+On a set stock fully solves, a change can only lose instances.
+`mixed_frontier_split.jsonl` adds 45 instances that stock didn't solve in the
+300 s calibration, but that at least one SAT Competition 2024 main-track solver
+solved in 300 s or less (the competition's `detailed_main.csv`). They are 30 SAT
+and 15 UNSAT from 21 families, split 22 to `train` and 23 to `heldout` by family
+and answer. Each has its own conflict budget (`budget` in the row): stock's
+conflicts at 300 s. Stock ends every one at exactly that budget. An unsolved
+instance costs twice the ticks of a run to the budget, which on these is stock's
+own ticks (`budget_reached` in the stock file). One evaluation takes as long as
+on the mixed split, about 16 min per half on an r8g.8xlarge, because the extra
+instances run alongside.
+
+The six policies, and as a null control stock with only its random seed
+changed. The control is `solver->options.seed = N` in
+`kissat_update_focused_restart_limit`, which runs before the seed is read, so it
+equals `--seed=N`. Score is the combined score of this split (tick-PAR-2 ratio):
+
+| program | train | heldout | solved lost (of 74 / 74) | stock failures solved (of 22 / 23) |
+|---|---|---|---|---|
+| `restartmargin` 15 | 1.07 | 1.15 | 3 / 5 | 5 / 7 |
+| `restartmargin` 20 | 1.18 | 1.04 | 7 / 2 | 9 / 4 |
+| `restartmargin` 30 | 1.05 | 1.01 | 8 / 7 | 6 / 6 |
+| focused restart interval log term × 1.5 | 1.06 | 1.26 | 8 / 3 | 7 / 7 |
+| evolved, 1.2425 on Hamiltonian | 1.08 | 1.02 | 4 / 7 | 7 / 6 |
+| evolved, 0.917 on Hamiltonian | 1.04 | 1.05 | 8 / 4 | 7 / 6 |
+| stock, seed 1 | 1.02 | 0.93 | 6 / 7 | 5 / 2 |
+| stock, seed 2 | 0.99 | 1.06 | 5 / 5 | 5 / 6 |
+| stock, seed 3 | 0.96 | 1.16 | 6 / 4 | 4 / 6 |
+| stock, seed 4 | 1.04 | 1.17 | 7 / 3 | 6 / 7 |
+
+A seed change alone scores 0.93–1.17 (mean 1.04, sd 0.09) and moves as many
+instances as a policy change. The policies average 1.09. The difference is
+within noise (Welch t = 1.2). Across the ten programs, train score doesn't
+predict heldout (Spearman −0.12). At this size, one evaluation of one seed can't
+separate a restart-policy effect of about 10% from the change of trajectory it
+causes. A credible improvement has to clear the seed spread on both halves, or be
+measured over several seeds.
 
 ## Fitness
 

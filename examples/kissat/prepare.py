@@ -112,8 +112,11 @@ def measure(sets: dict, time_cap: int, jobs: int, log=print) -> dict:
         wrong = [r["hash"] for r in results if r["wrong"]]
         if wrong:
             raise RuntimeError(f"stock Kissat answered wrongly on {wrong}")
-        measured[name] = {r["hash"]: {k: r[k] for k in ("status", "wall_s", "conflicts", "ticks")}
-                          for r in results}
+        measured[name] = {}
+        for row, r in zip(set_rows, results):
+            m = measured[name][r["hash"]] = {k: r[k] for k in ("status", "wall_s", "conflicts", "ticks")}
+            if r["status"] == "unknown":  # ran out of budget (deterministic) or hit the wall cap
+                m["budget_reached"] = (r["conflicts"] or 0) >= evaluator.conflict_budget(row)
         log(f"  {name:9} solved {sum(r['status'] in ('sat', 'unsat') for r in results)}"
             f"/{len(results)}  PAR-2 {evaluator.par2(results, time_cap):.1f} s"
             f"  tick-PAR-2 {evaluator.tick_par2(results, results) or float('nan'):.3g}"
@@ -140,7 +143,8 @@ def stock_ticks(base: dict) -> dict:
         "kissat_commit": base["kissat_commit"], "split_sha256": base["split_sha256"],
         "measured_on": f"{base['machine']} ({base['host']}, {base['measured_at']}); "
                        "ticks and conflicts are machine-independent",
-        "sets": {name: {h: {k: r[k] for k in ("status", "conflicts", "ticks")} for h, r in rows.items()}
+        "sets": {name: {h: {k: r[k] for k in ("status", "conflicts", "ticks", "budget_reached") if k in r}
+                        for h, r in rows.items()}
                  for name, rows in base["sets"].items()},
     }
 

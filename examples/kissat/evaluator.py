@@ -133,7 +133,11 @@ def budget_factor() -> float:
 
 
 def conflict_budget(row: dict) -> int:
-    """Deterministic per-instance cap: a multiple of stock's conflicts there."""
+    """Deterministic per-instance cap: a multiple of stock's conflicts there, or the
+    row's own ``budget`` (an instance stock doesn't solve: its conflicts at the
+    calibration's time cap)."""
+    if "budget" in row:
+        return int(row["budget"])
     return max(1000, int(budget_factor() * row["conflicts"]))
 
 
@@ -242,17 +246,24 @@ def par2(results: list, time_cap: int) -> float:
 
 def tick_par2(results: list, stock: list) -> float | None:
     """PAR-2 in search ticks. A solved instance counts its ticks; an unsolved one
-    (budget or wall cap) counts 2 x budget factor x stock's ticks there, a fixed
+    (budget or wall cap) counts twice the ticks of a run to the budget, a fixed
     penalty, so the score depends only on which instances were solved and how
-    much search solving took. None if stock has no tick count for an instance."""
+    much search solving took. For an instance stock solves, a run to the budget is
+    taken as budget factor x stock's ticks; for one where stock used its whole
+    budget (``budget_reached``), stock's ticks there. None if stock has neither
+    (it stopped at the wall cap)."""
     total = 0.0
     for r, s in zip(results, stock):
         if r["status"] in ("sat", "unsat"):
             total += r["ticks"] or 0
-        elif s.get("ticks") is None or s.get("status") not in ("sat", "unsat"):
+        elif s.get("ticks") is None:
             return None
-        else:
+        elif s.get("status") in ("sat", "unsat"):
             total += 2 * budget_factor() * s["ticks"]
+        elif s.get("budget_reached"):
+            total += 2 * s["ticks"]
+        else:
+            return None
     return total / len(results)
 
 
