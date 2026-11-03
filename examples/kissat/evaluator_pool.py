@@ -29,7 +29,8 @@ sys.path.insert(0, str(HERE))
 import evaluator  # noqa: E402
 
 FORWARD = ("KISSAT_EVAL_JOBS", "KISSAT_EVAL_CAP", "KISSAT_EVAL_SPLIT", "KISSAT_EVAL_METRIC",
-           "KISSAT_EVAL_BUDGET", "KISSAT_EVAL_INSTANCES_S3", "KISSAT_EVAL_REPEATS")
+           "KISSAT_EVAL_BUDGET", "KISSAT_EVAL_INSTANCES_S3", "KISSAT_EVAL_REPEATS",
+           "KISSAT_EVAL_DETAIL")
 
 _lock = threading.Lock()
 _pool = None
