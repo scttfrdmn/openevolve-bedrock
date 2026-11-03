@@ -14,6 +14,12 @@ All notable changes to this project are documented here. The format follows
   from whichever derivation is active (#5).
 
 ### Added
+- Pool evaluation ledger lines record when each task ran: `started_at` /
+  `ended_at` from spawn's completion record, `run_s` (time on the worker),
+  `wait_s` (time queued), `submitted_at` and `instance_type`. `eval_s`
+  (submit to result) includes queue time, so worker utilization comes from
+  `run_s`. `oe-bedrock cost` reports both, and `--json` gains
+  `evals.worker_seconds`.
 - `openevolve_bedrock.pool.SpawnPool`: run an evaluation on a spore.host
   `spawn pool` worker. The problem directory is staged as a content-addressed
   bundle, each candidate submitted as a TaskSpec, and `metrics.json` read back
