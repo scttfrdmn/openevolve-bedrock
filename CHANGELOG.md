@@ -6,14 +6,7 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-### Changed
-- `OE_BEDROCK_POOL_POLL` defaults to 3 s (was 10): the median time from a
-  task ending to its result being seen fell from 6.8 s to 3.1 s.
-- The per-iteration reseed of the model sampler is skipped on OpenEvolve
-  0.4.1 and later, which reseeds per iteration itself (`LLMEnsemble.reseed`,
-  upstream #559). On 0.4.1 ours was overridden anyway, and the spawn test,
-  which predicted counts from our hash, failed there. The test now predicts
-  from whichever derivation is active (#5).
+## [0.2.0] - 2026-11-04
 
 ### Added
 - `examples/kissat`: `KISSAT_EVAL_SPLIT_FILE` selects the instance list, and
@@ -83,6 +76,21 @@ All notable changes to this project are documented here. The format follows
   in-flight ones finish and are recorded. (#11)
 - `bench/matrix.py --target-score` / `--budget-usd`, passed to every run.
 
+### Changed
+- `OE_BEDROCK_POOL_POLL` defaults to 3 s (was 10): the median time from a
+  task ending to its result being seen fell from 6.8 s to 3.1 s.
+- The per-iteration reseed of the model sampler is skipped on OpenEvolve
+  0.4.1 and later, which reseeds per iteration itself (`LLMEnsemble.reseed`,
+  upstream #559). On 0.4.1 ours was overridden anyway, and the spawn test,
+  which predicted counts from our hash, failed there. The test now predicts
+  from whichever derivation is active (#5).
+- `bench/matrix.py`: `--threshold` takes several values, with `iter@T` and
+  `usd@T` columns per value, blank if not reached; adds a `best@N` column; and
+  writes `curves.csv` (best-so-far against cumulative $ per checkpoint) next to
+  `results.csv`. Both are rebuilt from the run dirs on every invocation;
+  `--rescore` re-scores without running. Finished runs are reused, so an
+  interrupted matrix resumes. Generated configs checkpoint every 5 iterations.
+
 ### Fixed
 - Pool evaluation: `OE_BEDROCK_POOL_TIMEOUT` counts only time running on a
   worker. Before, it counted from submit, so with more tasks queued than
@@ -98,16 +106,6 @@ All notable changes to this project are documented here. The format follows
 - `bench/matrix.py` treats a run with a clean `run_meta.json` as finished (a
   run stopped early has no final checkpoint), and moves an interrupted run's
   dir aside instead of appending to its partial ledger.
-
-### Changed
-- `bench/matrix.py`: `--threshold` takes several values, with `iter@T` and
-  `usd@T` columns per value, blank if not reached; adds a `best@N` column; and
-  writes `curves.csv` (best-so-far against cumulative $ per checkpoint) next to
-  `results.csv`. Both are rebuilt from the run dirs on every invocation;
-  `--rescore` re-scores without running. Finished runs are reused, so an
-  interrupted matrix resumes. Generated configs checkpoint every 5 iterations.
-
-### Fixed
 - `examples/circle_packing/requirements.txt` (scipy, matplotlib), copied from
   upstream. Without it, candidates using `scipy.optimize` scored 0, which
   capped circle packing runs below upstream's result.
@@ -166,5 +164,6 @@ All notable changes to this project are documented here. The format follows
   GPT-6.1 Sol on Mantle and `bedrock-runtime`; GPT-6.1 Sol cache writes and
   reads; one ensemble mixing Converse, Mantle and `bedrock-runtime` models.
 
-[Unreleased]: https://github.com/scttfrdmn/openevolve-bedrock/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/scttfrdmn/openevolve-bedrock/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/scttfrdmn/openevolve-bedrock/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/scttfrdmn/openevolve-bedrock/releases/tag/v0.1.0

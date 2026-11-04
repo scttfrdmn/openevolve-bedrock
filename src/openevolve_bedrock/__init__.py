@@ -37,7 +37,7 @@ or, for the OpenAI-compatible Mantle endpoint::
 
 from openevolve_bedrock.provider import BedrockLLM, register
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __all__ = ["BedrockLLM", "register", "__version__"]
 
 register()
