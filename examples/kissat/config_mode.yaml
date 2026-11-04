@@ -1,0 +1,104 @@
+# Evolve Kissat's mode-switching policy on Amazon Bedrock (issue #13), on a pool.
+#
+#   export KISSAT_EVAL_SOURCE=mode.c KISSAT_EVAL_SPLIT_FILE=mixed_frontier_split.jsonl \
+#          KISSAT_EVAL_SEEDS=0,1,2,3 OE_BEDROCK_POOL_TIMEOUT=18000   # plus OE_BEDROCK_POOL_* (README);
+#   the long pool timeout because it counts queue time (#24)
+#   oe-bedrock run examples/kissat/initial_program_mode.c examples/kissat/evaluator_pool.py \
+#       --config examples/kissat/config_mode.yaml --iterations 50 --budget-usd 150 --pricing pricing.yaml
+#
+# combined_score = tick-PAR-2(stock Kissat) / tick-PAR-2(candidate), pooled over
+# seeds 0-3 on the 96 training instances; > 1 means less search than stock.
+
+max_iterations: 50
+checkpoint_interval: 5
+log_level: "INFO"
+random_seed: 42
+language: "c"
+diff_based_evolution: true
+enforce_evolve_blocks: true
+max_code_length: 20000
+
+llm:
+  provider: bedrock
+  api_base: aws://us-west-2
+  models:
+    - name: us.anthropic.claude-haiku-5-5
+      weight: 0.8
+    - name: us.anthropic.claude-sonnet-5-5
+      weight: 0.2
+  max_tokens: 16000
+  timeout: 600
+
+prompt:
+  system_message: |
+    You are improving the mode-switching policy of Kissat 4.0.4, a state-of-the-art
+    CDCL SAT solver written in C. The program is Kissat's src/mode.c. Only the two
+    functions inside the EVOLVE-BLOCK may change, and their signatures must stay:
+
+      static void update_mode_limit (kissat *solver, uint64_t delta_ticks);
+          Called on every mode switch, after solver->stable has been set to the
+          new mode; delta_ticks is the search ticks spent in the mode just left.
+          Sets when the new mode ends: limits->mode.ticks for a stable phase
+          (limits->mode.count odd), limits->mode.conflicts for a focused phase
+          (count even). It must also keep the first line
+          (kissat_init_averages) and set solver->mode.ticks and
+          solver->mode.conflicts to the current counts.
+      bool kissat_switching_search_mode (kissat *solver);
+          Checked in the search loop; return true to end the current mode now.
+          Keep the GET_OPTION (stable) != 1 guard.
+
+    Kissat alternates between focused mode (solver->stable == false: VMTF
+    decisions, frequent glue-based restarts) and stable mode (solver->stable ==
+    true: VSIDS-like scores, reluctant-doubling restarts, target phases). Stock:
+    the n-th focused phase lasts GET_OPTION (modeint) * kissat_nlogpown (n, 4)
+    conflicts, and each stable phase gets as many search ticks as the focused
+    phase before it. Measured on these instances, the best fixed choice differs
+    by family: focused-only search needs 2.2x less search than stock on
+    random-circuits but 2.9x more on software-verification; stable-only needs
+    1.3x less on argumentation but 2.1x more on random-circuits. So a policy
+    that gives more effort to the mode that is working on this formula has room
+    to gain.
+    Useful state: statistics->conflicts, statistics->search_ticks,
+    statistics->decisions, statistics->switched (switches so far),
+    statistics->restarts, solver->mode.ticks and solver->mode.conflicts (counts
+    when the current mode began), and per-mode exponential moving averages
+    solver->averages[0] (focused) and solver->averages[1] (stable), each with
+    .fast_glue.value, .slow_glue.value, .decision_rate.value (and .initialized),
+    GET_OPTION (modeint), GET_OPTION (modeinit), kissat_nlogpown (n, 4),
+    kissat_logn (n). Lower glue means better learned clauses.
+
+    Fitness is PAR-2 in Kissat's search ticks (its deterministic effort counter)
+    relative to stock Kissat, pooled over 4 seeds, on 96 instances from many
+    families of the SAT Competition 2024 main track: 74 that stock solves and 22
+    it doesn't solve within its budget. Each instance has a conflict budget; an
+    instance not solved within it counts double. Less search is better, and
+    solving instances stock can't counts. Every answer is checked, so a wrong
+    answer scores 0. A pure change of random seed already scores between 0.92
+    and 1.11, so small differences are noise.
+    Do not add includes, macros, I/O or calls to exit/abort inside the block; such
+    candidates are rejected before building. Prefer small, well-reasoned changes
+    and explain the hypothesis behind each one.
+
+    The programs shown as top performers and inspirations have already been
+    evaluated, and copying one of their changes gains nothing: an identical
+    program scores no better than the one it copies. Build on the parent with a
+    modification that differs from every change shown, and say how it differs.
+  num_top_programs: 3
+
+database:
+  population_size: 40
+  archive_size: 20
+  num_islands: 2
+  elite_selection_ratio: 0.3
+  exploitation_ratio: 0.7
+
+evaluator:
+  # Stage 1 builds and runs the 3 fastest training instances at each seed; a
+  # candidate must be at least half as fast as stock there to reach stage 2.
+  cascade_evaluation: true
+  cascade_thresholds: [0.5]
+  # One stage-2 evaluation is ~65 min on one r8g.8xlarge (96 instances x 4
+  # seeds); with 8 workers, about 2x as many in flight keeps them busy.
+  parallel_evaluations: 16
+  timeout: 18000
+  use_llm_feedback: false

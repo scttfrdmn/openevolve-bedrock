@@ -3,7 +3,8 @@
 """
 Evaluator for evolving Kissat's restart policy (issue #13).
 
-A candidate is a complete ``src/restart.c``. The evaluator builds Kissat with
+A candidate is a complete ``src/restart.c`` (or ``src/mode.c`` with
+``KISSAT_EVAL_SOURCE=mode.c``, from ``initial_program_mode.c``). The evaluator builds Kissat with
 it and runs the training instances of the split file (``KISSAT_EVAL_SPLIT_FILE``,
 default ``hamiltonian_split.jsonl``), each with a
 conflict budget (``KISSAT_EVAL_BUDGET`` x stock's conflicts there, default 3x)
@@ -50,6 +51,11 @@ machine. Environment (all optional):
                        (default: 0). The score pools all (instance, seed) runs,
                        each against stock at the same seed, which averages out
                        the change of search trajectory any change causes
+    KISSAT_EVAL_SOURCE which Kissat source file a candidate replaces: restart.c
+                       (default; initial_program.c) or mode.c (initial_program_mode.c)
+    KISSAT_EVAL_OPTIONS  extra Kissat flags for the candidate's runs, e.g.
+                       "--target=2"; stock's baseline is unchanged. For
+                       screening heuristics, not for OpenEvolve runs
     KISSAT_EVAL_BUDGET conflict budget as a multiple of stock's conflicts (default: 3)
     KISSAT_EVAL_CACHE  result cache dir (default: <home>/eval-cache); "off" disables
     KISSAT_EVAL_DETAIL set to add per-instance results ("detail") to the metrics;
@@ -184,12 +190,13 @@ def check_source(code: str) -> str | None:
 
 
 def build(program_path: str, workdir: Path) -> Path:
-    """Copy the prepared Kissat tree (timestamps kept), swap in the candidate,
-    rebuild incrementally: only restart.o is recompiled and kissat relinked."""
+    """Copy the prepared Kissat tree (timestamps kept), swap in the candidate as
+    src/<KISSAT_EVAL_SOURCE>, rebuild incrementally: only that object is
+    recompiled and kissat relinked."""
     tree = workdir / "kissat"
     shutil.copytree(home() / "kissat", tree, symlinks=True, copy_function=shutil.copy2)
-    shutil.copyfile(program_path, tree / "src" / "restart.c")
-    os.utime(tree / "src" / "restart.c")
+    shutil.copyfile(program_path, tree / "src" / source())
+    os.utime(tree / "src" / source())
     p = subprocess.run(["make", "-C", str(tree / "build"), "kissat"], capture_output=True,
                        text=True, timeout=300)
     if p.returncode != 0:
@@ -219,6 +226,24 @@ def seeds() -> list:
     return [int(x) for x in os.environ.get("KISSAT_EVAL_SEEDS", "0").split(",") if x.strip()]
 
 
+SOURCES = ("restart.c", "mode.c")
+
+
+def source() -> str:
+    s = os.environ.get("KISSAT_EVAL_SOURCE", "restart.c")
+    if s not in SOURCES:
+        raise ValueError(f"KISSAT_EVAL_SOURCE must be one of {SOURCES}, not {s!r}")
+    return s
+
+
+def extra_options() -> list:
+    flags = os.environ.get("KISSAT_EVAL_OPTIONS", "").split()
+    bad = [f for f in flags if not re.fullmatch(r"--[a-z0-9]+=-?[0-9.e]+", f)]
+    if bad:
+        raise ValueError(f"KISSAT_EVAL_OPTIONS takes --name=value flags only, not {bad}")
+    return flags
+
+
 def run_key(hash_: str, seed: int) -> str:
     """Key of a run in a stock file: the hash for seed 0 (so seed-0 files stay
     valid), ``hash@seed`` otherwise."""
@@ -236,7 +261,7 @@ def run_instance(kissat: Path, row: dict, time_cap: int, seed: int = 0) -> dict:
     try:
         p = subprocess.run([str(kissat), "--statistics", f"--time={time_cap}",
                             f"--conflicts={conflict_budget(row)}", *([f"--seed={seed}"] if seed else []),
-                            str(cnf)],
+                            *extra_options(), str(cnf)],
                            capture_output=True, text=True, timeout=time_cap + 60)
         rc, out = p.returncode, p.stdout
     except subprocess.TimeoutExpired:
@@ -397,6 +422,8 @@ def cache_key(code: str, set_name: str, time_cap: int) -> str:
         "tokens": c_tokens(code), "set": set_name, "cap": time_cap, "metric": metric(),
         "budget": budget_factor(),
         **({"seeds": seeds()} if seeds() != [0] else {}),
+        **({"options": extra_options()} if extra_options() else {}),
+        **({"source": source()} if source() != "restart.c" else {}),
         "split": hashlib.sha256(split_file().read_bytes()).hexdigest(),
         "stock": hashlib.sha256(json.dumps(base["sets"].get(set_name), sort_keys=True).encode()).hexdigest(),
     }
