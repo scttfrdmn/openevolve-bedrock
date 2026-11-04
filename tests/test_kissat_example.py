@@ -266,3 +266,50 @@ def test_seeds_pool_runs_against_stock_at_the_same_seed(monkeypatch):
     monkeypatch.setenv("KISSAT_EVAL_SEEDS", "0")
     monkeypatch.setattr(ev, "baseline", lambda: {"cap": 300, "budget_factor": 3.0, "sets": {"stage1": stock}})
     assert ev.cache_key(INITIAL, "stage1", 300) != a
+
+
+def test_extra_options_reach_candidate_runs_only(monkeypatch, tmp_path):
+    import importlib.util as iu
+    monkeypatch.setenv("KISSAT_EVAL_OPTIONS", "--target=2 --reducehigh=700")
+    assert ev.extra_options() == ["--target=2", "--reducehigh=700"]
+    seen = {}
+    monkeypatch.setattr(ev.subprocess, "run", lambda cmd, **k: seen.setdefault("cmd", cmd) and
+                        type("P", (), {"returncode": 0, "stdout": ""})())
+    monkeypatch.setenv("KISSAT_EVAL_HOME", str(tmp_path))
+    ev.run_instance(Path("/bin/true"), {"hash": "h", "expected": "sat", "conflicts": 10}, 300, seed=2)
+    assert seen["cmd"][-4:-1] == ["--seed=2", "--target=2", "--reducehigh=700"]
+    stock_key = ev.cache_key(INITIAL, "stage1", 300)
+    monkeypatch.setenv("KISSAT_EVAL_OPTIONS", "")
+    assert ev.cache_key(INITIAL, "stage1", 300) != stock_key
+    monkeypatch.setenv("KISSAT_EVAL_OPTIONS", "--target=2; rm -rf /")
+    with pytest.raises(ValueError):
+        ev.extra_options()
+    monkeypatch.setenv("KISSAT_EVAL_OPTIONS", "--target=2")
+    spec = iu.spec_from_file_location("kissat_prepare", EXAMPLE / "prepare.py")
+    prep = iu.module_from_spec(spec)
+    spec.loader.exec_module(prep)
+    with pytest.raises(RuntimeError, match="default options"):
+        prep.measure({}, 300, 1)
+
+
+def test_mode_program_is_stock_mode_c_with_a_block(monkeypatch, tmp_path):
+    code = (EXAMPLE / "initial_program_mode.c").read_text()
+    assert ev.check_source(code) is None
+    block = ev.evolve_block(code)
+    assert "static void update_mode_limit" in block and "bool kissat_switching_search_mode" in block
+    monkeypatch.setenv("KISSAT_EVAL_SOURCE", "mode.c")
+    assert ev.source() == "mode.c"
+    key = ev.cache_key(code, "stage1", 300)
+    monkeypatch.setenv("KISSAT_EVAL_SOURCE", "restart.c")
+    assert ev.cache_key(code, "stage1", 300) != key
+    monkeypatch.setenv("KISSAT_EVAL_SOURCE", "../internal.h")
+    with pytest.raises(ValueError):
+        ev.source()
+
+
+def test_mode_config_loads():
+    from openevolve.config import load_config
+    cfg = load_config(str(EXAMPLE / "config_mode.yaml"))
+    assert cfg.llm.models[0].provider == "bedrock" or cfg.llm.provider == "bedrock"
+    assert "mode-switching" in cfg.prompt.system_message
+    assert cfg.evaluator.parallel_evaluations == 16

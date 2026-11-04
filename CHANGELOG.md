@@ -36,6 +36,13 @@ All notable changes to this project are documented here. The format follows
   0–3 is in `mixed_frontier_split.stock_ticks.json` (`hash@seed`). Four seeds
   cut the null spread from 0.07–0.17 to 0.03–0.05, and with that no restart
   policy tested differs from stock (#13).
+- `examples/kissat`: a second target, the mode-switching policy:
+  `initial_program_mode.c` (Kissat's `src/mode.c` with an EVOLVE-BLOCK) and
+  `config_mode.yaml`, chosen by `KISSAT_EVAL_SOURCE=mode.c`.
+  `KISSAT_EVAL_OPTIONS` passes extra Kissat flags to candidate runs for
+  screening. In a nine-variant screen at 4 seeds, mode and rephasing changes
+  moved the score by 3–9 null sd, with family-dependent sign, and a per-family
+  mode choice made on train scored 1.046 on heldout against 0.988 for nulls (#13).
 - `examples/kissat`: the system message tells the model that the programs shown
   are already evaluated and asks for a different modification. Copies of the
   best program in a 60-iteration run's final population fell from 19 to 2.

@@ -97,6 +97,8 @@ def fetch_instances(home: Path, rows: list) -> None:
 def measure(sets: dict, time_cap: int, jobs: int, log=print) -> dict:
     """Stock Kissat on each set, each set run as one batch as the evaluator runs it.
     Returns the baseline dict; raises if stock answers wrongly."""
+    if evaluator.extra_options():
+        raise RuntimeError("KISSAT_EVAL_OPTIONS is set; the stock baseline must run with default options")
     home = evaluator.home()
     rows = list({r["hash"]: r for rows_ in sets.values() for r in rows_}.values())
     build_kissat(home)

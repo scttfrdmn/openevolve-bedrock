@@ -15,6 +15,7 @@ wrote the candidate.
 | `prepare.py` | fetches and builds the pinned Kissat, downloads the instances, measures the stock baseline |
 | `hamiltonian_split.jsonl` | the 40 instances, their split, known result and stock numbers from the Graviton calibration |
 | `config.yaml` | OpenEvolve config: Bedrock models, prompt, cascade |
+| `initial_program_mode.c`, `config_mode.yaml` | the second target: Kissat's `src/mode.c` with an EVOLVE-BLOCK around the mode-switching policy (`KISSAT_EVAL_SOURCE=mode.c`), and its config |
 | `evaluator_pool.py` | the same evaluation, run on a spore.host `spawn pool` worker (issue #1) |
 | `remote.py` | worker entry point for `evaluator_pool.py` |
 | `stock_ticks.json` | stock Kissat's conflicts and ticks per instance set (machine-independent), used when no local `baseline.json` exists |
@@ -144,6 +145,42 @@ Kissat 4.0.4 have no effect measurable at about ±5% on these 193 instances. An
 evaluation at 4 seeds costs 4×: about 65 min per half on one r8g.8xlarge, or 16
 min spread over 4 workers.
 
+## Which heuristic to evolve
+
+A heuristic is worth evolving if a single change moves the 4-seed pooled score
+beyond the null spread, in either direction. Nine one-option variants of stock
+(`KISSAT_EVAL_OPTIONS`) on the mixed split with stock failures, at seeds 0–3,
+with z in null standard deviations (nulls: train 1.04 ± 0.05, heldout 0.96 ±
+0.03):
+
+| variant | flags | train (z) | heldout (z) |
+|---|---|---|---|
+| focused mode only | `--stable=0` | 0.64 (−8.6) | 0.72 (−8.2) |
+| no rephasing | `--rephase=0` | 0.79 (−5.3) | 0.73 (−7.6) |
+| stable mode only | `--stable=2` | 0.88 (−3.3) | 0.83 (−4.4) |
+| reduce less | `--reducehigh=700 --reducelow=300` | 1.00 (−0.7) | 0.87 (−3.2) |
+| no chronological backtracking | `--chrono=0` | 0.93 (−2.2) | 1.02 (+2.0) |
+| target phases in focused mode too | `--target=2` | 0.98 (−1.1) | 0.91 (−1.9) |
+| later first mode switch | `--modeinit=1e4` | 1.00 (−0.7) | 0.92 (−1.5) |
+| faster score decay | `--decay=100` | 0.96 (−1.6) | 0.94 (−0.8) |
+| larger tier 2 | `--tier2=10` | 1.00 (−0.9) | 0.94 (−0.7) |
+
+The reduce variant hit the wall cap on 97 runs, so its numbers are partly
+wall-clock. Mode and rephasing carry weight, and the mode effect depends on the
+family. Focused only needs 2.2× less search than stock on `random-circuits` and
+2.9× more on `software-verification`. Stable only needs 1.3× less on
+`argumentation` and 2.1× more on `random-circuits`. Choosing the best of the three
+mode variants per family on train, then scoring that choice on heldout, gives
+1.046. The same procedure over the four seed nulls gives 0.988.
+
+So the second target is the mode-switching policy (`initial_program_mode.c`,
+`config_mode.yaml`). It is Kissat's `src/mode.c` with `update_mode_limit` and
+`kissat_switching_search_mode` moved together into the EVOLVE-BLOCK. The block
+drops only verbose-only logging. Built from it, Kissat gives the same status,
+conflicts and ticks as stock on 8 Hamiltonian instances × 2 seeds. To count as a
+result, an evolved policy needs a pooled heldout score above the null maximum
+(1.00) by more than 2 null sd, so at least 1.06.
+
 ## Fitness
 
 Each instance runs with a conflict budget of 3× stock's conflicts on it (from the
@@ -206,6 +243,8 @@ KISSAT_EVAL_SPLIT=heldout python -c "import sys; sys.path.insert(0, 'examples/ki
 | `KISSAT_EVAL_CAP` | the stock file's cap (300; 1200 for `mixed_split`) | per-instance cap in seconds; must match `prepare.py --cap` |
 | `KISSAT_EVAL_SPLIT` | `train` | set scored by `evaluate` / stage 2 |
 | `KISSAT_EVAL_METRIC` | `ticks` | `ticks` (deterministic) or `time` (wall-clock PAR-2) |
+| `KISSAT_EVAL_SOURCE` | `restart.c` | Kissat source file a candidate replaces: `restart.c` or `mode.c` |
+| `KISSAT_EVAL_OPTIONS` | none | extra `--name=value` Kissat flags for the candidate's runs only, for screening heuristics; `prepare.py` refuses to measure stock with it set |
 | `KISSAT_EVAL_SEEDS` | `0` | Kissat seeds each instance runs with; the score pools all runs, each against stock at the same seed |
 | `KISSAT_EVAL_BUDGET` | 3 | conflict budget as a multiple of stock's conflicts; must match `prepare.py` |
 | `KISSAT_EVAL_CACHE` | `<home>/eval-cache` | result cache by C token sequence; `off` disables |
