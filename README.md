@@ -16,7 +16,7 @@ llm:
 ```
 
 ```bash
-pip install openevolve-bedrock
+pip install git+https://github.com/scttfrdmn/openevolve-bedrock
 oe-bedrock run initial_program.py evaluator.py --config config.yaml --iterations 100
 oe-bedrock cost openevolve_output/ --pricing pricing.yaml --threshold 0.99
 ```
@@ -40,7 +40,7 @@ model calls and adds accounting:
 ## Install
 
 ```bash
-pip install openevolve-bedrock           # or: pip install -e . from a checkout
+pip install git+https://github.com/scttfrdmn/openevolve-bedrock   # not on PyPI yet (#26); or pip install -e . from a checkout
 cp $(python -c 'import openevolve_bedrock,os;print(os.path.dirname(openevolve_bedrock.__file__))')/pricing.example.yaml pricing.yaml
 ```
 
