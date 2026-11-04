@@ -48,7 +48,8 @@ def _pool(s3, **kw):
                               profile="aws", timeout_s=kw.pop("timeout_s", 60), poll_s=1, s3=s3, **kw)
 
 
-def _fake_worker(monkeypatch, s3, state="completed", metrics=None, cost=0.04, write_record=True):
+def _fake_worker(monkeypatch, s3, state="completed", metrics=None, cost=0.04, write_record=True,
+                 started=True):
     """`spawn pool submit` that 'runs' the task: writes its record and metrics."""
     calls = []
 
@@ -56,6 +57,8 @@ def _fake_worker(monkeypatch, s3, state="completed", metrics=None, cost=0.04, wr
         spec = json.loads(Path(cmd[cmd.index("--spec") + 1]).read_text())
         calls.append((cmd, spec))
         tid = spec["task_id"]
+        if started:  # what the spec's first command does on a worker
+            s3.put_object("bkt", f"oe/started/{tid}", b"1793670627\n")
         rec_bucket, rec_prefix = pool_mod._split_s3(spec["results_prefix"])
         if write_record:
             s3.put_object(rec_bucket, f"{rec_prefix}/{tid}/completion.json",
@@ -112,6 +115,8 @@ def test_evaluate_round_trip_and_ledger(env, tmp_path, monkeypatch):
     assert spec["task_id"].startswith("r1-") and spec["env"] == {"KISSAT_EVAL_JOBS": "24"}
     assert spec["command"][2].endswith(
         "exec python3 remote.py stage2 /work/candidate/cand.c /work/out/metrics.json")
+    assert spec["command"][2].startswith(
+        f"date -u +%s | aws s3 cp --quiet --region us-west-2 - s3://bkt/oe/started/{spec['task_id']} || true; set -e;")
     assert spec["inputs"][1] == {"source": f"s3://bkt/oe/candidates/{spec['task_id']}/cand.c",
                                  "destination": "/work/candidate/cand.c"}
     assert s3.objects[("bkt", f"oe/candidates/{spec['task_id']}/cand.c")] == b"int x;\n"
@@ -141,9 +146,55 @@ def test_no_record_times_out(env, tmp_path, monkeypatch):
     clock = iter(range(0, 10_000, 30))
     monkeypatch.setattr(pool_mod.time, "monotonic", lambda: next(clock))
     m = _pool(s3, timeout_s=100).evaluate("s3://bkt/oe/b.tgz", str(prog), ["true"])
-    assert m["combined_score"] == 0.0 and "no completion record" in m["error"]
+    assert m["combined_score"] == 0.0 and "no completion record in 100 s of running" in m["error"]
     rec = list(led.read(env / "ledger.jsonl"))[0]
     assert rec["state"] == "timeout" and rec["run_s"] is None and rec["wait_s"] is None
+
+
+def _delayed_record(monkeypatch, s3, start_after, finish_after):
+    """A worker that takes the task after `start_after` polls and finishes after `finish_after`."""
+    polls = {"n": 0}
+    calls = _fake_worker(monkeypatch, s3, write_record=False, started=False, metrics={"combined_score": 1.0})
+    get = s3.get_object
+    head = s3.head_object
+
+    def head_object(Bucket, Key):
+        if Key.endswith("completion.json") or "/started/" in Key:
+            polls["n"] += Key.endswith("completion.json")
+            tid = calls[0][1]["task_id"]
+            if polls["n"] >= start_after:
+                s3.objects.setdefault(("bkt", f"oe/started/{tid}"), b"1")
+            if polls["n"] >= finish_after:
+                s3.objects.setdefault(("bkt", f"oe/records/{tid}/completion.json"),
+                                      json.dumps({"task_id": tid, "state": "completed", "exit_code": 0}).encode())
+        return head(Bucket, Key)
+
+    s3.head_object = head_object
+    return polls
+
+
+def test_queue_time_does_not_count_toward_the_timeout(env, tmp_path, monkeypatch):
+    s3 = FakeS3()
+    prog = tmp_path / "cand.c"
+    prog.write_text("x")
+    _delayed_record(monkeypatch, s3, start_after=10, finish_after=12)   # queued ~300 s, runs ~60 s
+    clock = iter(range(0, 10_000, 30))
+    monkeypatch.setattr(pool_mod.time, "monotonic", lambda: next(clock))
+    m = _pool(s3, timeout_s=100).evaluate("s3://bkt/oe/b.tgz", str(prog), ["true"])
+    assert m == {"combined_score": 1.0}
+    assert list(led.read(env / "ledger.jsonl"))[0]["state"] == "completed"
+
+
+def test_a_task_never_started_hits_the_queue_timeout(env, tmp_path, monkeypatch):
+    s3 = FakeS3()
+    prog = tmp_path / "cand.c"
+    prog.write_text("x")
+    _fake_worker(monkeypatch, s3, write_record=False, started=False)
+    clock = iter(range(0, 100_000, 30))
+    monkeypatch.setattr(pool_mod.time, "monotonic", lambda: next(clock))
+    m = _pool(s3, timeout_s=100, queue_timeout_s=1000).evaluate("s3://bkt/oe/b.tgz", str(prog), ["true"])
+    assert "not started by a worker in 1000 s" in m["error"]
+    assert list(led.read(env / "ledger.jsonl"))[0]["state"] == "queue_timeout"
 
 
 def test_submit_failure_raises(env, tmp_path, monkeypatch):
