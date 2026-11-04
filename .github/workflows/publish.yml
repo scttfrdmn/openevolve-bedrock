@@ -1,0 +1,56 @@
+# Publish to PyPI when a v* tag is pushed (#26). Trusted publishing (OIDC):
+# no token is stored; PyPI trusts this workflow file in the `pypi` environment.
+name: publish
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Tag matches package version
+        run: |
+          v=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          test "v$v" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME != version $v"; exit 1; }
+          grep -q "__version__ = \"$v\"" src/openevolve_bedrock/__init__.py
+          grep -q "^## \[$v\]" CHANGELOG.md
+      - name: Tests
+        run: |
+          pip install -e ".[dev]"
+          pytest -q
+      - name: Build and check
+        run: |
+          pip install build twine
+          python -m build
+          twine check --strict dist/*
+      - name: Install the wheel in a clean venv
+        run: |
+          python -m venv /tmp/v
+          /tmp/v/bin/pip install -q dist/*.whl
+          /tmp/v/bin/oe-bedrock --version
+          /tmp/v/bin/python -c "import openevolve_bedrock, os; assert os.path.isfile(os.path.join(os.path.dirname(openevolve_bedrock.__file__), 'pricing.example.yaml'))"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/openevolve-bedrock
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

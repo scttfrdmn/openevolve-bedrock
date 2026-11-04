@@ -1,19 +1,21 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "openevolve-bedrock"
-version = "0.1.0"
+version = "0.2.0"
 description = "Amazon Bedrock as the LLM backend for OpenEvolve (AlphaEvolve-class evolutionary coding), with a per-call cost ledger."
 readme = "README.md"
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 authors = [{ name = "Scott Friedman" }]
 requires-python = ">=3.10"
 keywords = ["openevolve", "alphaevolve", "bedrock", "evolutionary", "llm"]
 classifiers = [
-  "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Development Status :: 3 - Alpha",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
@@ -22,6 +24,11 @@ dependencies = [
   "openai>=1.0",
   "pyyaml>=6",
 ]
+
+[project.urls]
+Homepage = "https://github.com/scttfrdmn/openevolve-bedrock"
+Issues = "https://github.com/scttfrdmn/openevolve-bedrock/issues"
+Changelog = "https://github.com/scttfrdmn/openevolve-bedrock/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "numpy"]
