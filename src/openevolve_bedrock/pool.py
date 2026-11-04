@@ -25,7 +25,9 @@ worker:
    ``spawn pool submit``s a TaskSpec that unpacks the bundle on the worker and
    runs ``argv`` there, then polls ``<staging>/records/<task>/completion.json``
    (the spec's ``results_prefix``) and reads ``metrics.json`` back from
-   ``<staging>/results/<task>/``.
+   ``<staging>/results/<task>/``. The task's first act on the worker is to write
+   ``<staging>/started/<task>``, so the timeout counts time running, not time
+   queued behind other tasks.
 3. Each evaluation appends a ``kind: "eval"`` line to the ledger, with spawn's
    ``cost_estimate`` for the task, so ``oe-bedrock cost`` reports evaluation $
    next to LLM $.
@@ -38,7 +40,8 @@ is by environment, as for the rest of this package:
     OE_BEDROCK_POOL_RUN_ID   pool run id (required)
     OE_BEDROCK_POOL_STAGING  s3://bucket/prefix the workers can read and write (required)
     OE_BEDROCK_POOL_REGION   region of the pool (default: OE_BEDROCK_REGION / AWS_REGION)
-    OE_BEDROCK_POOL_TIMEOUT  seconds to wait for one evaluation (default 3600)
+    OE_BEDROCK_POOL_TIMEOUT  seconds one evaluation may run once a worker has started it (default 3600)
+    OE_BEDROCK_POOL_QUEUE_TIMEOUT  seconds it may wait in the queue before that (default 86400)
     OE_BEDROCK_POOL_POLL     seconds between completion checks (default 3; one S3 GET each)
     OE_BEDROCK_PROFILE       boto3 / spawn profile (else AWS_PROFILE)
 """
@@ -108,7 +111,7 @@ class SpawnPool:
     def __init__(self, run_id: Optional[str] = None, staging: Optional[str] = None,
                  region: Optional[str] = None, profile: Optional[str] = None,
                  timeout_s: Optional[float] = None, poll_s: Optional[float] = None,
-                 s3=None) -> None:
+                 s3=None, queue_timeout_s: Optional[float] = None) -> None:
         self.run_id = run_id or os.environ.get("OE_BEDROCK_POOL_RUN_ID")
         self.staging = (staging or os.environ.get("OE_BEDROCK_POOL_STAGING") or "").rstrip("/")
         if not self.run_id or not self.staging:
@@ -119,6 +122,7 @@ class SpawnPool:
                        or os.environ.get("OE_BEDROCK_REGION") or os.environ.get("AWS_REGION"))
         self.profile = profile or os.environ.get("OE_BEDROCK_PROFILE") or os.environ.get("AWS_PROFILE")
         self.timeout_s = float(timeout_s or os.environ.get("OE_BEDROCK_POOL_TIMEOUT", 3600))
+        self.queue_timeout_s = float(queue_timeout_s or os.environ.get("OE_BEDROCK_POOL_QUEUE_TIMEOUT", 86400))
         self.poll_s = float(poll_s or os.environ.get("OE_BEDROCK_POOL_POLL", 3))
         self._s3 = s3
         self._bundles: Dict[str, str] = {}
@@ -170,7 +174,10 @@ class SpawnPool:
         replaced by the candidate's path and the output dir on the worker."""
         program = f"/work/candidate/{program_name}"
         args = [a.replace("{program}", program).replace("{out}", "/work/out") for a in argv]
-        script = ("set -e; mkdir -p /work/bundle /work/out; "
+        started = f"s3://{self.bucket}/{self._key('started', task_id)}"
+        region = f" --region {shlex.quote(self.region)}" if self.region else ""
+        script = (f"date -u +%s | aws s3 cp --quiet{region} - {shlex.quote(started)} || true; "
+                  "set -e; mkdir -p /work/bundle /work/out; "
                   "tar -xzf /work/bundle.tar.gz -C /work/bundle; cd /work/bundle; "
                   f"exec {shlex.join(args)}")
         spec = {
@@ -226,14 +233,28 @@ class SpawnPool:
         submitted = time.time()
         self._submit(spec)
         record_key = self._key("records", task_id, "completion.json")
-        record = None
-        while time.monotonic() - t0 < self.timeout_s:
+        started_key = self._key("started", task_id)
+        record, running_since, warned, state = None, None, False, "timeout"
+        while True:
             record = self._get_json(record_key)
             if record is not None:
                 break
+            now = time.monotonic()
+            if running_since is None and self._exists(started_key):
+                running_since = now
+            if running_since is not None:
+                if now - running_since >= self.timeout_s:
+                    break
+            elif now - t0 >= self.queue_timeout_s:
+                state = "queue_timeout"
+                break
+            elif not warned and now - t0 >= self.timeout_s:
+                logger.warning("pool task %s still queued after %.0f s (waiting up to %.0f s)",
+                               task_id, now - t0, self.queue_timeout_s)
+                warned = True
             time.sleep(self.poll_s)
         eval_s = time.monotonic() - t0
-        state = (record or {}).get("state", "timeout")
+        state = (record or {}).get("state", state)
         started = _epoch((record or {}).get("started_at"))
         ended = _epoch((record or {}).get("ended_at"))
         _ledger.append({
@@ -249,8 +270,11 @@ class SpawnPool:
             "wait_s": round(started - submitted, 3) if started is not None else None,
         })
         if record is None:
+            if state == "queue_timeout":
+                return {"combined_score": 0.0,
+                        "error": f"pool task {task_id} not started by a worker in {self.queue_timeout_s:.0f} s"}
             return {"combined_score": 0.0,
-                    "error": f"pool task {task_id} gave no completion record in {self.timeout_s:.0f} s"}
+                    "error": f"pool task {task_id} gave no completion record in {self.timeout_s:.0f} s of running"}
         metrics = self._get_json(self._key("results", task_id, "metrics.json"))
         if state != "completed" or metrics is None:
             reason = record.get("retry_class") or record.get("terminal_reason") or f"exit {record.get('exit_code')}"

@@ -1,8 +1,9 @@
 # Evolve Kissat's mode-switching policy on Amazon Bedrock (issue #13), on a pool.
 #
 #   export KISSAT_EVAL_SOURCE=mode.c KISSAT_EVAL_SPLIT_FILE=mixed_frontier_split.jsonl \
-#          KISSAT_EVAL_SEEDS=0,1,2,3 OE_BEDROCK_POOL_TIMEOUT=18000   # plus OE_BEDROCK_POOL_* (README);
-#   the long pool timeout because it counts queue time (#24)
+#          KISSAT_EVAL_SEEDS=0,1,2,3 OE_BEDROCK_POOL_TIMEOUT=7200   # plus OE_BEDROCK_POOL_* (README)
+#   One stage-2 evaluation runs ~65 min on an r8g.8xlarge, so the run timeout is 2 h, and the
+#   pool needs `spawn pool create ... --visibility-timeout 7200`.
 #   oe-bedrock run examples/kissat/initial_program_mode.c examples/kissat/evaluator_pool.py \
 #       --config examples/kissat/config_mode.yaml --iterations 50 --budget-usd 150 --pricing pricing.yaml
 #

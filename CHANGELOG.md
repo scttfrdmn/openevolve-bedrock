@@ -84,6 +84,13 @@ All notable changes to this project are documented here. The format follows
 - `bench/matrix.py --target-score` / `--budget-usd`, passed to every run.
 
 ### Fixed
+- Pool evaluation: `OE_BEDROCK_POOL_TIMEOUT` counts only time running on a
+  worker. Before, it counted from submit, so with more tasks queued than
+  workers, the later ones returned "no completion record" and scored 0 while
+  still running and billed. Each task now writes `<staging>/started/<task>` as
+  its first command. Time waiting in the queue is bounded separately by
+  `OE_BEDROCK_POOL_QUEUE_TIMEOUT` (default 24 h), and a task that never starts
+  is recorded as `queue_timeout` (#24).
 - After an early stop (`--target-score` or budget), the last checkpoint is
   saved at the iteration where the run stopped. OpenEvolve labelled it with
   the maximum iteration, so `iter@T` and the curves read a run that stopped at
