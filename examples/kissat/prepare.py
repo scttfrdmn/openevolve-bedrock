@@ -113,8 +113,8 @@ def measure(sets: dict, time_cap: int, jobs: int, log=print) -> dict:
         if wrong:
             raise RuntimeError(f"stock Kissat answered wrongly on {wrong}")
         measured[name] = {}
-        for row, r in zip(set_rows, results):
-            m = measured[name][r["hash"]] = {k: r[k] for k in ("status", "wall_s", "conflicts", "ticks")}
+        for (row, seed), r in zip(evaluator.runs(set_rows), results):
+            m = measured[name][evaluator.run_key(r["hash"], seed)] = {k: r[k] for k in ("status", "wall_s", "conflicts", "ticks")}
             if r["status"] == "unknown":  # ran out of budget (deterministic) or hit the wall cap
                 m["budget_reached"] = (r["conflicts"] or 0) >= evaluator.conflict_budget(row)
         log(f"  {name:9} solved {sum(r['status'] in ('sat', 'unsat') for r in results)}"
