@@ -181,6 +181,30 @@ conflicts and ticks as stock on 8 Hamiltonian instances × 2 seeds. To count as 
 result, an evolved policy needs a pooled heldout score above the null maximum
 (1.00) by more than 2 null sd, so at least 1.06.
 
+### Mode-switching evolution (issue #28)
+
+50 iterations of `config_mode.yaml` on the training half at 4 seeds:
+- 8 × r8g.8xlarge, 9.3 h.
+- $119.20 in pool cost and $0.67 for the models.
+- 40 distinct programs, 2 of which failed to build.
+- Training scores: median 0.98, best 1.096 (found at iteration 6).
+- Only one candidate was above 1.05, and it was still below the training null maximum of 1.11.
+
+The four best on training, rescored on the held-out half at 4 seeds:
+
+| program | train | heldout, 4 seeds | heldout per seed |
+|---|---|---|---|
+| stable budget 1.5× when stable's fast glue < focused's, else 0.75× | 1.096 | 0.981 | 0.93 1.13 0.85 1.03 |
+| second | 1.047 | 0.969 | 1.00 0.96 0.96 0.96 |
+| third | 1.033 | 0.965 | 1.02 1.30 0.72 0.94 |
+| fourth | 1.033 | 0.953 | 0.97 1.18 0.77 0.94 |
+
+All four are inside the null range (0.92–1.00) and below the 1.06 bar.
+Training ranks don't carry to heldout. The per-family headroom measured
+with whole-mode switches (1.046) wasn't reached by a policy that reads
+glue averages at the mode switch. The programs, ledger and per-instance
+results are in `analysis/mode-28-2026-11-05/` in the example's S3 bucket.
+
 ## Fitness
 
 Each instance runs with a conflict budget of 3× stock's conflicts on it (from the
@@ -292,6 +316,13 @@ oe-bedrock cost openevolve_output/ --pricing pricing.yaml   # LLM $ and evaluati
 - Set `parallel_evaluations` to about 2× the number of workers. The extra
   iterations make their model calls while others are being evaluated, and the
   pool's queue holds them until a worker is free.
+- OpenEvolve evaluates the initial program before the first iteration, so the
+  other workers sit idle for that long. Set `--idle-timeout` above one stage-2
+  evaluation (65 min at 4 seeds on the mixed split), or they terminate before
+  the iterations start.
+- Set `--ttl` and `--cost-limit` to cover the run plus any heldout checks on the
+  same pool. A worker that reaches either is terminated mid-task, and that
+  task's result is lost.
 - Results are cached by the candidate's C token sequence (`KISSAT_EVAL_CACHE`;
   comments and spacing ignored). Evolution repeats programs often and tick
   fitness is deterministic, so a repeat is answered locally without a pool task.

@@ -63,8 +63,10 @@ prompt:
     statistics->decisions, statistics->switched (switches so far),
     statistics->restarts, solver->mode.ticks and solver->mode.conflicts (counts
     when the current mode began), and per-mode exponential moving averages
-    solver->averages[0] (focused) and solver->averages[1] (stable), each with
-    .fast_glue.value, .slow_glue.value, .decision_rate.value (and .initialized),
+    solver->averages[0] (focused) and solver->averages[1] (stable). Each is a
+    struct with fields .initialized (bool; false until that mode has run) and
+    .fast_glue, .slow_glue, .decision_rate, each of which is a smooth whose
+    current value is .value (e.g. solver->averages[1].slow_glue.value);
     GET_OPTION (modeint), GET_OPTION (modeinit), kissat_nlogpown (n, 4),
     kissat_logn (n). Lower glue means better learned clauses.
 
