@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- `examples/kissat/config_mode.yaml`: the prompt said the per-mode averages
+  had an `.initialized` field next to the glue fields. In fact `.initialized`
+  belongs to `solver->averages[i]` and each glue field is a `smooth` with
+  `.value`. In the #28 run, 1 of 50 candidates failed to build on this.
+- `examples/kissat/README.md`: the mode-switching evolution result (#28); none
+  of the top four beats the seed nulls on heldout. Also notes on pool
+  idle timeout, TTL and cost limit for long evaluations.
+
 ## [0.2.0] - 2026-11-04
 
 ### Added
