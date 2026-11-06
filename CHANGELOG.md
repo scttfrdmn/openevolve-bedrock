@@ -16,6 +16,11 @@ All notable changes to this project are documented here. The format follows
   spread of ±0.006, and best-of-2 seeds as the compute-matched bar at 1.016
   heldout (#30). A 50-iteration run ($0.52 of LLM, local) rebuilt level 3:
   heldout 1.009 at 1.67× CPU, below best-of-2's 1.019.
+- `examples/qiskit_routing`: `QISKIT_EVAL_MAX_PRESET` and `config_no_l3.yaml`.
+  A 200-iteration run without level 3 ($2.11) found a new composition
+  (resynthesis loop, deep VF2 layout, Sabre fallback). It scored 1.020 on
+  training at 2 seeds but 1.005 on heldout at 4 seeds, below level 3 and the
+  best-of-2 bar (#30).
 
 ### Changed
 - `examples/kissat/config_mode.yaml`: the prompt said the per-mode averages

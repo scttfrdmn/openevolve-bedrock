@@ -17,6 +17,7 @@ held-out split, and a compute-matched bar.
 | `prepare.py` | downloads the circuits (Benchpress at a pinned commit), writes the split, measures the reference |
 | `split.jsonl` | 138 circuits and their train/heldout assignment |
 | `config.yaml` | OpenEvolve config: Bedrock models, prompt, cascade |
+| `config_no_l3.yaml` | the second run: preset level 3 unavailable (`QISKIT_EVAL_MAX_PRESET=2`), 200 iterations |
 | `requirements.txt` | `qiskit==2.6.2`, `qiskit-ibm-runtime==0.51.0` (for `FakeTorino`) |
 
 ## Circuits and split
@@ -101,6 +102,32 @@ variant's training edge (+0.002) was noise.
 The programs, ledger and per-run results are in
 `analysis/qiskit-30-2026-11-05/` in the example's S3 bucket.
 
+### Second run: preset level 3 unavailable
+
+`config_no_l3.yaml` with `QISKIT_EVAL_MAX_PRESET=2`, under which the worker
+makes `generate_preset_pass_manager` raise above level 2:
+- 200 iterations, local, about 1.5 h, $2.11.
+- Training scores: median 1.001, best 1.0203 at 1.85× CPU.
+
+The best program composes a new pipeline:
+1. a CZ-guarded resynthesis loop on the logical circuit before layout;
+2. VF2Layout with 5,000 trials, falling back to Sabre with 3 iterations and 24 trials;
+3. two extra resynthesis rounds after routing.
+
+At 4 seeds:
+
+| pipeline | train | heldout (95% CI over circuits) | CPU × level 2 |
+|---|---|---|---|
+| best (the composition above) | 1.015 | 1.005 (0.998–1.013) | 1.65 |
+| the same without the layout change | 1.006 | 0.999 (0.994–1.005) | 1.48 |
+| level 3 (first run) | 1.013 | 1.009 | 1.62 |
+| best of 2 seeds (bar) | 1.017 | 1.019 | ~1.8–2 |
+
+The training score fell from 1.020 (2 seeds) to 1.015 (4 seeds) to 1.005 on
+heldout. That is selection on the training seeds, which the 4-seed and heldout
+checks are there to catch. All 246 checked outputs were equivalent. Neither
+run beat level 3, let alone the compute-matched bar.
+
 ## Run
 
 ```bash
@@ -122,6 +149,7 @@ QISKIT_EVAL_SPLIT=heldout python -c "import sys; sys.path.insert(0, 'examples/qi
 | `QISKIT_EVAL_SPLIT` | `train` | set scored by stage 2 |
 | `QISKIT_EVAL_CPU_CAP` | 2 | CPU limit as a multiple of level 2's |
 | `QISKIT_EVAL_DETAIL` | unset | add per-run results to the metrics |
+| `QISKIT_EVAL_MAX_PRESET` | unset | highest level `generate_preset_pass_manager` may build; above it, it raises |
 
 `reference.json` records level 2's CZ counts, which are the same on any machine
 for Qiskit 2.6.2, and its CPU time, which belongs to the machine it was
