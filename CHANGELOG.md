@@ -14,7 +14,8 @@ All notable changes to this project are documented here. The format follows
   active qubits). A 2× CPU cap applies. Candidates run in a separate Qiskit
   interpreter (`QISKIT_EVAL_PYTHON`, `-I`). A screen at 4 seeds gave a null
   spread of ±0.006, and best-of-2 seeds as the compute-matched bar at 1.016
-  heldout (#30).
+  heldout (#30). A 50-iteration run ($0.52 of LLM, local) rebuilt level 3:
+  heldout 1.009 at 1.67× CPU, below best-of-2's 1.019.
 
 ### Changed
 - `examples/kissat/config_mode.yaml`: the prompt said the per-mode averages

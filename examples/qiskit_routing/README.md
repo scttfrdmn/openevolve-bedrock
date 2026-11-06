@@ -75,6 +75,32 @@ Best-of-2 is the compute-matched bar: under the 2× CPU cap, an evolved pipeline
 has to beat about 1.016 on heldout. Otherwise running level 2 twice does as
 well.
 
+## Result (issue #30)
+
+50 iterations: Haiku 5.5 / Sonnet 5.5, local, 21 min, $0.52.
+- 40 programs; 13 raised on Qiskit API mistakes, which stage 1 caught.
+- Training scores: median 1.001, best 1.0153 at 1.6× CPU.
+- The best programs are level 2 with level 3's layout and optimization stages
+  swapped in. In effect evolution rebuilt level 3.
+
+At 4 seeds:
+
+| pipeline | train | heldout | CPU × level 2 (heldout) |
+|---|---|---|---|
+| null (level 2, seed + 100) | 1.001 | 0.993 | 0.94 |
+| level 3 | 1.013 | 1.009 | 1.62 |
+| evolved: level 2 + level 3 layout and optimization | 1.013 | 1.009 | 1.67 |
+| evolved, layout from seed + 1 | 1.011 | 1.008 | 1.67 |
+| best of 2 seeds (bar) | 1.017 | 1.019 | ~1.8–2 |
+
+All 124 checked heldout outputs were equivalent. The evolved pipeline scores
+the same as level 3 on heldout. It beats the null, but stays under the
+compute-matched bar, so running level 2 twice is better. The seed-shift
+variant's training edge (+0.002) was noise.
+
+The programs, ledger and per-run results are in
+`analysis/qiskit-30-2026-11-05/` in the example's S3 bucket.
+
 ## Run
 
 ```bash
