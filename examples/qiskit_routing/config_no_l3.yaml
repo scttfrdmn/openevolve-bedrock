@@ -1,0 +1,99 @@
+# Second Qiskit run (issue #30): as config.yaml, with preset level 3 unavailable
+# (QISKIT_EVAL_MAX_PRESET=2) and 200 iterations. The first run rebuilt level 3 from
+# its stages; this one has to find other compositions under the same 2x CPU cap.
+#
+#   python -m venv ~/qiskit-venv && ~/qiskit-venv/bin/pip install -r examples/qiskit_routing/requirements.txt
+#   export QISKIT_EVAL_PYTHON=~/qiskit-venv/bin/python
+#   python examples/qiskit_routing/prepare.py          # circuits + level-2 reference on this machine
+#   QISKIT_EVAL_MAX_PRESET=2 oe-bedrock run examples/qiskit_routing/initial_program.py \
+#       examples/qiskit_routing/evaluator.py --config examples/qiskit_routing/config_no_l3.yaml \
+#       --iterations 200 --budget-usd 10 --pricing pricing.yaml
+#
+# combined_score = geomean over (circuit, seed) of (CZ_level2 + 1) / (CZ_candidate + 1) on the
+# training circuits at seeds 0,1; > 1 means fewer CZ gates than Qiskit's preset level 2.
+
+max_iterations: 200
+checkpoint_interval: 5
+log_level: "INFO"
+random_seed: 42
+language: "python"
+diff_based_evolution: true
+max_code_length: 20000
+
+llm:
+  provider: bedrock
+  api_base: aws://us-west-2
+  models:
+    - name: us.anthropic.claude-haiku-5-5
+      weight: 0.8
+    - name: us.anthropic.claude-sonnet-5-5
+      weight: 0.2
+  max_tokens: 16000
+  timeout: 600
+
+prompt:
+  system_message: |
+    You are improving a Qiskit 2.6 transpiler pipeline. The program defines
+    build_pass_manager(backend, seed), which returns a pass manager that maps a
+    circuit onto backend: IBM Torino (FakeTorino), 133 qubits on a heavy-hex
+    coupling map, basis {cz, rz, sx, x, id}. Only the function inside the
+    EVOLVE-BLOCK may change; keep its name and signature and use seed for all
+    randomness (seed_transpiler, Sabre seeds).
+
+    The starting point is generate_preset_pass_manager(2, backend,
+    seed_transpiler=seed). Its stages are pm.init, pm.layout, pm.routing,
+    pm.translation, pm.optimization, pm.scheduling; any stage can be replaced
+    by a PassManager. Its layout stage runs SabreLayout(backend.target,
+    max_iterations=2, seed=seed, swap_trials=20, layout_trials=20) with
+    routing included. Available without imports: generate_preset_pass_manager,
+    PassManager, StagedPassManager, ConditionalController, DoWhileController,
+    common (qiskit.transpiler.preset_passmanagers.common, e.g.
+    common.generate_embed_passmanager), and passes (qiskit.transpiler.passes:
+    SabreLayout, SabreSwap, VF2Layout, VF2PostLayout, ElidePermutations,
+    Optimize1qGatesDecomposition, ConsolidateBlocks, UnitarySynthesis,
+    CommutativeCancellation, InverseCancellation, ...).
+
+    Fitness: the geometric mean over 71 Benchpress circuits (feynman,
+    qasmbench) and 2 seeds of (CZ count of level 2 + 1) / (CZ count of yours +
+    1). Above 1 is better. Measured on held-out circuits: running level 2 with
+    two seeds and keeping the better result gives about 1.019 at 1.8x the CPU,
+    and Sabre with max_iterations=4 about 1.007 at the same CPU. A seed change
+    alone moves the score by about 0.006.
+
+    generate_preset_pass_manager is limited to optimization levels 0-2 here
+    (a higher level raises). A previous run found that swapping level 3's
+    layout and optimization stages into level 2 gives 1.009, the same as level
+    3 itself; repeating that is not possible and would not be enough. Look for
+    other compositions: Sabre settings (max_iterations, trials, heuristics),
+    VF2Layout / VF2PostLayout, ElidePermutations, extra optimization loops
+    (DoWhileController until the 2-qubit count stops falling), or spending the
+    CPU budget where it pays most.
+
+    A candidate scores 0 if its total CPU time exceeds 2x level 2's, if any
+    output uses a gate outside the basis or a 2-qubit gate off a coupling edge,
+    or if any output is not equivalent to its input (checked by simulation).
+    The block may not import modules, define classes, use I/O, introspection
+    or names starting with "_", or use approximation_degree.
+
+    The programs shown as top performers and inspirations have already been
+    evaluated, and copying one of their changes gains nothing: an identical
+    program scores no better than the one it copies. Build on the parent with a
+    modification that differs from every change shown, and say how it differs.
+  num_top_programs: 3
+
+database:
+  population_size: 40
+  archive_size: 20
+  num_islands: 2
+  elite_selection_ratio: 0.3
+  exploitation_ratio: 0.7
+
+evaluator:
+  # Stage 1: 10 cheap training circuits at seed 0 with the equivalence check;
+  # stage 2: all 71 at seeds 0,1 (~10 s with 10 worker processes).
+  cascade_evaluation: true
+  cascade_thresholds: [0.9]
+  # One evaluation uses QISKIT_EVAL_JOBS processes, so evaluate one at a time.
+  parallel_evaluations: 1
+  timeout: 3600
+  use_llm_feedback: false
