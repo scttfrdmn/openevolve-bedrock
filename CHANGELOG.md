@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- `examples/qiskit_routing/`: evolve a Qiskit 2.6 transpiler pipeline for IBM
+  Torino. The score is the geomean CZ ratio against preset level 2 on 71
+  Benchpress training circuits at 2 seeds. Every output is checked for basis
+  and connectivity, and by random-input simulation for equivalence (up to 20
+  active qubits). A 2× CPU cap applies. Candidates run in a separate Qiskit
+  interpreter (`QISKIT_EVAL_PYTHON`, `-I`). A screen at 4 seeds gave a null
+  spread of ±0.006, and best-of-2 seeds as the compute-matched bar at 1.016
+  heldout (#30).
+
 ### Changed
 - `examples/kissat/config_mode.yaml`: the prompt said the per-mode averages
   had an `.initialized` field next to the glue fields. In fact `.initialized`
