@@ -11,3 +11,6 @@ pricing.yaml
 
 # examples/kissat prepare.py cache
 examples/kissat/.cache/
+
+# examples/qiskit_routing prepare.py cache
+examples/qiskit_routing/.cache/
