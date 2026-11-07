@@ -14,6 +14,7 @@ implements the input circuit (``equivalent``).
 
 import importlib.util
 import json
+import os
 import random
 import sys
 import time
@@ -30,6 +31,17 @@ def load(program):
     spec = importlib.util.spec_from_file_location("candidate", program)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
+    limit = os.environ.get("QISKIT_EVAL_MAX_PRESET")
+    if limit is not None and hasattr(mod, "generate_preset_pass_manager"):
+        preset = mod.generate_preset_pass_manager
+
+        def guarded(*args, **kw):
+            level = kw.get("optimization_level", args[0] if args else 2)
+            if level > int(limit):
+                raise ValueError(f"preset optimization level {level} is not available (QISKIT_EVAL_MAX_PRESET={limit})")
+            return preset(*args, **kw)
+
+        mod.generate_preset_pass_manager = guarded
     return mod.build_pass_manager
 
 

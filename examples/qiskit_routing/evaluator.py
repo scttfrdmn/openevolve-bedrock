@@ -36,6 +36,8 @@ reference on this machine (CPU time is per machine). Environment:
     QISKIT_EVAL_SPLIT   set scored by stage 2 (default: train)
     QISKIT_EVAL_CPU_CAP CPU limit as a multiple of level 2's (default: 2)
     QISKIT_EVAL_DETAIL  set to add per-run results ("detail") to the metrics
+    QISKIT_EVAL_MAX_PRESET  highest preset level generate_preset_pass_manager may build
+                       (unset: any); config_no_l3.yaml's run uses 2
 """
 
 from __future__ import annotations
