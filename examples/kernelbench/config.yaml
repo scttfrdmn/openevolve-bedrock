@@ -1,0 +1,74 @@
+# Evolve a GPU kernel for one KernelBench problem on Amazon Bedrock (issue #29).
+#
+#   export KB_PROBLEM=level2/12_Gemm_Multiply_LeakyReLU KB_HOST=ceres.local
+#   python examples/kernelbench/prepare.py            # problems, checker, initial program, GPU host
+#   oe-bedrock run examples/kernelbench/.cache/programs/level2_12_Gemm_Multiply_LeakyReLU.py \
+#       examples/kernelbench/evaluator.py --config examples/kernelbench/config.yaml \
+#       --iterations 50 --budget-usd 5 --pricing pricing.yaml
+#
+# combined_score = bar_ms / candidate_ms, the bar being the fastest of PyTorch eager,
+# torch.compile and torch.compile(mode="max-autotune") in the same GPU process.
+
+max_iterations: 50
+checkpoint_interval: 5
+log_level: "INFO"
+random_seed: 42
+language: "python"
+diff_based_evolution: false     # the first program must be rewritten as a kernel, not patched
+max_code_length: 40000
+
+llm:
+  provider: bedrock
+  api_base: aws://us-west-2
+  models:
+    - name: us.anthropic.claude-haiku-5-5
+      weight: 0.5
+    - name: us.anthropic.claude-sonnet-5-5
+      weight: 0.5
+  max_tokens: 32000
+  timeout: 900
+
+prompt:
+  system_message: |
+    You are writing a fast GPU kernel for one KernelBench problem, for an NVIDIA
+    Blackwell GPU (sm_120; CUDA 12.8, PyTorch 2.9.1, Triton 3.5.1). The program
+    must define class ModelNew with the same constructor and forward signature
+    as the reference Model shown in the first program, returning the same
+    result (within atol = rtol = 1e-2) for float32 inputs.
+
+    The work must be done by your own kernels: CUDA C++ compiled with
+    torch.utils.cpp_extension.load_inline (with __global__ kernels), or Triton
+    (@triton.jit). Allocating outputs with torch.empty and similar is fine;
+    computing with PyTorch ops (torch.matmul, torch.relu, F.conv2d, nn.Linear
+    and so on) is not. These are rejected before running, with the reason given
+    back to you: try/except, pass, torch.compile, dynamo or inductor, CUDA
+    streams, threads, lazy evaluation, timing patches, and lowering precision
+    (float16/bfloat16 or TF32).
+
+    Score: (fastest of PyTorch eager, torch.compile and torch.compile
+    max-autotune) / (your time), measured with CUDA events and a flushed L2
+    cache in the same process. Above 1 means faster than anything PyTorch does
+    on its own. It is 0 if your output is wrong on any of three fresh random
+    input sets, if you modify the inputs, return an input, or reuse a previous
+    result. Timing noise on this GPU is about 1-2%, so claim only what is
+    clearly faster. Fusing operations, avoiding extra memory passes and using
+    shared memory and vectorised loads are the usual sources of speed.
+
+    Return the complete program. Explain the kernel's design in a short comment.
+  num_top_programs: 3
+
+database:
+  population_size: 30
+  archive_size: 15
+  num_islands: 2
+  elite_selection_ratio: 0.3
+  exploitation_ratio: 0.7
+
+evaluator:
+  # Stage 1 is the static check on this machine (milliseconds); stage 2 builds and times the kernel on
+  # the GPU host (~1 min). One GPU, so one evaluation at a time.
+  cascade_evaluation: true
+  cascade_thresholds: [0.5]
+  parallel_evaluations: 1
+  timeout: 1200
+  use_llm_feedback: false

@@ -7,6 +7,18 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- `examples/kernelbench/`: evolve a CUDA or Triton kernel for one KernelBench
+  problem. Its score is relative to the fastest of PyTorch eager, `torch.compile`
+  and `torch.compile(mode="max-autotune")` in the same GPU process.
+  - Checks: KernelBench's static checker with its warnings as errors, plus bans
+    on `torch.compile`, dynamo, inductor, private `torch._` APIs and TF32.
+    Correctness on 3 fresh input sets, and runtime checks for input mutation,
+    aliasing and stale results.
+  - Evaluation runs on a GPU host over SSH (`KB_HOST`), in a container with no
+    network.
+  - Calibration: timing nulls of 0.01–0.02% median on an RTX PRO 6000 Blackwell;
+    `torch.compile` alone is 1.13× (L1) and 1.45× (L2) over eager on an RTX
+    5090 (#29).
 - `examples/qiskit_routing/`: evolve a Qiskit 2.6 transpiler pipeline for IBM
   Torino. The score is the geomean CZ ratio against preset level 2 on 71
   Benchpress training circuits at 2 seeds. Every output is checked for basis
