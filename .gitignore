@@ -14,3 +14,6 @@ examples/kissat/.cache/
 
 # examples/qiskit_routing prepare.py cache
 examples/qiskit_routing/.cache/
+
+# examples/kernelbench prepare.py cache (KernelBench problems + checker, MIT, not committed)
+examples/kernelbench/.cache/
