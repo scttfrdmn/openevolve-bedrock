@@ -242,6 +242,44 @@ def test_unrecognised_or_repeated_rejection_raises(fake_converse):
     assert len(client.calls) == 2
 
 
+def test_concurrent_first_calls_both_adapt(monkeypatch):
+    """Two calls to a new model in flight at once both get the rejection; the second
+    finds the quirk already learned and must retry, not raise (#30's best-of-N run)."""
+    import threading
+
+    temp = "The model returned the following errors: `temperature` is deprecated for this model."
+    gate = threading.Barrier(2)
+
+    class Racing:
+        def __init__(self):
+            self.calls, self.lock = [], threading.Lock()
+
+        def converse(self, **kw):
+            with self.lock:
+                self.calls.append(kw)
+            if "temperature" in kw.get("inferenceConfig", {}):
+                gate.wait(timeout=5)         # both requests were built before either was rejected
+                raise client_error("ValidationException", temp)
+            return converse_ok()
+
+    client = Racing()
+    monkeypatch.setattr(prov, "_bedrock_runtime_client", lambda *a, **k: client)
+    llm = BedrockLLM(model_cfg(name="us.anthropic.claude-haiku-5-5"))
+    errors = []
+
+    def call():
+        try:
+            run(llm.generate("x"))
+        except Exception as e:  # noqa: BLE001
+            errors.append(e)
+
+    threads = [threading.Thread(target=call) for _ in range(2)]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+    assert errors == []
+    assert len(client.calls) == 4 and sum("temperature" in c["inferenceConfig"] for c in client.calls) == 2
+
+
 def test_thinking_budget_env(fake_converse, monkeypatch):
     monkeypatch.setenv("OE_BEDROCK_THINKING_BUDGET", "2048")
     client = fake_converse([converse_ok()])

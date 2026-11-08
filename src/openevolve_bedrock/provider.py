@@ -156,12 +156,18 @@ def _has_quirk(model: str, quirk: str) -> bool:
         return quirk in _quirks.get(model, ())
 
 
+# Adaptation retries allowed within one call. A rejection for a quirk another thread has already
+# learned means this request was built before it was learned: retry, and the rebuilt request omits
+# the field. The cap only guards against a request builder that ignores a learned quirk.
+MAX_ADAPT_RETRIES = 8
+
+
 def _learn_quirk(model: str, quirk: str, message: str) -> bool:
-    """Record a quirk; False if already known (the caller should then give up)."""
+    """Record a quirk (logged once per model); True: rebuild the request and retry."""
     with _quirks_lock:
         known = _quirks.setdefault(model, set())
         if quirk in known:
-            return False
+            return True    # learned concurrently by another call; this request predates it
         known.add(quirk)
     logger.warning("%s: %s; adapting requests to this model (%s)", model, quirk, message[:200])
     return True
@@ -328,6 +334,7 @@ class ConverseTransport(_Transport):
 
         attempt = 0
         throttled = 0
+        adapted = 0
         while True:
             attempt += 1
             use_cache = bool(system) and self._cache_enabled()
@@ -342,8 +349,9 @@ class ConverseTransport(_Transport):
                 # Unsupported fields come back as ValidationException; an unsupported
                 # cachePoint as AccessDeniedException ("did not allow prompt caching").
                 if code in ("ValidationException", "AccessDeniedException") and \
-                        _learn_from_rejection(self.model, msg, features):
+                        adapted < MAX_ADAPT_RETRIES and _learn_from_rejection(self.model, msg, features):
                     attempt -= 1  # does not count against the budget
+                    adapted += 1
                     continue
                 if code in _THROTTLE_CODES and attempt < self.settings.max_attempts:
                     throttled += 1
@@ -508,6 +516,7 @@ class OpenAICompatTransport(_Transport):
 
         attempt = 0
         throttled = 0
+        adapted = 0
         while True:
             attempt += 1
             req, features = self.build_request(system, messages, params)
@@ -524,8 +533,9 @@ class OpenAICompatTransport(_Transport):
                         "/v1 or /openai/v1); or use Converse (api_base: aws://<region>). (%s)"
                         % (self.model, self.base_url, e)
                     ) from e
-                if _learn_from_rejection(self.model, str(e), features):
+                if adapted < MAX_ADAPT_RETRIES and _learn_from_rejection(self.model, str(e), features):
                     attempt -= 1  # does not count against the budget
+                    adapted += 1
                     continue
                 raise
             except openai.RateLimitError:
