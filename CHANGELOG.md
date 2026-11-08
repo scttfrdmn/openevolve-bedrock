@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- Provider: when several calls to a new model were in flight and Bedrock
+  rejected a field (e.g. `temperature` on Claude 5.5), only the first call
+  adapted. The others raised, because the quirk was already learned when they
+  got the same rejection for their older request. They now retry, at most 8
+  adaptations per call; the quirk is still learned and logged once. This hit
+  any OpenEvolve run with concurrent LLM calls on a model's first use.
+
 ### Added
 - `examples/kernelbench/`: evolve a CUDA or Triton kernel for one KernelBench
   problem. Its score is relative to the fastest of PyTorch eager, `torch.compile`
