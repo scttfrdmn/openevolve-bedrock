@@ -37,7 +37,7 @@ import yaml
 
 from openevolve_bedrock import __version__, register
 from openevolve_bedrock import ledger as led
-from openevolve_bedrock import stopping
+from openevolve_bedrock import selftest, stopping
 from openevolve_bedrock.ledger import DEFAULT_LEDGER_ENV, DEFAULT_LEDGER_NAME
 
 
@@ -65,6 +65,12 @@ def cmd_run(args: argparse.Namespace, passthrough: List[str]) -> int:
         os.environ[stopping.PRICING_ENV] = str(Path(args.pricing).resolve())
         stopping.budget_from_env()  # fail now on a bad pricing file, not mid-run
         _p(f"budget ${args.budget_usd:g} priced from {os.environ[stopping.PRICING_ENV]}")
+    if selftest.enabled():   # #48: abort before any search if the evaluator can't tell good from bad
+        st = selftest.run(args.initial_program, args.evaluation_file)
+        _p(st.summary())
+        if not st.passed:
+            _p("not starting the run: fix the evaluator or the planted set, or unset " + selftest.FLAG_ENV)
+            return 3
 
     from openevolve.cli import main as oe_main
 
@@ -353,9 +359,27 @@ def build_parser() -> argparse.ArgumentParser:
     k.add_argument("--threshold", type=float)
     k.add_argument("--json", action="store_true")
 
+    t = sub.add_parser("selftest", help="check an evaluator against its reference, null and planted candidates")
+    t.add_argument("initial_program")
+    t.add_argument("evaluation_file")
+    t.add_argument("--planted", help="directory of known-bad programs (default: selftest/ next to the evaluator)")
+    t.add_argument("--json", action="store_true")
+
     h = sub.add_parser("install-hook", help="auto-import this package in every Python process")
     h.add_argument("--remove", action="store_true")
     return p
+
+
+def cmd_selftest(args: argparse.Namespace) -> int:
+    register()
+    st = selftest.run(args.initial_program, args.evaluation_file, args.planted)
+    if args.json:
+        print(json.dumps({"passed": st.passed, "false_accept_rate": st.false_accept_rate,
+                          "false_accepts": st.false_accepts, "reference": st.reference,
+                          "null": st.null, "planted": st.planted, "errors": st.errors, "seconds": st.seconds}))
+    else:
+        print(st.summary())
+    return 0 if st.passed else 3
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -373,6 +397,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_cost(args)
     if args.cmd == "install-hook":
         return cmd_install_hook(args)
+    if args.cmd == "selftest":
+        return cmd_selftest(args)
     return 1
 
 

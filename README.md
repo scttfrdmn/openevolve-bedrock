@@ -232,12 +232,34 @@ is 2.609, `0.995` is 2.622 and `1.0` is the AlphaEvolve figure.
 | `OE_BEDROCK_THINKING_BUDGET` | enable Claude extended thinking with this token budget |
 | `OE_BEDROCK_BUDGET_USD`, `OE_BEDROCK_PRICING` | stop the run at this spend, priced with this file (same as `run --budget-usd --pricing`) |
 | `AWS_BEARER_TOKEN_BEDROCK` | Bedrock API key (both transports; optional for `https://`, which can mint one) |
+| `OE_BEDROCK_FITNESS_INTEGRITY` | `1`: an evaluator failure (the evaluator sets `evaluator_failed: 1.0`) is retried and never archived as a score; every attempt's outcome goes to the ledger (#47). Off by default |
+| `OE_BEDROCK_EVAL_RETRIES` | retries for an evaluator failure before the candidate is skipped (default 2) |
+| `OE_BEDROCK_SELFTEST` | `1`: `run` first checks the evaluator against its reference, null and planted candidates and aborts if any check fails (#48). Off by default |
+| `OE_BEDROCK_SELFTEST_DIR` | planted directory (default `selftest/` next to the evaluator) |
+
+### Measurement helpers
+
+Both are off by default, so stock OpenEvolve behaviour is unchanged.
+
+- **Fitness integrity** (`OE_BEDROCK_FITNESS_INTEGRITY=1`). Classifies each evaluation as `scored`, `candidate_failed` or `evaluator_failed`. A lost pool worker or a GPU host with no answer would otherwise be archived as a candidate scoring 0.
+- **Self-test** (`oe-bedrock selftest INITIAL EVALUATOR`, or `OE_BEDROCK_SELFTEST=1` on `run`). Runs before any search:
+  - the reference program must score. That is `reference.py` in the planted directory if present, else the initial program;
+  - every `null*.py` and planted `*.py` must fail.
+
+  It reports the evaluator's false-accept rate. Planted sets ship for the stand-in, `qiskit_routing` and KernelBench `level1/19_ReLU`.
+- **Stand-in** (`openevolve_bedrock.standin`). A CPU evaluator plus `provider: oeb-fake`, for developing and A/B-testing these with no AWS account:
+  - a known optimum of 1.821;
+  - 1% seeded noise;
+  - injectable faults (`STANDIN_FAULT_RATE`);
+  - planted defects.
+
+  100 iterations take about 1 s.
 
 ## Tests
 
 ```bash
 pip install -e ".[dev]"
-pytest            # 50 tests, ~15 s, no AWS credentials needed
+pytest            # ~160 tests, ~30 s, no AWS credentials needed
 ```
 
 `tests/test_e2e_spawn.py` runs a real 40-iteration OpenEvolve job twice with

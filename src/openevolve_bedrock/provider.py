@@ -775,6 +775,11 @@ def register() -> None:
         ensemble._create_model = _create_model
     _patch_iteration_worker()
     from openevolve_bedrock import stopping
+    from openevolve_bedrock.standin import fake_llm
+
+    from openevolve_bedrock import integrity
 
     stopping.install()
+    integrity.install()   # evaluator failures retried, never archived as scores (#47); off by default
+    fake_llm.register()   # provider: oeb-fake, for tests and A/B runs with no AWS (#46)
     _registered = True

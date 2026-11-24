@@ -15,6 +15,16 @@ All notable changes to this project are documented here. The format follows
   any OpenEvolve run with concurrent LLM calls on a model's first use.
 
 ### Added
+- **Fitness integrity** (`OE_BEDROCK_FITNESS_INTEGRITY=1`, off by default).
+  - Every evaluation is classified as `scored`, `candidate_failed` or `evaluator_failed`, and each attempt gets a `kind: "outcome"` ledger line.
+  - Evaluator failures are retried (`OE_BEDROCK_EVAL_RETRIES`, default 2), then the candidate is skipped instead of archived at 0.
+  - `SpawnPool`, KernelBench's no-result path and the stand-in flag `evaluator_failed: 1.0`.
+  - On the stand-in at 10% injected faults, the final archive had 1, 2 and 0 programs scored differently from their fault-free score over 3 seeds without it, and 0, 0, 0 with it (#47).
+- **Evaluator self-test** (`oe-bedrock selftest`, or `OE_BEDROCK_SELFTEST=1` on `run`).
+  - The reference must score, and null and planted candidates must fail; the run aborts otherwise.
+  - Reports the false-accept rate, and records it in the ledger.
+  - Planted sets for the stand-in, `qiskit_routing` and KernelBench `level1/19_ReLU`. All three evaluators measured 0% false accepts (0 of 5, 0 of 4, 0 of 5). Deliberately weakened stand-in evaluators measured 80% and 100% (#48).
+- **`openevolve_bedrock.standin`.** A CPU stand-in evaluator (masked softmax + bias with a CONFIG whose cost has a known optimum, seeded noise, held-out shapes, injectable faults, planted defects) and `provider: oeb-fake`, a deterministic fake model logged in the ledger. With these, the search-quality capabilities (#57) are tested and A/B'd with no AWS account (#46).
 - `examples/kernelbench/`: evolve a CUDA or Triton kernel for one KernelBench
   problem. Its score is relative to the fastest of PyTorch eager, `torch.compile`
   and `torch.compile(mode="max-autotune")` in the same GPU process.

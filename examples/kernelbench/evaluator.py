@@ -122,8 +122,9 @@ def run_remote(code: str) -> dict:
            f"cat out/{name}.json 2>/dev/null || tail -c 1500 out/{name}.err; rm -f cand/{name}")
     p = ssh(run, timeout=int(os.environ.get("KB_TIMEOUT", 900)) + 120, stdin=code)
     line = next((l for l in reversed(p.stdout.splitlines()) if l.startswith("{")), None)
-    if line is None:
-        return {"correct": False, "error": f"GPU run gave no result: {(p.stdout + p.stderr).strip()[-800:]}"}
+    if line is None:   # no result at all: the host, SSH or container failed, not the candidate (#47)
+        return {"correct": False, "evaluator_failed": True,
+                "error": f"GPU run gave no result: {(p.stdout + p.stderr).strip()[-800:]}"}
     return json.loads(line)
 
 
@@ -137,7 +138,8 @@ def evaluate(program_path: str) -> dict:
     except subprocess.TimeoutExpired:
         return {"combined_score": 0.0, "error": "GPU run timed out"}
     if not r.get("correct"):
-        return {"combined_score": 0.0, "error": r.get("error", "incorrect")}
+        return {"combined_score": 0.0, "error": r.get("error", "incorrect"),
+                **({"evaluator_failed": 1.0} if r.get("evaluator_failed") else {})}
     keys = ("speedup_vs_bar", "speedup_vs_eager", "candidate_ms", "bar_best_ms", "load_s", "eval_s")
     out = {"combined_score": r["speedup_vs_bar"], **{k: r[k] for k in keys if k in r}}
     out["bar"] = {"eager": 0, "default": 1, "max-autotune": 2}.get(r.get("bar"), -1)   # numeric for OpenEvolve
