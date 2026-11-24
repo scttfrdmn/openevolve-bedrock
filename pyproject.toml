@@ -40,7 +40,7 @@ oe-bedrock = "openevolve_bedrock.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-openevolve_bedrock = ["pricing.example.yaml"]
+openevolve_bedrock = ["pricing.example.yaml", "standin/config.yaml", "standin/defects/*.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
