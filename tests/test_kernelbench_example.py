@@ -81,7 +81,8 @@ def test_no_result_from_the_host_scores_zero(monkeypatch, tmp_path):
     monkeypatch.setenv("KB_PROBLEM", "level1/19_ReLU")
     monkeypatch.setenv("KB_HOST", "gpu.example")
     monkeypatch.setattr(ev, "ssh", lambda cmd, timeout, stdin=None: SimpleNamespace(stdout="", stderr="no route"))
-    assert ev.run_remote(KERNEL) == {"correct": False, "error": "GPU run gave no result: no route"}
+    assert ev.run_remote(KERNEL) == {"correct": False, "evaluator_failed": True,
+                                     "error": "GPU run gave no result: no route"}   # infra, not candidate (#47)
     monkeypatch.setattr(ev, "ssh", lambda cmd, timeout, stdin=None: SimpleNamespace(
         stdout="noise\n" + json.dumps({"correct": True, "speedup_vs_bar": 1.1}) + "\n", stderr=""))
     assert ev.run_remote(KERNEL)["speedup_vs_bar"] == 1.1

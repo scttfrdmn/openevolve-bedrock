@@ -42,10 +42,10 @@ The optimum is block = 32, unroll = 4, fuse_bias = True, at a score of
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import math
 import os
 import random
+import types
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -93,9 +93,11 @@ OPTIMUM_SCORE = total_time(INITIAL_CONFIG, SEARCH_SHAPES) / total_time(OPTIMAL_C
 
 
 def _load(path: str):
-    spec = importlib.util.spec_from_file_location(f"standin_cand_{abs(hash(path))}", path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    """Execute the candidate from its source. Not through the import system: a rewritten file
+    of the same size within a second would get a stale .pyc from __pycache__."""
+    mod = types.ModuleType("standin_candidate")
+    mod.__file__ = path
+    exec(compile(Path(path).read_text(), path, "exec"), mod.__dict__)
     return mod
 
 
@@ -171,7 +173,7 @@ def score(program_path: str, shapes=SEARCH_SHAPES, costly: bool = True) -> dict:
     if not costly:
         return {"combined_score": 1.0, "outcome": "scored", "sim_minutes": 0.0}
     if _fault(code):
-        return {"combined_score": 0.0, "outcome": "evaluator_failed",
+        return {"combined_score": 0.0, "outcome": "evaluator_failed", "evaluator_failed": 1.0,
                 "error": "simulated infrastructure fault: transport error", "sim_minutes": MINUTES_PER_SHAPE}
     t = total_time(cfg, shapes) * _noise(code, shapes)
     return {"combined_score": total_time(INITIAL_CONFIG, shapes) / t, "outcome": "scored",

@@ -269,15 +269,19 @@ class SpawnPool:
             "run_s": ended - started if started is not None and ended is not None else None,
             "wait_s": round(started - submitted, 3) if started is not None else None,
         })
+        # evaluator_failed: the attempt failed outside the candidate (#47). It is retried, and never
+        # archived as a score, when OE_BEDROCK_FITNESS_INTEGRITY is on.
         if record is None:
             if state == "queue_timeout":
-                return {"combined_score": 0.0,
+                return {"combined_score": 0.0, "evaluator_failed": 1.0,
                         "error": f"pool task {task_id} not started by a worker in {self.queue_timeout_s:.0f} s"}
-            return {"combined_score": 0.0,
+            return {"combined_score": 0.0, "evaluator_failed": 1.0,
                     "error": f"pool task {task_id} gave no completion record in {self.timeout_s:.0f} s of running"}
         metrics = self._get_json(self._key("results", task_id, "metrics.json"))
         if state != "completed" or metrics is None:
+            # The task command is the evaluator's own script, which reports candidate failures in
+            # metrics.json; a task that ends without one failed in the evaluator or the infrastructure.
             reason = record.get("retry_class") or record.get("terminal_reason") or f"exit {record.get('exit_code')}"
-            return {"combined_score": 0.0,
+            return {"combined_score": 0.0, "evaluator_failed": 1.0,
                     "error": f"pool task {task_id} {state} ({reason}); log: {record.get('logs')}"}
         return metrics
