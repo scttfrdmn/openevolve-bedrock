@@ -18,7 +18,7 @@ capabilities (#57) can be built and A/B-tested with no AWS account (#46).
 
 - ``problem``: the evaluator. ``evaluate`` / ``evaluate_stage1`` / ``evaluate_stage2``
   / ``evaluate_heldout``, a known optimum, seeded noise, injectable faults and
-  planted defects in ``defects/``.
+  planted defects in ``selftest/``.
 - ``fake_llm``: ``provider: oeb-fake``, registered when openevolve_bedrock is imported.
 - ``evaluator.py``: the file to pass to ``oe-bedrock run``; ``config.yaml``: a run config.
 """

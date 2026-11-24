@@ -199,7 +199,7 @@ def evaluate_heldout(program_path: str) -> dict:
 
 
 def defects_dir() -> Path:
-    return HERE / "defects"
+    return HERE / "selftest"
 
 
 def initial_program() -> Path:
