@@ -221,3 +221,8 @@ def evaluate_stage2(program_path: str) -> dict:
 
 def evaluate(program_path: str) -> dict:
     return evaluate_stage2(program_path)
+
+
+def evaluate_heldout(program_path: str, seed: int = 0) -> dict:
+    """The held-out circuits at one transpiler seed (the hook ``oe-bedrock verify`` calls, #41)."""
+    return score(program_path, load_split("heldout"), [seed], check=True)

@@ -247,6 +247,13 @@ Both are off by default, so stock OpenEvolve behaviour is unchanged.
   - every `null*.py` and planted `*.py` must fail.
 
   It reports the evaluator's false-accept rate. Planted sets ship for the stand-in, `qiskit_routing` and KernelBench `level1/19_ReLU`.
+- **Verify** (`oe-bedrock verify OUTPUT_DIR --evaluator EVAL [--top 4] [--seeds 0,1,2,3] [--initial PROG]`). Re-scores the run's top distinct programs, and the initial program, through the evaluator's `evaluate_heldout(program_path, seed)`. Reports:
+  - the training score;
+  - the held-out score per seed;
+  - the held-out mean, with a 95% t-interval across seeds;
+  - the shrinkage, held-out mean minus training score.
+
+  A program that fails held-out correctness is marked rejected. The stand-in and `qiskit_routing` define the hook. On #30's 200-iteration Qiskit run, it reproduces the hand-computed result: the winner goes from 1.020 on training to 1.005 on held-out (#41).
 - **Stand-in** (`openevolve_bedrock.standin`). A CPU evaluator plus `provider: oeb-fake`, for developing and A/B-testing these with no AWS account:
   - a known optimum of 1.821;
   - 1% seeded noise;

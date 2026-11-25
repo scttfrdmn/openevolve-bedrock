@@ -51,7 +51,7 @@ from typing import Dict, List, Optional
 
 HERE = Path(__file__).resolve().parent
 SEARCH_SHAPES = (5, 16, 37, 64, 120)
-HELDOUT_SHAPES = (9, 50, 200)
+HELDOUT_SHAPES = (7, 20, 33, 70, 112)   # same count and total length as SEARCH_SHAPES: same optimum
 SMALL_SHAPES = (5, 16)           # stage 1
 ROWS = 4
 TOL = 1e-9
@@ -139,9 +139,10 @@ def _digest(code: str) -> str:
     return hashlib.sha256(code.encode()).hexdigest()[:16]
 
 
-def _noise(code: str, shapes) -> float:
+def _noise(code: str, shapes, seed=None) -> float:
     sd = float(os.environ.get("STANDIN_NOISE", "0.01"))
-    rng = random.Random(f"{_digest(code)}:{os.environ.get('STANDIN_SEED', '0')}:{','.join(map(str, shapes))}")
+    seed = os.environ.get("STANDIN_SEED", "0") if seed is None else seed
+    rng = random.Random(f"{_digest(code)}:{seed}:{','.join(map(str, shapes))}")
     return max(0.5, 1 + rng.gauss(0, sd))
 
 
@@ -155,7 +156,7 @@ def _fault(code: str) -> bool:
     return rng.random() < rate
 
 
-def score(program_path: str, shapes=SEARCH_SHAPES, costly: bool = True) -> dict:
+def score(program_path: str, shapes=SEARCH_SHAPES, costly: bool = True, seed=None) -> dict:
     code = Path(program_path).read_text()
     try:
         mod = _load(program_path)
@@ -175,7 +176,7 @@ def score(program_path: str, shapes=SEARCH_SHAPES, costly: bool = True) -> dict:
     if _fault(code):
         return {"combined_score": 0.0, "outcome": "evaluator_failed", "evaluator_failed": 1.0,
                 "error": "simulated infrastructure fault: transport error", "sim_minutes": MINUTES_PER_SHAPE}
-    t = total_time(cfg, shapes) * _noise(code, shapes)
+    t = total_time(cfg, shapes) * _noise(code, shapes, seed)
     return {"combined_score": total_time(INITIAL_CONFIG, shapes) / t, "outcome": "scored",
             "sim_minutes": MINUTES_PER_SHAPE * len(shapes),
             "true_score": total_time(INITIAL_CONFIG, shapes) / total_time(cfg, shapes)}
@@ -194,8 +195,9 @@ def evaluate(program_path: str) -> dict:
     return evaluate_stage2(program_path)
 
 
-def evaluate_heldout(program_path: str) -> dict:
-    return score(program_path, HELDOUT_SHAPES)
+def evaluate_heldout(program_path: str, seed: int = 0) -> dict:
+    """Held-out shapes, with ``seed`` as the timing-noise seed (the hook ``oe-bedrock verify`` calls)."""
+    return score(program_path, HELDOUT_SHAPES, seed=seed)
 
 
 def defects_dir() -> Path:
