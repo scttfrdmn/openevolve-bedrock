@@ -236,11 +236,38 @@ def source() -> str:
     return s
 
 
+_OPTION = re.compile(r"OPTION \((\w+), ([^,]+), ([^,]+), ([^,]+),")
+
+
+def option_table() -> dict:
+    """{name: (low, high)} from the pinned Kissat's options.h (bounds None where not a number),
+    or {} if the tree isn't on this machine (a pool driver; the worker checks again)."""
+    f = home() / "kissat" / "src" / "options.h"
+    if not f.is_file():
+        return {}
+
+    def num(x):
+        try:
+            return float(x)
+        except ValueError:
+            return None
+
+    return {m.group(1): (num(m.group(3).strip()), num(m.group(4).strip())) for m in _OPTION.finditer(f.read_text())}
+
+
 def extra_options() -> list:
     flags = os.environ.get("KISSAT_EVAL_OPTIONS", "").split()
     bad = [f for f in flags if not re.fullmatch(r"--[a-z0-9]+=-?[0-9.e]+", f)]
     if bad:
         raise ValueError(f"KISSAT_EVAL_OPTIONS takes --name=value flags only, not {bad}")
+    table = option_table()
+    for f in flags if table else []:   # #73: a flag Kissat would reject is a configuration error, caught here
+        name, value = f[2:].split("=", 1)
+        if name not in table:
+            raise ValueError(f"KISSAT_EVAL_OPTIONS: Kissat has no option {name!r}")
+        low, high = table[name]
+        if (low is not None and float(value) < low) or (high is not None and float(value) > high):
+            raise ValueError(f"KISSAT_EVAL_OPTIONS: {name}={value} is outside Kissat's range [{low:g}, {high:g}]")
     return flags
 
 
@@ -263,11 +290,15 @@ def run_instance(kissat: Path, row: dict, time_cap: int, seed: int = 0) -> dict:
                             f"--conflicts={conflict_budget(row)}", *([f"--seed={seed}"] if seed else []),
                             *extra_options(), str(cnf)],
                            capture_output=True, text=True, timeout=time_cap + 60)
-        rc, out = p.returncode, p.stdout
+        rc, out, err = p.returncode, p.stdout, p.stderr
     except subprocess.TimeoutExpired:
-        rc, out = -9, ""
+        rc, out, err = -9, "", ""
     wall = time.monotonic() - t0
     status = STATUS.get(rc, "error")
+    if rc == 1 and "kissat: error:" in err:
+        # Kissat refused its command line before solving: the run's configuration, not the candidate (#73)
+        return {"hash": row["hash"], "seed": seed, "status": "rejected", "wall_s": wall, "conflicts": None,
+                "ticks": None, "wrong": False, "rejected": err.strip()[:300]}
     def counter(name):
         m = re.search(rf"^c {name}:\s+(\d+)", out, re.M)
         return int(m.group(1)) if m else None
@@ -357,6 +388,10 @@ def score(program_path: str, set_name: str, time_cap: int) -> dict:
             return {"combined_score": 0.0, "error": f"build failed: {e}"}
         results = run_batch(kissat, rows, time_cap)
 
+    rejected = [r for r in results if r.get("status") == "rejected"]
+    if rejected:
+        return {"combined_score": 0.0, "evaluator_failed": 1.0,
+                "error": f"Kissat rejected its command line ({len(rejected)} runs): {rejected[0]['rejected']}"}
     wrong = [r["hash"] for r in results if r["wrong"]]
     missing = [run_key(r["hash"], seed) for r, seed in runs(rows)
                if run_key(r["hash"], seed) not in base["sets"][set_name]]

@@ -274,7 +274,7 @@ def test_extra_options_reach_candidate_runs_only(monkeypatch, tmp_path):
     assert ev.extra_options() == ["--target=2", "--reducehigh=700"]
     seen = {}
     monkeypatch.setattr(ev.subprocess, "run", lambda cmd, **k: seen.setdefault("cmd", cmd) and
-                        type("P", (), {"returncode": 0, "stdout": ""})())
+                        type("P", (), {"returncode": 0, "stdout": "", "stderr": ""})())
     monkeypatch.setenv("KISSAT_EVAL_HOME", str(tmp_path))
     ev.run_instance(Path("/bin/true"), {"hash": "h", "expected": "sat", "conflicts": 10}, 300, seed=2)
     assert seen["cmd"][-4:-1] == ["--seed=2", "--target=2", "--reducehigh=700"]
@@ -313,3 +313,38 @@ def test_mode_config_loads():
     assert cfg.llm.models[0].provider == "bedrock" or cfg.llm.provider == "bedrock"
     assert "mode-switching" in cfg.prompt.system_message
     assert cfg.evaluator.parallel_evaluations == 16
+
+
+def test_options_are_checked_against_kissats_table(monkeypatch, tmp_path):
+    src = tmp_path / "kissat" / "src"
+    src.mkdir(parents=True)
+    (src / "options.h").write_text('  OPTION (restartmargin, 10, 0, 25, "fast/slow margin in percent") \\\n'
+                                   '  OPTION (seed, 0, 0, INT_MAX, "random seed") \\\n')
+    monkeypatch.setenv("KISSAT_EVAL_HOME", str(tmp_path))
+    monkeypatch.setenv("KISSAT_EVAL_OPTIONS", "--restartmargin=30")       # the #59 case (#73)
+    with pytest.raises(ValueError, match=r"outside Kissat's range \[0, 25\]"):
+        ev.extra_options()
+    monkeypatch.setenv("KISSAT_EVAL_OPTIONS", "--nosuch=1")
+    with pytest.raises(ValueError, match="no option 'nosuch'"):
+        ev.extra_options()
+    monkeypatch.setenv("KISSAT_EVAL_OPTIONS", "--restartmargin=25 --seed=99999")
+    assert ev.extra_options() == ["--restartmargin=25", "--seed=99999"]
+    (src / "options.h").unlink()                                          # no tree here: the worker checks
+    monkeypatch.setenv("KISSAT_EVAL_OPTIONS", "--restartmargin=30")
+    assert ev.extra_options() == ["--restartmargin=30"]
+
+
+def test_a_rejected_command_line_is_an_evaluator_failure(monkeypatch, tmp_path):
+    fake = tmp_path / "kissat"
+    fake.write_text("#!/bin/sh\necho \"kissat: error: invalid long option '$5' (try '-h')\" >&2\nexit 1\n")
+    fake.chmod(0o755)
+    monkeypatch.setenv("KISSAT_EVAL_HOME", str(tmp_path))
+    monkeypatch.delenv("KISSAT_EVAL_OPTIONS", raising=False)
+    r = ev.run_instance(fake, {"hash": "h", "expected": "sat", "conflicts": 10}, 300)
+    assert r["status"] == "rejected" and not r["wrong"] and "invalid long option" in r["rejected"]
+    stage1 = ev.instance_sets()["stage1"]
+    monkeypatch.setattr(ev, "baseline", lambda: {"cap": 300, "budget_factor": 3.0,
+                                                 "sets": {"stage1": {x["hash"]: {**x, "ticks": 1} for x in stage1}}})
+    monkeypatch.setattr(ev, "build", lambda prog, tmp: fake)
+    m = ev.score(str(EXAMPLE / "initial_program.c"), "stage1", 300)
+    assert m["combined_score"] == 0.0 and m["evaluator_failed"] == 1.0 and "rejected its command line" in m["error"]
