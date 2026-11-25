@@ -21,6 +21,14 @@ All notable changes to this project are documented here. The format follows
   any OpenEvolve run with concurrent LLM calls on a model's first use.
 
 ### Added
+- `openevolve_bedrock.tuner`: the two-level search's inner tuner (#64).
+  - Searches a declared parameter space with no model, behind an interface an external tuner can replace.
+  - Two tuners: random search (without replacement), and a genetic algorithm (tournament selection, uniform crossover, grid-neighbour mutation, constraint repair, one elite).
+  - The budget counts distinct evaluations, so the two compare at equal cost.
+  - The GA beat random search at equal evaluations on all three test spaces, so it is the default:
+    - stand-in, 40 evaluations: 100% vs 50% of runs within 0.5% of the optimum;
+    - the #58 Qiskit table, 40 evaluations: 94% vs 70%;
+    - an 8-parameter coupled probe, 320 evaluations: 72% vs 0%.
 - `oe-bedrock verify`: re-scores a run's best distinct programs on held-out cases at several seeds through an optional evaluator hook, `evaluate_heldout(program_path, seed)`.
   - Reports per-seed scores, the mean with a 95% t-interval, and the shrinkage from training. A program failing held-out correctness is reported as rejected.
   - Hooks for the stand-in and `qiskit_routing`.
