@@ -37,7 +37,7 @@ import yaml
 
 from openevolve_bedrock import __version__, register
 from openevolve_bedrock import ledger as led
-from openevolve_bedrock import selftest, stopping
+from openevolve_bedrock import selftest, stopping, verify
 from openevolve_bedrock.ledger import DEFAULT_LEDGER_ENV, DEFAULT_LEDGER_NAME
 
 
@@ -365,6 +365,14 @@ def build_parser() -> argparse.ArgumentParser:
     t.add_argument("--planted", help="directory of known-bad programs (default: selftest/ next to the evaluator)")
     t.add_argument("--json", action="store_true")
 
+    v = sub.add_parser("verify", help="re-score a run's best programs on held-out cases at several seeds")
+    v.add_argument("output_dir", help="OpenEvolve output dir (with checkpoints/)")
+    v.add_argument("--evaluator", required=True, help="evaluation file defining evaluate_heldout(path, seed)")
+    v.add_argument("--top", type=int, default=4)
+    v.add_argument("--seeds", default="0,1,2,3")
+    v.add_argument("--initial", help="initial program, scored as a reference line")
+    v.add_argument("--json", action="store_true")
+
     h = sub.add_parser("install-hook", help="auto-import this package in every Python process")
     h.add_argument("--remove", action="store_true")
     return p
@@ -380,6 +388,20 @@ def cmd_selftest(args: argparse.Namespace) -> int:
     else:
         print(st.summary())
     return 0 if st.passed else 3
+
+
+def cmd_verify(args: argparse.Namespace) -> int:
+    register()
+    seeds = [int(x) for x in args.seeds.split(",") if x.strip()]
+    rows = verify.run(args.output_dir, args.evaluator, args.top, seeds, args.initial)
+    if args.json:
+        print(json.dumps([{"name": r.name, "train": r.train, "heldout": r.heldout, "mean": r.mean,
+                           "interval": r.interval, "shrinkage": r.shrinkage, "rejected": r.rejected,
+                           "errors": r.errors} for r in rows]))
+    else:
+        print(f"heldout at seeds {seeds}; shrinkage = heldout mean - train")
+        print(verify.table(rows))
+    return 0
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -399,6 +421,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_install_hook(args)
     if args.cmd == "selftest":
         return cmd_selftest(args)
+    if args.cmd == "verify":
+        return cmd_verify(args)
     return 1
 
 

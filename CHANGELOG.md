@@ -21,6 +21,11 @@ All notable changes to this project are documented here. The format follows
   any OpenEvolve run with concurrent LLM calls on a model's first use.
 
 ### Added
+- `oe-bedrock verify`: re-scores a run's best distinct programs on held-out cases at several seeds through an optional evaluator hook, `evaluate_heldout(program_path, seed)`.
+  - Reports per-seed scores, the mean with a 95% t-interval, and the shrinkage from training. A program failing held-out correctness is reported as rejected.
+  - Hooks for the stand-in and `qiskit_routing`.
+  - On #30 run 2 it reproduces the hand-computed result: winner 1.0203 on training, 1.0050 on held-out.
+  - The stand-in's held-out shapes now have the same count and total length as its search shapes, so both share the optimum (1.821) and shrinkage measures selection only (#41).
 - **Fitness integrity** (`OE_BEDROCK_FITNESS_INTEGRITY=1`, off by default).
   - Every evaluation is classified as `scored`, `candidate_failed` or `evaluator_failed`, and each attempt gets a `kind: "outcome"` ledger line.
   - Evaluator failures are retried (`OE_BEDROCK_EVAL_RETRIES`, default 2), then the candidate is skipped instead of archived at 0.
