@@ -21,6 +21,12 @@ All notable changes to this project are documented here. The format follows
   any OpenEvolve run with concurrent LLM calls on a model's first use.
 
 ### Added
+- `experiments/two_level/numpy_standin`: the two-level stand-in, with real timing (#61).
+  - **Operation:** a fixed specification, `C = relu(A @ B + b)` in float64. Its tolerance class (1e-9 × output scale) is part of the specification and is not a setting (#71).
+  - **Structures:** `unfused`, `tiled_fused` and `tiled_k`. Each has a declared parameter space and an `emit(shape, params)`.
+  - **Timing:** in a fresh process with BLAS/OpenMP/vecLib threads pinned to one; candidate and reference are timed alternately, and each configuration gets a timing interval.
+  - **Planted defects:** a skipped tile, a dropped bias, wrong only at the largest shape, a float32 cast, and zeros.
+  - **Noise floor:** the reference against itself across 10 processes has sd 0.20% (range 0.6%) pinned, against 1.51% (range 5.5%) unpinned.
 - `openevolve_bedrock.tuner`: the two-level search's inner tuner (#64).
   - Searches a declared parameter space with no model, behind an interface an external tuner can replace.
   - Two tuners: random search (without replacement), and a genetic algorithm (tournament selection, uniform crossover, grid-neighbour mutation, constraint repair, one elite).
