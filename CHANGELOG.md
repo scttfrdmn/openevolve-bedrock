@@ -7,6 +7,12 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Fixed
+- `examples/kissat`: a Kissat option the solver rejects no longer scores as a
+  wrong answer. `KISSAT_EVAL_OPTIONS` is checked against the pinned Kissat's
+  `options.h` (name and numeric range) before any run. If Kissat still refuses
+  its command line, the evaluation is `evaluator_failed`. In #59,
+  `--restartmargin=30` (the range is 0–25) had been reported as wrong answers
+  on every instance (#73).
 - Provider: when several calls to a new model were in flight and Bedrock
   rejected a field (e.g. `temperature` on Claude 5.5), only the first call
   adapted. The others raised, because the quirk was already learned when they
