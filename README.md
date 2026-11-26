@@ -236,6 +236,7 @@ is 2.609, `0.995` is 2.622 and `1.0` is the AlphaEvolve figure.
 | `OE_BEDROCK_EVAL_RETRIES` | retries for an evaluator failure before the candidate is skipped (default 2) |
 | `OE_BEDROCK_SELFTEST` | `1`: `run` first checks the evaluator against its reference, null and planted candidates and aborts if any check fails (#48). Off by default |
 | `OE_BEDROCK_SELFTEST_DIR` | planted directory (default `selftest/` next to the evaluator) |
+| `OE_BEDROCK_OUTCOMES` | `1`: log each evaluation's outcome and code hash to the ledger without retrying or skipping (used by `compare`; behaviour unchanged) |
 
 ### Measurement helpers
 
@@ -254,6 +255,15 @@ Both are off by default, so stock OpenEvolve behaviour is unchanged.
   - the shrinkage, held-out mean minus training score.
 
   A program that fails held-out correctness is marked rejected. The stand-in and `qiskit_routing` define the hook. On #30's 200-iteration Qiskit run, it reproduces the hand-computed result: the winner goes from 1.020 on training to 1.005 on held-out (#41).
+- **Compare** (`oe-bedrock compare arms.yaml --out DIR`). Runs named arms at equal budget, the same iterations and seeds, where arms differ only by config file and environment. Each winner is verified on held-out data.
+
+  One table per arm, mean ± sd over seeds:
+  - best training score and held-out score;
+  - verified rate;
+  - LLM calls and $, and $ per verified improvement;
+  - duplicate rate and repeat-failure rate.
+
+  Format: `openevolve_bedrock.compare`. On the stand-in, 2 arms × 3 seeds × 60 iterations take about 9 s (#53).
 - **Stand-in** (`openevolve_bedrock.standin`). A CPU evaluator plus `provider: oeb-fake`, for developing and A/B-testing these with no AWS account:
   - a known optimum of 1.821;
   - 1% seeded noise;

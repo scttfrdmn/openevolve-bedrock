@@ -81,3 +81,13 @@ def test_cli(tmp_path):
     assert r.returncode == 0, r.stderr
     out = json.loads(r.stdout.strip().splitlines()[-1])
     assert len(out) == 1 and len(out[0]["heldout"]) == 2 and out[0]["rejected"] is False
+
+
+def test_evaluator_failures_are_retried_and_never_reject(tmp_path, monkeypatch):
+    run = _checkpoint(tmp_path, [(_cfg(INITIAL, 32, 4, True), 1.85)])
+    monkeypatch.setenv("STANDIN_FAULT_RATE", "0.5")
+    rows = verify.run(str(run), str(STANDIN / "evaluator.py"), top=1, seeds=(0, 1, 2, 3, 4, 5))
+    assert not rows[0].rejected and rows[0].mean is not None          # faults retried, not counted as wrong
+    monkeypatch.setenv("STANDIN_FAULT_RATE", "1.0")
+    rows = verify.run(str(run), str(STANDIN / "evaluator.py"), top=1, seeds=(0, 1))
+    assert not rows[0].rejected and rows[0].evaluator_failures == 2 and rows[0].mean is None

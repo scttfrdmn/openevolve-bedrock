@@ -38,6 +38,7 @@ Without the variable, nothing changes: OpenEvolve's ``evaluate_program`` runs as
 
 from __future__ import annotations
 
+import hashlib
 import os
 import time
 from typing import Dict, Iterable
@@ -46,6 +47,7 @@ from openevolve_bedrock import ledger as _ledger
 
 FLAG_ENV = "OE_BEDROCK_FITNESS_INTEGRITY"
 RETRIES_ENV = "OE_BEDROCK_EVAL_RETRIES"
+OBSERVE_ENV = "OE_BEDROCK_OUTCOMES"   # log each evaluation's outcome without retrying or skipping (#53)
 SCORED, CANDIDATE_FAILED, EVALUATOR_FAILED, SKIPPED = "scored", "candidate_failed", "evaluator_failed", "skipped"
 _installed = False
 
@@ -56,6 +58,10 @@ class EvaluationSkipped(RuntimeError):
 
 def enabled() -> bool:
     return os.environ.get(FLAG_ENV, "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def observing() -> bool:
+    return os.environ.get(OBSERVE_ENV, "").strip().lower() in ("1", "true", "yes", "on")
 
 
 def retries() -> int:
@@ -75,10 +81,15 @@ def classify(metrics) -> str:
         return CANDIDATE_FAILED
 
 
-def _record(program_id: str, cls: str, attempt: int, metrics) -> None:
+def code_hash(code: str) -> str:
+    """Whitespace-insensitive hash of a candidate, for duplicate counting (#53)."""
+    return hashlib.sha256("".join((code or "").split()).encode()).hexdigest()[:16]
+
+
+def _record(program_id: str, cls: str, attempt: int, metrics, code: str = "") -> None:
     _ledger.append({"ts": time.time(), "kind": "outcome", "program_id": program_id, "class": cls,
-                    "attempt": attempt, "error": str((metrics or {}).get("error", ""))[:300] if isinstance(metrics, dict)
-                    else ""})
+                    "attempt": attempt, "code_hash": code_hash(code),
+                    "error": str((metrics or {}).get("error", ""))[:300] if isinstance(metrics, dict) else ""})
 
 
 def counts(records: Iterable[dict]) -> Dict[str, int]:
@@ -105,12 +116,15 @@ def wrap(original):
 
     async def evaluate_program(self, program_code, program_id=""):
         if not enabled():
-            return await original(self, program_code, program_id)
+            metrics = await original(self, program_code, program_id)
+            if observing():      # record only: behaviour is exactly OpenEvolve's
+                _record(program_id, classify(metrics), 0, metrics, program_code)
+            return metrics
         n = retries()
         for attempt in range(n + 1):
             metrics = await original(self, program_code, program_id)
             cls = classify(metrics)
-            _record(program_id, cls, attempt, metrics)
+            _record(program_id, cls, attempt, metrics, program_code)
             if cls != EVALUATOR_FAILED:
                 return metrics
         raise EvaluationSkipped(f"evaluator failed on all {n + 1} attempts for program {program_id or '?'}: "

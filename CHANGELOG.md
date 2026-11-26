@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Fixed
+- `oe-bedrock verify` retries an evaluator failure on a held-out evaluation, and never counts it as a rejection. With injected faults it had rejected correct programs (#53, #47).
 - `examples/kissat`: a Kissat option the solver rejects no longer scores as a
   wrong answer. `KISSAT_EVAL_OPTIONS` is checked against the pinned Kissat's
   `options.h` (name and numeric range) before any run. If Kissat still refuses
@@ -21,6 +22,9 @@ All notable changes to this project are documented here. The format follows
   any OpenEvolve run with concurrent LLM calls on a model's first use.
 
 ### Added
+- `oe-bedrock compare arms.yaml`: named arms at equal budget, the same iterations and seeds, differing only by config file and environment (#53).
+  - Each winner is verified on held-out data. One table per arm, mean ± sd over seeds: best training score, held-out score, verified rate, LLM calls and $, $ per verified improvement, duplicate rate, and repeat-failure rate.
+  - `OE_BEDROCK_OUTCOMES=1` logs every evaluation's outcome and whitespace-normalised code hash without changing the run. Outcome lines from fitness integrity carry the hash too.
 - `experiments/two_level/numpy_standin`: the two-level stand-in, with real timing (#61).
   - **Operation:** a fixed specification, `C = relu(A @ B + b)` in float64. Its tolerance class (1e-9 × output scale) is part of the specification and is not a setting (#71).
   - **Structures:** `unfused`, `tiled_fused` and `tiled_k`. Each has a declared parameter space and an `emit(shape, params)`.
