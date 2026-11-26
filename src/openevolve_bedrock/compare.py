@@ -196,8 +196,9 @@ def run(arms_file: str, out_dir: str) -> dict:
     root = Path(out_dir)
     root.mkdir(parents=True, exist_ok=True)
     ih = _initial_heldout(spec)
+    # seed-major, so a change in machine load over a long comparison falls on every arm alike
     results = [_one(spec, root, arm, armspec or {}, seed, ih)
-               for arm, armspec in spec["arms"].items() for seed in spec["seeds"]]
+               for seed in spec["seeds"] for arm, armspec in spec["arms"].items()]
     summary = {"initial_heldout": ih, "arms": {}}
     for arm in spec["arms"]:
         rs = [r for r in results if r.arm == arm and not r.error]
