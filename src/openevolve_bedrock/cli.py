@@ -37,7 +37,7 @@ import yaml
 
 from openevolve_bedrock import __version__, register
 from openevolve_bedrock import ledger as led
-from openevolve_bedrock import selftest, stopping, verify
+from openevolve_bedrock import compare, selftest, stopping, verify
 from openevolve_bedrock.ledger import DEFAULT_LEDGER_ENV, DEFAULT_LEDGER_NAME
 
 
@@ -373,6 +373,10 @@ def build_parser() -> argparse.ArgumentParser:
     v.add_argument("--initial", help="initial program, scored as a reference line")
     v.add_argument("--json", action="store_true")
 
+    q = sub.add_parser("compare", help="run named arms at equal budget and write one comparison table")
+    q.add_argument("arms", help="arms.yaml (see openevolve_bedrock.compare)")
+    q.add_argument("--out", default="compare_out")
+
     h = sub.add_parser("install-hook", help="auto-import this package in every Python process")
     h.add_argument("--remove", action="store_true")
     return p
@@ -423,6 +427,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_selftest(args)
     if args.cmd == "verify":
         return cmd_verify(args)
+    if args.cmd == "compare":
+        register()
+        summary = compare.run(args.arms, args.out)
+        print(compare.table(summary))
+        print(f"results: {Path(args.out) / 'results.json'}")
+        return 0
     return 1
 
 

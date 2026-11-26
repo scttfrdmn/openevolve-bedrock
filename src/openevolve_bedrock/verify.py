@@ -66,18 +66,28 @@ class Verified:
 
     @property
     def rejected(self) -> bool:
-        return any(o != integrity.SCORED for o in self.outcomes)
+        """A held-out correctness failure. An evaluator failure is not one (#47)."""
+        return any(o == integrity.CANDIDATE_FAILED for o in self.outcomes)
+
+    @property
+    def scored(self) -> List[float]:
+        return [x for x, o in zip(self.heldout, self.outcomes) if o == integrity.SCORED]
+
+    @property
+    def evaluator_failures(self) -> int:
+        return sum(1 for o in self.outcomes if o == integrity.EVALUATOR_FAILED)
 
     @property
     def mean(self) -> Optional[float]:
-        return S.mean(self.heldout) if self.heldout and not self.rejected else None
+        return S.mean(self.scored) if self.scored and not self.rejected else None
 
     @property
     def interval(self):
-        if self.rejected or len(self.heldout) < 2:
+        xs = self.scored
+        if self.rejected or len(xs) < 2:
             return None
-        t = _T95[len(self.heldout) - 2] if len(self.heldout) - 2 < len(_T95) else 1.96
-        h = t * S.stdev(self.heldout) / math.sqrt(len(self.heldout))
+        t = _T95[len(xs) - 2] if len(xs) - 2 < len(_T95) else 1.96
+        h = t * S.stdev(xs) / math.sqrt(len(xs))
         return self.mean - h, self.mean + h
 
     @property
@@ -122,7 +132,10 @@ def run(output_dir: str, evaluator: str, top: int = 4, seeds=(0, 1, 2, 3),
             f.write_text(code)
             v = Verified(name, train)
             for s in seeds:
-                m = mod.evaluate_heldout(str(f), s)
+                for _ in range(integrity.retries() + 1):     # evaluator failures are retried, as in a run (#47)
+                    m = mod.evaluate_heldout(str(f), s)
+                    if integrity.classify(m) != integrity.EVALUATOR_FAILED:
+                        break
                 v.outcomes.append(integrity.classify(m))
                 v.heldout.append(float(m.get("combined_score") or 0.0))
                 v.errors.append(str(m.get("error", "")))
@@ -138,11 +151,11 @@ def table(rows: List[Verified]) -> str:
     for v in rows:
         tr = "" if v.train is None else f"{v.train:.4f}"
         if v.rejected:
-            bad = next(e for o, e in zip(v.outcomes, v.errors) if o != integrity.SCORED)
+            bad = next(e for o, e in zip(v.outcomes, v.errors) if o == integrity.CANDIDATE_FAILED)
             out.append(f"{v.name:28} {tr:>8} {'REJECTED':>12} {'':>19} {'':>9}  {bad[:70]}")
             continue
         ci = v.interval
         out.append(f"{v.name:28} {tr:>8} {v.mean:12.4f} {('%.4f–%.4f' % ci) if ci else '':>19} "
                    f"{'' if v.shrinkage is None else f'{v.shrinkage:+.4f}':>9}  "
-                   + " ".join(f"{x:.4f}" for x in v.heldout))
+                   + " ".join(f"{x:.4f}" if o == integrity.SCORED else "evalfail" for x, o in zip(v.heldout, v.outcomes)))
     return "\n".join(out)
