@@ -31,8 +31,11 @@ The arms file::
       stock: {}
       integrity: {env: {OE_BEDROCK_FITNESS_INTEGRITY: "1"}}
       other_models: {config: examples/x/config_b.yaml}
+      best_of_n: {kind: bestofn}          # `iterations` independent samples, no population
 
-Arms differ only by a config file and environment variables. OpenEvolve drops unknown YAML
+An arm is an OpenEvolve run unless ``kind: bestofn``, which makes the same number of LLM calls
+as independent samples from the initial program (``oe-bedrock bestofn``). Otherwise arms differ
+only by a config file and environment variables. OpenEvolve drops unknown YAML
 keys, so that's the only safe way to vary them. Every run logs each evaluation's outcome
 (``OE_BEDROCK_OUTCOMES=1``, which changes nothing about the run). That gives, per run:
 
@@ -108,9 +111,13 @@ def run_stats(records: List[dict]) -> Dict[str, Optional[float]]:
             "repeat_fail_rate": repeats / fails if fails else None}
 
 
-def _config_for(base: Path, seed: int, out: Path) -> Path:
+def _config_for(base: Path, seed: int, out: Path, iterations: int) -> Path:
     cfg = yaml.safe_load(base.read_text()) or {}
     cfg["random_seed"] = seed
+    # OpenEvolve checkpoints only every checkpoint_interval iterations, and verify reads the last
+    # checkpoint: if the interval doesn't divide the run, the last iterations would go unverified.
+    if iterations % int(cfg.get("checkpoint_interval") or 100):
+        cfg["checkpoint_interval"] = iterations
     f = out / "config.yaml"
     f.write_text(yaml.safe_dump(cfg, sort_keys=False))
     return f
@@ -124,11 +131,17 @@ def _one(spec: dict, root: Path, arm: str, armspec: dict, seed: int, initial_hel
     env = {**os.environ, **{k: str(v) for k, v in (spec.get("env") or {}).items()},
            **{k: str(v) for k, v in (armspec.get("env") or {}).items()},
            "OE_BEDROCK_LEDGER": str(led), integrity.OBSERVE_ENV: "1"}
-    cfg = _config_for(Path(armspec.get("config") or spec["config"]), seed, out)
+    cfg = _config_for(Path(armspec.get("config") or spec["config"]), seed, out, int(spec["iterations"]))
     if not (out / "run" / "best" / "best_program_info.json").exists():
-        p = subprocess.run([sys.executable, "-m", "openevolve_bedrock", "run", spec["initial"], spec["evaluator"],
-                            "--config", str(cfg), "--output", str(out / "run"), "--iterations", str(spec["iterations"])],
-                           capture_output=True, text=True, env=env)
+        kind = armspec.get("kind", "openevolve")
+        if kind not in ("openevolve", "bestofn"):
+            res.error = f"unknown arm kind {kind!r}"
+            return res
+        cmd = (["run", spec["initial"], spec["evaluator"], "--config", str(cfg), "--output", str(out / "run"),
+                "--iterations", str(spec["iterations"])] if kind == "openevolve" else
+               ["bestofn", spec["initial"], spec["evaluator"], "--config", str(cfg), "--output", str(out / "run"),
+                "--samples", str(spec["iterations"])])
+        p = subprocess.run([sys.executable, "-m", "openevolve_bedrock", *cmd], capture_output=True, text=True, env=env)
         (out / "run.log").write_text(p.stdout + p.stderr)
         if p.returncode != 0:
             res.error = (p.stderr or p.stdout)[-500:]

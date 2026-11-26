@@ -377,6 +377,13 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("arms", help="arms.yaml (see openevolve_bedrock.compare)")
     q.add_argument("--out", default="compare_out")
 
+    b = sub.add_parser("bestofn", help="N independent samples from the initial program, no population (a control)")
+    b.add_argument("initial_program")
+    b.add_argument("evaluation_file")
+    b.add_argument("--config", "-c")
+    b.add_argument("--output", "-o", required=True)
+    b.add_argument("--samples", "-n", type=int, required=True, help="LLM calls; set equal to the run's --iterations")
+
     h = sub.add_parser("install-hook", help="auto-import this package in every Python process")
     h.add_argument("--remove", action="store_true")
     return p
@@ -427,6 +434,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_selftest(args)
     if args.cmd == "verify":
         return cmd_verify(args)
+    if args.cmd == "bestofn":
+        register()
+        from openevolve_bedrock import bestofn
+        os.environ.setdefault(DEFAULT_LEDGER_ENV, str(Path(args.output) / DEFAULT_LEDGER_NAME))
+        info = bestofn.run(args.initial_program, args.evaluation_file, args.config, args.samples, args.output)
+        print(json.dumps(info))
+        return 0
     if args.cmd == "compare":
         register()
         summary = compare.run(args.arms, args.out)

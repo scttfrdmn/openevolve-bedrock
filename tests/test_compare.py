@@ -66,3 +66,36 @@ arms:
         assert a["runs"] == 2 and a["calls"][0] == 20 and a["evals"][0] > 0 and a["llm_usd"][0] > 0
         assert a["heldout"][0] is not None and a["dup_rate"][0] is not None
     assert "stock" in r.stdout and "verified" in r.stdout
+
+
+def test_bestofn_arm_makes_the_same_calls_from_the_initial_program_only(tmp_path):
+    (tmp_path / "arms.yaml").write_text(f"""initial: {STANDIN / 'initial_program.py'}
+evaluator: {STANDIN / 'evaluator.py'}
+config: {STANDIN / 'config.yaml'}
+iterations: 12
+seeds: [0]
+verify_seeds: [0, 1]
+arms:
+  evolve: {{}}
+  best_of_n: {{kind: bestofn}}
+""")
+    r = subprocess.run([sys.executable, "-m", "openevolve_bedrock", "compare", str(tmp_path / "arms.yaml"),
+                        "--out", str(tmp_path / "out")], capture_output=True, text=True, env={**os.environ},
+                       timeout=600)
+    assert r.returncode == 0, r.stderr[-2000:]
+    s = json.loads((tmp_path / "out" / "results.json").read_text())
+    assert s["arms"]["best_of_n"]["calls"][0] == s["arms"]["evolve"]["calls"][0] == 12
+    assert s["arms"]["best_of_n"]["heldout"][0] is not None
+    run = tmp_path / "out" / "best_of_n" / "s0" / "run"
+    samples = [json.loads(l) for l in (run / "samples.jsonl").read_text().splitlines()]
+    assert sorted(x["i"] for x in samples) == list(range(1, 13))
+    progs = [json.loads(f.read_text()) for f in (run / "checkpoints" / "checkpoint_12" / "programs").glob("*.json")]
+    root = [p for p in progs if p.get("parent_id") is None]
+    assert len(root) == 1 and all(p["parent_id"] == root[0]["id"] for p in progs if p is not root[0])
+
+
+def test_unknown_arm_kind_is_a_failed_run_not_a_crash(tmp_path):
+    spec = {"initial": str(STANDIN / "initial_program.py"), "evaluator": str(STANDIN / "evaluator.py"),
+            "config": str(STANDIN / "config.yaml"), "iterations": 1}
+    res = compare._one(spec, tmp_path, "x", {"kind": "nope"}, 0, None)
+    assert res.error and "nope" in res.error
