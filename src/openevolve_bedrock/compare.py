@@ -26,6 +26,7 @@ The arms file::
     seeds: [0, 1, 2]                        # written into each run's config as random_seed
     pricing: pricing.yaml                   # optional, for $ columns
     verify_seeds: [0, 1, 2, 3]              # optional; needs evaluate_heldout in the evaluator
+    report: [cpu_ratio]                     # optional; held-out metrics of each winner to tabulate
     env: {QISKIT_EVAL_JOBS: "10"}           # optional, for every arm
     arms:
       stock: {}
@@ -42,6 +43,8 @@ keys, so that's the only safe way to vary them. Every run logs each evaluation's
 - **best_train:** the run's best score;
 - **heldout:** the winner's held-out mean (``verify``) and whether it was rejected;
 - **verified:** the winner passed held-out correctness and beat the initial program's held-out mean;
+- **report** metrics: the winner's mean over held-out seeds of each metric named in ``report``
+  (default ``[cpu_ratio]``); a column appears only if some winner's evaluator returned it;
 - **calls**, **llm_usd:** from the ledger;
 - **evals:** evaluation attempts;
 - **dup_rate:** the share of evaluations whose whitespace-normalised code was already evaluated in the run;
@@ -68,6 +71,9 @@ import yaml
 
 from openevolve_bedrock import integrity
 from openevolve_bedrock import ledger as _ledger
+
+
+DEFAULT_REPORT = ["cpu_ratio"]
 
 
 @dataclass
@@ -164,6 +170,8 @@ def _one(spec: dict, root: Path, arm: str, armspec: dict, seed: int, initial_hel
             os.environ.clear()
             os.environ.update(old)
         res.heldout, res.rejected = v.mean, v.rejected
+        for key in spec.get("report", DEFAULT_REPORT):
+            res.extra[key] = v.metric_mean(key)
         res.verified = (not v.rejected) and initial_heldout is not None and v.mean is not None \
             and v.mean > initial_heldout
     return res
@@ -217,6 +225,7 @@ def run(arms_file: str, out_dir: str) -> dict:
             "usd_per_verified": (sum(usd) / verified) if usd and verified else None,
             "evals": ms([r.evals for r in rs]), "dup_rate": ms([r.dup_rate for r in rs]),
             "repeat_fail_rate": ms([r.repeat_fail_rate for r in rs]),
+            "report": {k: ms([r.extra.get(k) for r in rs]) for k in spec.get("report", DEFAULT_REPORT)},
         }
     summary["runs"] = [r.__dict__ for r in results]
     (root / "results.json").write_text(json.dumps(summary, indent=1, default=str))
@@ -232,10 +241,14 @@ def table(summary: dict) -> str:
              else "no heldout (evaluator without evaluate_heldout, or no verify_seeds)",
              f"{'arm':18} {'runs':>4} {'best train':>17} {'heldout':>17} {'verified':>8} {'calls':>11} "
              f"{'LLM $':>15} {'$/verified':>10} {'dup rate':>13} {'repeat fail':>13}"]
+    keys = [k for k in dict.fromkeys(k for a in summary["arms"].values() for k in a.get("report", {}))
+            if any(a["report"][k][0] is not None for a in summary["arms"].values() if k in a.get("report", {}))]
+    lines[-1] += "".join(f" {k[:15]:>15}" for k in keys)
     for arm, a in summary["arms"].items():
         vr = "—" if a["verified_rate"] is None else f"{a['verified_rate']:.0%}"
         upv = "—" if a["usd_per_verified"] is None else f"{a['usd_per_verified']:.3f}"
         lines.append(f"{arm:18} {a['runs']:>4} {f(a['best_train']):>17} {f(a['heldout']):>17} {vr:>8} "
                      f"{f(a['calls'], 0):>11} {f(a['llm_usd'], 3):>15} {upv:>10} {f(a['dup_rate'], 2):>13} "
-                     f"{f(a['repeat_fail_rate'], 2):>13}")
+                     f"{f(a['repeat_fail_rate'], 2):>13}"
+                     + "".join(f" {f(a['report'].get(k, (None, None)), 2):>15}" for k in keys))
     return "\n".join(lines)
