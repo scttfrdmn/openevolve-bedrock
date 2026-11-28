@@ -75,6 +75,7 @@ config: {STANDIN / 'config.yaml'}
 iterations: 12
 seeds: [0]
 verify_seeds: [0, 1]
+report: [true_score, not_returned]
 arms:
   evolve: {{}}
   best_of_n: {{kind: bestofn}}
@@ -86,6 +87,10 @@ arms:
     s = json.loads((tmp_path / "out" / "results.json").read_text())
     assert s["arms"]["best_of_n"]["calls"][0] == s["arms"]["evolve"]["calls"][0] == 12
     assert s["arms"]["best_of_n"]["heldout"][0] is not None
+    for a in s["arms"].values():                       # a held-out metric of each winner, per arm
+        assert 0.5 < a["report"]["true_score"][0] < 2 and a["report"]["not_returned"] == [None, None]
+    header = next(l for l in r.stdout.splitlines() if l.startswith("arm"))
+    assert "true_score" in header and "not_returned" not in header
     run = tmp_path / "out" / "best_of_n" / "s0" / "run"
     samples = [json.loads(l) for l in (run / "samples.jsonl").read_text().splitlines()]
     assert sorted(x["i"] for x in samples) == list(range(1, 13))
@@ -99,3 +104,16 @@ def test_unknown_arm_kind_is_a_failed_run_not_a_crash(tmp_path):
             "config": str(STANDIN / "config.yaml"), "iterations": 1}
     res = compare._one(spec, tmp_path, "x", {"kind": "nope"}, 0, None)
     assert res.error and "nope" in res.error
+
+
+def test_table_shows_cpu_ratio_by_default_only_when_returned():
+    base = {"runs": 1, "best_train": (1.0, 0.0), "heldout": (1.0, 0.0), "verified_rate": 1.0,
+            "usd_per_verified": None, "calls": (1, 0.0), "llm_usd": (None, None), "dup_rate": (0.0, 0.0),
+            "repeat_fail_rate": (None, None)}
+    with_cpu = {"initial_heldout": 1.0, "arms": {"a": {**base, "report": {"cpu_ratio": (1.5, 0.1)}},
+                                                  "b": {**base, "report": {"cpu_ratio": (None, None)}}}}
+    t = compare.table(with_cpu)
+    assert "cpu_ratio" in t.splitlines()[1] and "1.50 ± 0.10" in t
+    assert compare.DEFAULT_REPORT == ["cpu_ratio"]
+    without = {"initial_heldout": 1.0, "arms": {"a": {**base, "report": {"cpu_ratio": (None, None)}}}}
+    assert "cpu_ratio" not in compare.table(without)

@@ -63,6 +63,12 @@ class Verified:
     heldout: List[float] = field(default_factory=list)
     outcomes: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
+    metrics: List[dict] = field(default_factory=list)     # numeric held-out metrics, one dict per seed
+
+    def metric_mean(self, key: str) -> Optional[float]:
+        """Mean of one held-out metric (e.g. ``cpu_ratio``) over the scored seeds, or None if absent."""
+        xs = [m[key] for m, o in zip(self.metrics, self.outcomes) if o == integrity.SCORED and key in m]
+        return S.mean(xs) if xs else None
 
     @property
     def rejected(self) -> bool:
@@ -139,6 +145,8 @@ def run(output_dir: str, evaluator: str, top: int = 4, seeds=(0, 1, 2, 3),
                 v.outcomes.append(integrity.classify(m))
                 v.heldout.append(float(m.get("combined_score") or 0.0))
                 v.errors.append(str(m.get("error", "")))
+                v.metrics.append({k: float(x) for k, x in m.items()
+                                  if isinstance(x, (int, float)) and not isinstance(x, bool)})
             rows.append(v)
     _ledger.append({"ts": time.time(), "kind": "verify", "output_dir": str(output_dir), "seeds": list(seeds),
                     "programs": [{"name": v.name, "train": v.train, "heldout": v.heldout, "rejected": v.rejected,
